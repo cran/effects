@@ -1,4 +1,4 @@
-## last modified 29 November 03 by J. Fox
+## last modified 18 December 03 by J. Fox
 
 effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
@@ -119,6 +119,7 @@ effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         sort(setdiff(1:ncol(attr(mod$terms, "factors")),
             union(union(ancestors, descendants), self)))
         }
+    if ((!is.na(mod$na.action)) && class(mod$na.action) == "exclude") class(mod$na.action) <- "omit"
     term <- gsub(" ", "", gsub("\\*", ":", term))
     intercept <- has.intercept(mod)
     terms <- term.names(mod)

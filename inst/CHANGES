@@ -16,6 +16,10 @@ o Added ask argument to plot.effect.list, and row, col, nrow, ncol, and more arg
 
 o Fixed bug in plot.effect that caused xlab argument to be ignored in certain circumstances.
 
+Version 1.0-3
+
+o effect function now works if na.action is na.exclude.
+
 
 
 
