@@ -39,10 +39,10 @@ and \code{effect.list} objects.
     or the vertical axis is labelled on the scale of the response
     variable; if \code{"link"}, effects are printed 
     or the vertical axis labelled on the scale of the linear predictor.}
-  \item{x.var}{the index (number) of the covariate or factor to place on the 
+  \item{x.var}{the index (number) or quoted name of the covariate or factor to place on the 
     horizontal axis of each panel of the effect plot. The default is the 
     predictor with the largest number of levels or values.}
-  \item{z.var}{the index (number) of the covariate or factor for which
+  \item{z.var}{the index (number) or quoted name of the covariate or factor for which
     individual lines are to be drawn in each panel of the effect plot. The default is the 
     predictor with the smallest number of levels or values. This argument is only
     used if \code{multiline = TRUE}.}
