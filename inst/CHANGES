@@ -20,6 +20,11 @@ Version 1.0-3
 
 o effect function now works if na.action is na.exclude.
 
+Version 1.0-4
+
+o Fixed small bug introduced in version 1.0-3.
+
+
 
 
 
