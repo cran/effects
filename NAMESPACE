@@ -1,0 +1,8 @@
+export(effect, all.effects)
+S3method(print, effect)
+S3method(print, effect.list)
+S3method(summary, effect)
+S3method(summary, effect.list)
+S3method(as.data.frame, effect)
+S3method(plot, effect)
+S3method(plot, effect.list)
