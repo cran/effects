@@ -1,9 +1,13 @@
-## last modified 27 April 04 by J. Fox
+## last modified 19 November 04 by J. Fox
 
-effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE, 
+effect <- function(term, mod, ...){
+    UseMethod("effect", mod)
+    }
+
+effect.lm <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
     transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-    typical=mean){
+    typical=mean, ...){
     expand.model.frame <- function (model, extras, envir = environment(formula(model)),
         na.expand = FALSE){  # modified version of R base function
         f <- formula(model)
@@ -165,8 +169,8 @@ effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         if (!fac) {
             levels <- if (is.null(xlevels[[name]]))
                     seq(min(X[, name]), max(X[,name]), length=default.levels)
-                else if (length(xlevels[[name]]) == 1) 
-                    seq(min(X[, name]), max(X[,name]), length=xlevels[[name]])
+#                else if (length(xlevels[[name]]) == 1) 
+#                    seq(min(X[, name]), max(X[,name]), length=xlevels[[name]])
                 else xlevels[[name]]
                 }
             else factor.levels[[name]] <- levels

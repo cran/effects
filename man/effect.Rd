@@ -1,5 +1,6 @@
 \name{effect}
 \alias{effect}
+\alias{effect.lm}
 \alias{all.effects}
 \alias{as.data.frame.effect}
 
@@ -14,10 +15,12 @@
 }
 
 \usage{
-effect(term, mod, xlevels=list(), default.levels=10, se=TRUE, 
+effect{term, mod, ...}
+
+\method{effect}{lm}(term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
     transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-    typical=mean)
+    typical=mean, ...)
     
 all.effects(mod, ...)
 

@@ -1,5 +1,6 @@
 import(grid, lattice)
 export(effect, all.effects)
+S3method(effect, lm)
 S3method(print, effect)
 S3method(print, effect.list)
 S3method(summary, effect)
