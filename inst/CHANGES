@@ -28,6 +28,14 @@ Version 1.0-5
 
 o x.var and z.var arguments to plot.effect now take names as well as indices.
 
+Version 1.0-6
+
+o A variable specified in xlevels can be fixed to a single value.
+
+Version 1.0-7
+
+o made effect() generic, with a method for lm objects that handles glm objects as well.
+
 
 
 
