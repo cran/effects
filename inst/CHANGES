@@ -24,6 +24,10 @@ Version 1.0-4
 
 o Fixed small bug introduced in version 1.0-3.
 
+Version 1.0-5
+
+o x.var and z.var arguments to plot.effect now take names as well as indices.
+
 
 
 

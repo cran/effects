@@ -1,4 +1,4 @@
-## last modified 31 January 04 by J. Fox
+## last modified 27 April 04 by J. Fox
 
 effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
@@ -461,6 +461,16 @@ plot.effect <- function(x, x.var=which.max(levels),
         }
     predictors <- names(x)[1:n.predictors]
     levels <- sapply(apply(x[,predictors], 2, unique), length)
+    if (is.character(x.var)) {
+        which.x <- which(x.var == predictors)
+        if (length(which.x) == 0) stop(paste("x.var = '", x.var, "' is not in the model.", sep=""))
+        x.var <- which.x
+        }
+    if (is.character(z.var)) {
+        which.z <- which(z.var == predictors)
+        if (length(which.z) == 0) stop(paste("z.var = '", z.var, "' is not in the model.", sep=""))
+        z.var <- which.z
+        }    
     if (x.var == z.var) z.var <- z.var + 1
     range <- if (has.se && (!multiline)) range(c(x$lower, x$upper)) else range(x$fit)
     ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
