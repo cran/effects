@@ -1,4 +1,4 @@
-## last modified 13 April 03 by J. Fox
+## last modified 1 Sept 03 by J. Fox
 
 effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
@@ -68,12 +68,16 @@ effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         which.term<-which(term==names)
         if (length(which.term) == 0){
             factors <- attr(terms(mod.aug), "factors")
+            rownames(factors) <- gsub(" ", "", rownames(factors))
+            colnames(factors) <- gsub(" ", "", colnames(factors))
             result<-(1:length(names))[sapply(names,
                 function(term2) is.relative(term2, term, factors))]
             if (0 ==  length(result)) which.term else result
             }
         else {
-            factors <- attr(mod$terms, "factors")        
+            factors <- attr(mod$terms, "factors")     
+            rownames(factors) <- gsub(" ", "", rownames(factors))
+            colnames(factors) <- gsub(" ", "", colnames(factors))   
             result<-(1:length(names))[-which.term][sapply(names[-which.term],
                 function(term2) is.relative(term2, term, factors))]
             if (0 ==  length(result)) which.term else result
@@ -90,11 +94,15 @@ effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         which.term<-which(term==names)
         if (length(which.term) == 0){
             factors <- attr(terms(mod.aug), "factors")
+            rownames(factors) <- gsub(" ", "", rownames(factors))
+            colnames(factors) <- gsub(" ", "", colnames(factors))
             (1:length(names))[sapply(names,
                 function(term2) is.relative(term, term2, factors))]
             }
         else {
             factors <- attr(mod$terms, "factors")
+            rownames(factors) <- gsub(" ", "", rownames(factors))
+            colnames(factors) <- gsub(" ", "", colnames(factors))
             (1:length(names))[-which.term][sapply(names[-which.term],
                 function(term2) is.relative(term, term2, factors))]
             }
@@ -111,7 +119,7 @@ effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         sort(setdiff(1:ncol(attr(mod$terms, "factors")),
             union(union(ancestors, descendants), self)))
         }
-    term <- gsub("\\*", ":", term)
+    term <- gsub(" ", "", gsub("\\*", ":", term))
     intercept <- has.intercept(mod)
     terms <- term.names(mod)
     if (intercept) terms <- terms[-1]
@@ -242,7 +250,8 @@ effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
     }
 
 summary.effect <- function(object, type=c("response", "link"), ...){
-    cat(paste("\n", gsub(":", "*", object$term), 'effect\n'))
+    result <- list()
+    result$header <- paste("\n", gsub(":", "*", object$term), 'effect\n')
     type <- match.arg(type)
     if (type == "response") {
         object$fit <- object$transformation$inverse(object$fit)
@@ -251,28 +260,39 @@ summary.effect <- function(object, type=c("response", "link"), ...){
             object$upper <- object$transformation$inverse(object$upper)
             }
         }
-    table <- array(object$fit,     
+    result$effect <- array(object$fit,     
         dim=sapply(object$variables, function(x) length(x$levels)),
         dimnames=lapply(object$variables, function(x) x$levels))
-    print(table)
     if (!is.null(object$se)){
-        cat(paste('\n Lower', 100*object$confidence.level, 
-            'Percent Confidence Limits\n'))
-        table <- array(object$lower,   
+        result$lower.header <- paste('\n Lower', round(100*object$confidence.level, 2), 
+            'Percent Confidence Limits\n')
+        result$lower <- array(object$lower,   
             dim=sapply(object$variables, function(x) length(x$levels)),
             dimnames=lapply(object$variables, function(x) x$levels))
-        print(table)
-        cat(paste('\n Upper', 100*object$confidence.level,
-            'Percent Confidence Limits\n'))
-        table <- array(object$upper,   
+        result$upper.header <- paste('\n Upper', round(100*object$confidence.level, 2),
+            'Percent Confidence Limits\n')
+        result$upper <- array(object$upper,   
             dim=sapply(object$variables, function(x) length(x$levels)),
             dimnames=lapply(object$variables, function(x) x$levels))
-        print(table)
         }
-    if (object$discrepancy > 1e-3) cat(paste("\nWarning: There is an average discrepancy of", 
+    if (object$discrepancy > 1e-3) result$warning <- paste("\nWarning: There is an average discrepancy of", 
         round(object$discrepancy, 3),
-        "percent \n     in the 'safe' predictions for effect", object$term, '\n'))
-    invisible(NULL)
+        "percent \n     in the 'safe' predictions for effect", object$term, '\n')
+    class(result) <- "summary.effect"
+    result
+    }
+
+print.summary.effect <- function(x, ...){
+    cat(x$header)
+    print(x$effect)
+    if (!is.null(x$lower)){
+        cat(x$lower.header)
+        print(x$lower)
+        cat(x$upper.header)
+        print(x$upper)
+        }
+    if (!is.null(x$warning)) cat(x$warning)
+    invisible(x)
     }
 
 print.effect <- function(x, type=c("response", "link"), ...){
@@ -293,6 +313,8 @@ all.effects <- function(mod, ...){
         names <- term.names(mod)
         if (has.intercept(mod)) names <- names[-1]
         factors <- attr(mod$terms, "factors")
+        rownames(factors) <- gsub(" ", "", rownames(factors))
+        colnames(factors) <- gsub(" ", "", colnames(factors))
         if(length(names)==1) return(NULL)
         which.term<-which(term==names)
         (1:length(names))[-which.term][sapply(names[-which.term],
@@ -553,6 +575,7 @@ plot.effect <- function(x, x.var=which.max(levels),
 
 plot.effect.list <- function(x, selection, ...){
     if (!missing(selection)){
+        if (is.character(selection)) selection <- gsub(" ", "", selection)
         plot(x[[selection]], ...)
         return(invisible())
         }
@@ -569,7 +592,7 @@ plot.effect.list <- function(x, selection, ...){
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
 term.names <- function (model, ...) {
-    term.names <- labels(terms(model))
+    term.names <- gsub(" ", "", labels(terms(model)))
     if (has.intercept(model)) c("(Intercept)", term.names)
     else term.names
     }

@@ -1,4 +1,16 @@
 Version 0.9-0 initial release to CRAN
 
+Version 1.0-0
+
+o Rewrote summary.effect method and added print.summary.effect method.
+
+Version 1.0-1
+
+o Blanks can be inserted into or removed from effect names without causing an error; thus, e.g., "poly(education,3)" is equivalent to "poly(education, 3)".
+
+o Name spaces of lattice and grid packages are imported, as required in R 1.8.0.
+
+
+
 
    
