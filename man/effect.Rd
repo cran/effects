@@ -1,12 +1,6 @@
 \name{effect}
 \alias{effect}
 \alias{all.effects}
-\alias{print.effect}
-\alias{print.effect.list}
-\alias{summary.effect}
-\alias{summary.effect.list}
-\alias{plot.effect}
-\alias{plot.effect.list}
 \alias{as.data.frame.effect}
 
 \title{Functions For Constructing Effect Plots}
@@ -27,17 +21,6 @@ effect(term, mod, xlevels=list(), default.levels=10, se=TRUE,
     
 all.effects(mod, ...)
 
-\method{print}{effect}(x, type=c("response", "link"), ...)
-\method{print}{effect.list}(x, ...)
-\method{summary}{effect}(object, type=c("response", "link"), ...)
-\method{summary}{effect.list}(object, ...)
-\method{plot}{effect}(x, x.var=which.max(levels),
-    z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
-    ylab=x$response, main=paste(effect, "effect plot"),
-    colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
-    factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, rescale.axis=TRUE, ...)
-\method{plot}{effect.list}(x, selection, ...)
 \method{as.data.frame}{effect}(x, row.names=NULL, optional=TRUE)
 }
 
@@ -66,68 +49,20 @@ all.effects(mod, ...)
     made to approximate it from the inverse-link.}
   \item{typical}{a function to be applied to the columns of the model matrix
     over which the effect is "averaged"; the default is \code{mean}.}
-  \item{x, object}{an object of type \code{"effect"} or \code{"effect.list"},
-    as appropriate.}
-  \item{type}{if \code{"response"} (the default), effects are printed 
-    or the vertical axis is labelled on the scale of the response
-    variable; if \code{"link"}, effects are printed 
-    or the vertical axis labelled on the scale of the linear predictor.}
-  \item{x.var}{the index (number) of the covariate or factor to place on the 
-    horizontal axis of each panel of the effect plot. The default is the 
-    predictor with the largest number of levels or values.}
-  \item{z.var}{the index (number) of the covariate or factor for which
-    individual lines are to be drawn in each panel of the effect plot. The default is the 
-    predictor with the smallest number of levels or values. This argument is only
-    used if \code{multiline = TRUE}.}
-  \item{multiline}{if \code{TRUE}, each panel of the display represents combinations
-    of values of two predictors, with one predictor (corresponding to \code{x.var})
-    on the horzontal axis, and the other (corresponding to \code{z.var}) used to define
-    lines in the graph; defaults to \code{TRUE} if there are no standard errors in
-    the object being plotted, and \code{FALSE} otherwise.}
-  \item{rug}{if \code{TRUE}, the default, a rug plot is shown giving the marginal 
-    distribution of the predictor on the horizontal axis, if this predictor is
-    a covariate.}
-  \item{xlab}{the label for the horizontal axis of the effect plot; if missing, the
-    function will use the name of the predictor on the horizontal axis.}
-  \item{ylab}{the label for the vertical axis of the effect plot; the default is the
-    response variable for the model from which the effect was computed.}
-  \item{main}{the title for the plot, printed at the top; the default title is constructed from the
-    name of the effect.}
-  \item{colors}{\code{colors[1]} is used to plot effects, \code{colors[2]} to plot 
-    confidence bands. In a mulitline plot, the successive \code{colors} correspond
-    to the levels of the \code{z.var} covariate or factor.}
-  \item{symbols, lines}{corresponding to the levels of the \code{z.var} covariate
-    or factor on a multiline plot. These arguments are used only if \code{multiline = TRUE};
-    in this case a legend is drawn at the top of the display.}
-  \item{cex}{character expansion for plotted symbols; default is \code{1}.}
-  \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
-    if \code{NULL}, the default, then the vertical axes are scaled from the data.}
-  \item{factor.names}{a logical value, default \code{TRUE}, that controls the inclusion of
-    factor names in conditioning-variable labels.}
-  \item{ticks}{a two-item list controlling the placement of tick marks on the vertical axis,
-    with elements \code{at} and \code{n}. If \code{at=NULL} (the default), the program
-    attempts to find `nice' locations for the ticks, and the value of \code{n} (default, 
-    \code{5}) gives the
-    approximate number of tick marks desired; if \code{at} is non-\code{NULL}, then the
-    value of \code{n} is ignored.}
-  \item{alternating}{if \code{TRUE} (the default), the axis labels alternate by panels in
-    multi-panel displays from left to right and top to bottom; if \code{FALSE}, axis labels
-    appear at the bottom and on the left.}
-  \item{rescale.axis}{if \code{TRUE} (the default), the tick marks on the vertical axis
-    are labelled on the response scale (e.g., the probability scale for effects computed on
-    the logit scale for a binomial GLM).}
-  \item{selection}{the optional index (number) or quoted name of the effect in an effect
-    list to be plotted; if not supplied, a menu of high-order terms is presented.}
   \item{...}{arguments to be passed down.}
+  \item{x}{an object of type \code{"effect"}.}
   \item{row.names, optional}{not used.}
 }
 
 \details{
   Normally, the functions to be used directly are \code{all.effects}, to return
   a list of high-order effects, and the generic \code{plot} function to plot the effects.
+  (see \code{\link{plot.effect.list}} and \code{\link{plot.effect}}).
   Plots are drawn using the \code{\link[lattice]{xyplot}} function in the 
   \code{lattice} package. Effects may also be printed (implicitly or explicitly via
-  \code{print}) or summarized (using \code{summary}).
+  \code{print}) or summarized (using \code{summary})
+  (see \code{\link{print.effect.list}}, \code{\link{summary.effect.list}},
+  \code{\link{print.effect}}, and \code{\link{summary.effect}}).
   
   If asked, the \code{effect} function will compute effects for terms that have 
   higher-order relatives in the model, averaging over those terms (which rarely makes sense), or for terms that
@@ -137,21 +72,12 @@ all.effects(mod, ...)
   \code{A}, \code{B}, and \code{C} main effects, and the three two-way interactions. In either of these
   cases, a warning is printed.
   
-  In a generalized linear model, by default, \code{effect} prints the computed effect on the scale of the
-  response variable using the inverse of the 
-  link function. In a logit model, for example, this means that the effects are expressed on the probability
-  scale. By default, effects in a GLM are plotted on the scale of the linear predictor, but the vertical
-  axis is labelled on the response scale. This preserves the linear structure of the model while permitting
-  interpretation on what is usually a more familiar scale.
-  This approach may also be used with linear models, for example to display effects on the scale of the
-  response even if the data are analyzed on a transformed scale, such as log or square-root.
-   
   In calculating effects, the strategy for `safe' prediction described
   in Hastie (1992: Sec. 7.3.3) is employed.
 }
 
 \value{
-  \code{effect} returns a list with the following components:
+  \code{effect} returns an \code{"effect"} object with the following components:
   \item{term}{the term to which the effect pertains.}
   \item{formula}{the complete model formula.}
   \item{response}{a character string giving the response variable.}
@@ -180,6 +106,11 @@ all.effects(mod, ...)
     \emph{Sociological Methodology}
     \bold{17}, 347--361.
     
+    Fox, J. (2003)
+    Effect displays in R for generalised linear models.
+    \emph{Journal of Statistical Software}
+    \bold{8:15}, 1--27, <\url{http://www.jstatsoft.org/counter.php?id=75&url=v08/i15/effect-displays-revised.pdf&ct=1}>.
+    
     Hastie, T. J. (1992)
     Generalized additive models.
     In Chambers, J. M., and Hastie, T. J. (eds.)
@@ -191,7 +122,9 @@ all.effects(mod, ...)
 \author{John Fox \email{jfox@mcmaster.ca}.}
 
 
-\seealso{\code{\link[lattice]{xyplot}}}
+\seealso{\code{\link{print.effect}}, \code{\link{summary.effect}}, \code{\link{plot.effect}}, 
+    \code{\link{print.summary.effect}}, \code{\link{print.effect.list}}, \code{\link{summary.effect.list}},
+    \code{\link{plot.effect.list}}, \code{\link[lattice]{xyplot}}}
 
 \examples{
 data(Cowles)
