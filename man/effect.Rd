@@ -170,13 +170,13 @@ plot(effect('sex:neuroticism:extraversion', mod.cowles,
     sex:neuroticism:extraversion does not appear in the model in: 
       effect("sex:neuroticism:extraversion", mod.cowles, 
       xlevels = list(neuroticism = 0:24,  
+}
 
 data(Prestige)
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
 eff.pres <- all.effects(mod.pres, default.levels=50)
-plot(eff.pres)
-}
+plot(eff.pres, ask=FALSE)
 
 }
 

@@ -10,6 +10,12 @@ o Blanks can be inserted into or removed from effect names without causing an er
 
 o Name spaces of lattice and grid packages are imported, as required in R 1.8.0.
 
+Version 1.0-2
+
+o Added ask argument to plot.effect.list, and row, col, nrow, ncol, and more arguments to plot.effect, to support graphing an array of effect plots.
+
+o Fixed bug in plot.effect that caused xlab argument to be ignored in certain circumstances.
+
 
 
 

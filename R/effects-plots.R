@@ -1,4 +1,4 @@
-## last modified 1 Sept 03 by J. Fox
+## last modified 29 November 03 by J. Fox
 
 effect <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
@@ -367,7 +367,7 @@ plot.effect <- function(x, x.var=which.max(levels),
     ylab=x$response, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
     factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, rescale.axis=TRUE, ...){
+    alternating=TRUE, rescale.axis=TRUE, row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){
     lrug <- function(x) {
                 if (length(unique(x)) < 0.8 * length(x)) x <- jitter(x)
                 grid.segments(x, unit(0, "npc"), x, unit(0.5, "lines"),
@@ -395,6 +395,7 @@ plot.effect <- function(x, x.var=which.max(levels),
         trans.link <- trans.inverse <- I
         }
     require(lattice)
+    split <- c(col, row, ncol, nrow)
     ylab # force evaluation
     x.data <- x$data
     effect <- paste(sapply(x$variables, "[[", "name"), collapse="*")
@@ -431,7 +432,7 @@ plot.effect <- function(x, x.var=which.max(levels),
                     y=list(at=tickmarks$at, labels=tickmarks$labels),
                     alternating=alternating),
                 main=main,
-                lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...))
+                lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...), split=split, more=more)
             }        
         else {
             x.vals <- x.data[, names(x)[1]]
@@ -448,11 +449,12 @@ plot.effect <- function(x, x.var=which.max(levels),
                     },
                 ylim=ylim,
                 ylab=ylab,
+                xlab=if (missing(xlab)) names(x)[1] else xlab,
                 x.vals=x.vals, rug=rug,
                 main=main,
                 lower=x$lower, upper=x$upper, has.se=has.se, data=x, 
                 scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-                    alternating=alternating), ...))
+                    alternating=alternating), ...), split=split, more=more)
             }
         return(invisible())
         }
@@ -495,7 +497,7 @@ plot.effect <- function(x, x.var=which.max(levels),
                     text=list(as.character(zvals)), 
                     lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2), 
                     points=list(pch=1:length(zvals))),
-                data=x, ...))
+                data=x, ...), split=split, more=more)
             }    
         else{
         x.vals <- x.data[, names(x)[x.var]]
@@ -522,7 +524,7 @@ plot.effect <- function(x, x.var=which.max(levels),
                     text=list(as.character(zvals)), 
                     lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2)), 
                 data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-                    alternating=alternating), ...))
+                    alternating=alternating), ...), split=split, more=more)
             }
         return(invisible())
         }
@@ -546,7 +548,7 @@ plot.effect <- function(x, x.var=which.max(levels),
                 y=list(at=tickmarks$at, labels=tickmarks$labels),
                 alternating=alternating),
             main=main,
-            lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...))
+            lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...), split=split, more=more)
         }    
     else{
         x.vals <- x.data[, names(x)[x.var]]
@@ -569,21 +571,36 @@ plot.effect <- function(x, x.var=which.max(levels),
             main=main,
             lower=x$lower, upper=x$upper, has.se=has.se, data=x, 
             scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-                alternating=alternating), ...))
+                alternating=alternating), ...), split=split, more=more)
         }
     }
 
-plot.effect.list <- function(x, selection, ...){
+plot.effect.list <- function(x, selection, ask=TRUE, ...){
     if (!missing(selection)){
         if (is.character(selection)) selection <- gsub(" ", "", selection)
         plot(x[[selection]], ...)
         return(invisible())
         }
     effects <- gsub(":", "*", names(x))
-    repeat {
-        selection <- menu(effects)
-        if (selection == 0) break
-        else plot(x[[selection]], ...)
+    if (ask){
+        repeat {
+            selection <- menu(effects)
+            if (selection == 0) break
+            else plot(x[[selection]], ...)
+            }
+        }
+    else {
+        neffects <- length(x)
+        mfrow <- mfrow(neffects)
+        rows <- mfrow[1]
+        cols <- mfrow[2]
+        for (i in 1:rows) {
+            for (j in 1:cols){
+                if ((i-1)*cols + j > neffects) break
+                more <- !((i-1)*cols + j == neffects)
+                plot(x[[(i-1)*cols + j]], row=i, col=j, nrow=rows, ncol=cols, more=more, ...)
+                }
+            }
         }
     }
 
@@ -598,3 +615,12 @@ term.names <- function (model, ...) {
     }
     
 response.name <- function (model, ...) deparse(attr(terms(model), "variables")[[2]])
+
+mfrow <- function(n, max.plots=0){
+    # number of rows and columns for array of n plots
+    if (max.plots != 0 & n > max.plots)
+        stop(paste("number of plots =",n," exceeds maximum =", max.plots))
+    rows <- round(sqrt(n))
+    cols <- ceiling(n/rows)
+    c(rows, cols)
+    }

@@ -25,8 +25,9 @@ and \code{effect.list} objects.
     ylab=x$response, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
     factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, rescale.axis=TRUE, ...)
-\method{plot}{effect.list}(x, selection, ...)
+    alternating=TRUE, rescale.axis=TRUE, 
+    row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
+\method{plot}{effect.list}(x, selection, ask=TRUE, ...)
 }
 
 \arguments{
@@ -82,8 +83,16 @@ and \code{effect.list} objects.
   \item{rescale.axis}{if \code{TRUE} (the default), the tick marks on the vertical axis
     are labelled on the response scale (e.g., the probability scale for effects computed on
     the logit scale for a binomial GLM).}
+  \item{row, col, nrow, ncol, more}{These arguments are used to graph an effect as part of an
+    array of plots; \code{row}, \code{col}, \code{nrow}, and \code{ncol} are used to compose
+    the \code{split} argument and \code{more} the \code{more} argument to \code{\link[lattice]{print.trellis}}.
+    Normally these arguments are not set by the user, but by \code{print.effect.list}.}
   \item{selection}{the optional index (number) or quoted name of the effect in an effect
-    list to be plotted; if not supplied, a menu of high-order terms is presented.}
+    list to be plotted; if not supplied, a menu of high-order terms is presented or all effects
+    are plotted.}
+  \item{ask}{if \code{selection} is not supplied and \code{ask} is \code{TRUE} (the default),
+    a menu of high-order terms is presented; if \code{ask} is \code{FALSE}, effects for all
+    high-order terms are plotted in an array.}
   \item{...}{arguments to be passed down.}
 }
 
@@ -161,14 +170,14 @@ plot(effect('sex:neuroticism:extraversion', mod.cowles,
     Warning message: 
     sex:neuroticism:extraversion does not appear in the model in: 
       effect("sex:neuroticism:extraversion", mod.cowles, 
-      xlevels = list(neuroticism = 0:24,  
+      xlevels = list(neuroticism = 0:24,
+}
 
 data(Prestige)
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
 eff.pres <- all.effects(mod.pres, default.levels=50)
-plot(eff.pres)
-}
+plot(eff.pres, ask=FALSE)
 
 }
 
