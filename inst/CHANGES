@@ -34,7 +34,11 @@ o A variable specified in xlevels can be fixed to a single value.
 
 Version 1.0-7
 
-o made effect() generic, with a method for lm objects that handles glm objects as well.
+o Made effect() generic, with a method for lm objects that handles glm objects as well.
+
+Version 1.0-8
+
+o Small fixes to the help files.
 
 
 

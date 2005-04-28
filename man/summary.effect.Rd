@@ -17,7 +17,7 @@ and \code{effect.list} objects.
 \usage{
 \method{print}{effect}(x, type=c("response", "link"), ...)
 \method{print}{effect.list}(x, ...)
-\method{print}{summary.effect}{x, ...}
+\method{print}{summary.effect}(x, ...)
 \method{summary}{effect}(object, type=c("response", "link"), ...)
 \method{summary}{effect.list}(object, ...)
 \method{plot}{effect}(x, x.var=which.max(levels),

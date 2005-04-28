@@ -15,7 +15,7 @@
 }
 
 \usage{
-effect{term, mod, ...}
+effect(term, mod, ...)
 
 \method{effect}{lm}(term, mod, xlevels=list(), default.levels=10, se=TRUE, 
     confidence.level=.95, 
