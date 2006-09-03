@@ -24,7 +24,7 @@ effect(term, mod, ...)
     
 all.effects(mod, ...)
 
-\method{as.data.frame}{effect}(x, row.names=NULL, optional=TRUE)
+\method{as.data.frame}{effect}(x, row.names=NULL, optional=TRUE, ...)
 }
 
 \arguments{
