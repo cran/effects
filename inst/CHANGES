@@ -40,6 +40,10 @@ Version 1.0-8
 
 o Small fixes to the help files.
 
+Version 1.0-9
+
+o Small change to compile without a warning in R 2.4.0.
+
 
 
 
