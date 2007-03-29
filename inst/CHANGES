@@ -44,6 +44,17 @@ Version 1.0-9
 
 o Small change to compile without a warning in R 2.4.0.
 
+Version 1.0-10
+
+o Standard errors of effects are computed using t rather than standard-normal distribution for models with estimated dispersion (as suggested by Brian Ripley).
+
+o Small fixes.
+
+o Objects are now named "eff" and "eff.list" rather than "effect" and "effect.list".
+
+o Data sets now provided by lazy data.
+
+
 
 
 

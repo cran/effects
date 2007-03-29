@@ -10,7 +10,7 @@ Toronto for simple possession of small quantities of marijuana. The data are par
 data set featured in a series of articles in the Toronto Star newspaper.
 }
 
-\usage{data(Arrests)}
+\usage{Arrests}
 
 \format{
   A data frame with 5226 observations on the following 8 variables.

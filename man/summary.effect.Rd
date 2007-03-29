@@ -1,33 +1,33 @@
-\name{summary.effect}
-\alias{print.effect}
-\alias{print.effect.list}
-\alias{print.summary.effect}
-\alias{summary.effect}
-\alias{summary.effect.list}
-\alias{plot.effect}
-\alias{plot.effect.list}
+\name{summary.eff}
+\alias{print.eff}
+\alias{print.eff.list}
+\alias{print.summary.eff}
+\alias{summary.eff}
+\alias{summary.eff.list}
+\alias{plot.eff}
+\alias{plot.eff.list}
 
 \title{Summarizing, Printing, and Plotting Effects}
 
 \description{
-\code{summary}, \code{print}, and \code{plot} methods for \code{effect}
-and \code{effect.list} objects.
+\code{summary}, \code{print}, and \code{plot} methods for \code{eff}
+and \code{eff.list} objects.
 }
 
 \usage{
-\method{print}{effect}(x, type=c("response", "link"), ...)
-\method{print}{effect.list}(x, ...)
-\method{print}{summary.effect}(x, ...)
-\method{summary}{effect}(object, type=c("response", "link"), ...)
-\method{summary}{effect.list}(object, ...)
-\method{plot}{effect}(x, x.var=which.max(levels),
+\method{print}{eff}(x, type=c("response", "link"), ...)
+\method{print}{eff.list}(x, ...)
+\method{print}{summary.eff}(x, ...)
+\method{summary}{eff}(object, type=c("response", "link"), ...)
+\method{summary}{eff.list}(object, ...)
+\method{plot}{eff}(x, x.var=which.max(levels),
     z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
     ylab=x$response, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
     factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
     alternating=TRUE, rescale.axis=TRUE, 
     row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
-\method{plot}{effect.list}(x, selection, ask=TRUE, ...)
+\method{plot}{eff.list}(x, selection, ask=TRUE, ...)
 }
 
 \arguments{
@@ -111,7 +111,7 @@ and \code{effect.list} objects.
 }
 
 \value{
-  The \code{summary} method for \code{"effect"} objects returns a \code{"summary.effect"} object with the following components
+  The \code{summary} method for \code{"eff"} objects returns a \code{"summary.eff"} object with the following components
   (those pertaining to confidence limits need not be present):
   \item{header}{a character string to label the effect.}
   \item{effect}{an array containing the estimated effect.}
@@ -128,7 +128,6 @@ and \code{effect.list} objects.
 \seealso{\code{\link{effect}}, \code{\link{all.effects}}, \code{\link[lattice]{xyplot}}}
 
 \examples{
-data(Cowles)
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 
     data=Cowles, family=binomial)
 eff.cowles <- all.effects(mod.cowles, xlevels=list(neuroticism=0:24, 
@@ -173,7 +172,6 @@ plot(effect('sex:neuroticism:extraversion', mod.cowles,
       xlevels = list(neuroticism = 0:24,
 }
 
-data(Prestige)
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
 eff.pres <- all.effects(mod.pres, default.levels=50)
