@@ -1,4 +1,4 @@
-## last modified 3 September 05 by J. Fox
+## last modified 28 March 2007 by J. Fox
 
 effect <- function(term, mod, ...){
     UseMethod("effect", mod)
@@ -234,13 +234,18 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix, 
         data=X, discrepancy=discrepancy)
     if (se){
-        dispersion <- if (any(family(mod)$family == c('binomial', 'poisson'))) 1
-            else sum(wts * mod$residuals^2)/mod$df.residual
+        if (any(family(mod)$family == c('binomial', 'poisson'))){
+            dispersion <-  1
+            z <- qnorm(1 - (1 - confidence.level)/2)
+            }
+        else {
+            dispersion <- sum(wts * mod$residuals^2)/mod$df.residual
+            z <- qt(1 - (1 - confidence.level)/2, df=mod$df.residual)
+            }
         mod.2$terms <- mod$terms
         V <- dispersion * summary.lm(mod.2)$cov
         var <- diag(mod.matrix %*% V %*% t(mod.matrix))
-        result$se <- sqrt(var)
-        z <- qnorm(1 - (1 - confidence.level)/2)
+        result$se <- sqrt(var)        
         result$lower <- effect - z*result$se
         result$upper <- effect + z*result$se
         result$confidence.level <- confidence.level
@@ -250,11 +255,11 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, se=TRUE,
         transformation$inverse <- I
         }
     result$transformation <- transformation
-    class(result)<-'effect'
+    class(result)<-'eff'
     result
     }
 
-summary.effect <- function(object, type=c("response", "link"), ...){
+summary.eff <- function(object, type=c("response", "link"), ...){
     result <- list()
     result$header <- paste("\n", gsub(":", "*", object$term), 'effect\n')
     type <- match.arg(type)
@@ -283,11 +288,11 @@ summary.effect <- function(object, type=c("response", "link"), ...){
     if (object$discrepancy > 1e-3) result$warning <- paste("\nWarning: There is an average discrepancy of", 
         round(object$discrepancy, 3),
         "percent \n     in the 'safe' predictions for effect", object$term, '\n')
-    class(result) <- "summary.effect"
+    class(result) <- "summary.eff"
     result
     }
 
-print.summary.effect <- function(x, ...){
+print.summary.eff <- function(x, ...){
     cat(x$header)
     print(x$effect)
     if (!is.null(x$lower)){
@@ -300,7 +305,7 @@ print.summary.effect <- function(x, ...){
     invisible(x)
     }
 
-print.effect <- function(x, type=c("response", "link"), ...){
+print.eff <- function(x, type=c("response", "link"), ...){
     cat(paste("\n", gsub(":", "*", x$term), 'effect\n'))
     type <- match.arg(type)
     if (type == "response") x$fit <- x$transformation$inverse(x$fit)
@@ -340,11 +345,11 @@ all.effects <- function(mod, ...){
     terms <- names[high.order.terms(mod)]
     result <- lapply(terms, effect, mod=mod, ...)
     names(result) <- terms
-    class(result) <- 'effect.list'
+    class(result) <- 'eff.list'
     result
     }
     
-print.effect.list <- function(x, ...){
+print.eff.list <- function(x, ...){
     cat(" model: ")
     print(x[[1]]$formula)
     for (effect in names(x)){
@@ -353,21 +358,21 @@ print.effect.list <- function(x, ...){
     invisible(x) 
     }
 
-summary.effect.list <- function(object, ...){
+summary.eff.list <- function(object, ...){
     cat(" model: ")
     print(object[[1]]$formula)
     for (effect in names(object)){
-        summary(object[[effect]], ...)
+        print(summary(object[[effect]], ...))
         }
     invisible(NULL) 
     }
         
-as.data.frame.effect <- function(x, row.names=NULL, optional=TRUE, ...){
+as.data.frame.eff <- function(x, row.names=NULL, optional=TRUE, ...){
     if (is.null(x$se)) data.frame(x$x, fit=x$fit)
     else data.frame(x$x, fit=x$fit, se=x$se, lower=x$lower, upper=x$upper)
     }
 
-plot.effect <- function(x, x.var=which.max(levels),
+plot.eff <- function(x, x.var=which.max(levels),
     z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
     ylab=x$response, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
@@ -590,7 +595,7 @@ plot.effect <- function(x, x.var=which.max(levels),
         }
     }
 
-plot.effect.list <- function(x, selection, ask=TRUE, ...){
+plot.eff.list <- function(x, selection, ask=TRUE, ...){
     if (!missing(selection)){
         if (is.character(selection)) selection <- gsub(" ", "", selection)
         plot(x[[selection]], ...)

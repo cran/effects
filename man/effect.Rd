@@ -2,7 +2,7 @@
 \alias{effect}
 \alias{effect.lm}
 \alias{all.effects}
-\alias{as.data.frame.effect}
+\alias{as.data.frame.eff}
 
 \title{Functions For Constructing Effect Plots}
 \description{
@@ -24,7 +24,7 @@ effect(term, mod, ...)
     
 all.effects(mod, ...)
 
-\method{as.data.frame}{effect}(x, row.names=NULL, optional=TRUE, ...)
+\method{as.data.frame}{eff}(x, row.names=NULL, optional=TRUE, ...)
 }
 
 \arguments{
@@ -60,12 +60,12 @@ all.effects(mod, ...)
 \details{
   Normally, the functions to be used directly are \code{all.effects}, to return
   a list of high-order effects, and the generic \code{plot} function to plot the effects.
-  (see \code{\link{plot.effect.list}} and \code{\link{plot.effect}}).
+  (see \code{\link{plot.eff.list}} and \code{\link{plot.eff}}).
   Plots are drawn using the \code{\link[lattice]{xyplot}} function in the 
   \code{lattice} package. Effects may also be printed (implicitly or explicitly via
   \code{print}) or summarized (using \code{summary})
-  (see \code{\link{print.effect.list}}, \code{\link{summary.effect.list}},
-  \code{\link{print.effect}}, and \code{\link{summary.effect}}).
+  (see \code{\link{print.eff.list}}, \code{\link{summary.eff.list}},
+  \code{\link{print.eff}}, and \code{\link{summary.eff}}).
   
   If asked, the \code{effect} function will compute effects for terms that have 
   higher-order relatives in the model, averaging over those terms (which rarely makes sense), or for terms that
@@ -80,7 +80,7 @@ all.effects(mod, ...)
 }
 
 \value{
-  \code{effect} returns an \code{"effect"} object with the following components:
+  \code{effect} returns an \code{"eff"} object with the following components:
   \item{term}{the term to which the effect pertains.}
   \item{formula}{the complete model formula.}
   \item{response}{a character string giving the response variable.}
@@ -125,12 +125,11 @@ all.effects(mod, ...)
 \author{John Fox \email{jfox@mcmaster.ca}.}
 
 
-\seealso{\code{\link{print.effect}}, \code{\link{summary.effect}}, \code{\link{plot.effect}}, 
-    \code{\link{print.summary.effect}}, \code{\link{print.effect.list}}, \code{\link{summary.effect.list}},
-    \code{\link{plot.effect.list}}, \code{\link[lattice]{xyplot}}}
+\seealso{\code{\link{print.eff}}, \code{\link{summary.eff}}, \code{\link{plot.eff}}, 
+    \code{\link{print.summary.eff}}, \code{\link{print.eff.list}}, \code{\link{summary.eff.list}},
+    \code{\link{plot.eff.list}}, \code{\link[lattice]{xyplot}}}
 
 \examples{
-data(Cowles)
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 
     data=Cowles, family=binomial)
 eff.cowles <- all.effects(mod.cowles, xlevels=list(neuroticism=0:24, 
@@ -175,7 +174,6 @@ plot(effect('sex:neuroticism:extraversion', mod.cowles,
       xlevels = list(neuroticism = 0:24,  
 }
 
-data(Prestige)
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
 eff.pres <- all.effects(mod.pres, default.levels=50)
