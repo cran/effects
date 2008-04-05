@@ -25,7 +25,7 @@ and \code{eff.list} objects.
     ylab=x$response, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
     factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, rescale.axis=TRUE, 
+    alternating=TRUE, rescale.axis=TRUE, key.args=NULL,
     row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
 \method{plot}{eff.list}(x, selection, ask=TRUE, ...)
 }
@@ -83,6 +83,8 @@ and \code{eff.list} objects.
   \item{rescale.axis}{if \code{TRUE} (the default), the tick marks on the vertical axis
     are labelled on the response scale (e.g., the probability scale for effects computed on
     the logit scale for a binomial GLM).}
+  \item{key.args}{additional arguments to be passed to the \code{key} trellis option to 
+    code{\link[lattice]{xyplot}}, e.g., to position the key (legend) in the plotting region.}
   \item{row, col, nrow, ncol, more}{These arguments are used to graph an effect as part of an
     array of plots; \code{row}, \code{col}, \code{nrow}, and \code{ncol} are used to compose
     the \code{split} argument and \code{more} the \code{more} argument to \code{\link[lattice]{print.trellis}}.
@@ -161,7 +163,7 @@ plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
 
 plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE, 
-    ylab="Prob(Volunteer)")
+    ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)))
     
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)

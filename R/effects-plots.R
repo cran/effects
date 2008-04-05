@@ -1,4 +1,4 @@
-## last modified 28 March 2007 by J. Fox
+## last modified 5 April 2008 by J. Fox
 
 effect <- function(term, mod, ...){
     UseMethod("effect", mod)
@@ -372,12 +372,15 @@ as.data.frame.eff <- function(x, row.names=NULL, optional=TRUE, ...){
     else data.frame(x$x, fit=x$fit, se=x$se, lower=x$lower, upper=x$upper)
     }
 
+# modified by Michael Friendly: added key.args:
+
 plot.eff <- function(x, x.var=which.max(levels),
     z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
     ylab=x$response, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
-    factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, rescale.axis=TRUE, row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){
+    factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5),  
+    alternating=TRUE, rescale.axis=TRUE, key.args=NULL, 
+    row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){
     lrug <- function(x) {
                 if (length(unique(x)) < 0.8 * length(x)) x <- jitter(x)
                 grid.segments(x, unit(0, "npc"), x, unit(0.5, "lines"),
@@ -492,6 +495,11 @@ plot.eff <- function(x, x.var=which.max(levels),
             stop(paste('Not enough colors, lines, or symbols to plot', length(zvals), 'lines'))
         if (is.factor(x[,x.var])){
             levs <- levels(x[,x.var])
+            key<-list(title=predictors[z.var], cex.title=1, border=TRUE,
+                text=list(as.character(zvals)), 
+                lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2), 
+                points=list(pch=1:length(zvals)))
+            key <- c(key, key.args)
             print(xyplot(eval(parse( 
                 text=paste("fit ~ as.numeric(", predictors[x.var], ")",
                     if (n.predictors > 2) paste(" |", 
@@ -513,14 +521,15 @@ plot.eff <- function(x, x.var=which.max(levels),
                     alternating=alternating),
                 zvals=zvals,
                 main=main,
-                key=list(title=predictors[z.var], cex.title=1, border=TRUE,
-                    text=list(as.character(zvals)), 
-                    lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2), 
-                    points=list(pch=1:length(zvals))),
+                key=key,
                 data=x, ...), split=split, more=more)
             }    
         else{
         x.vals <- x.data[, names(x)[x.var]]
+        key<-list(title=predictors[z.var], cex.title=1, border=TRUE,
+            text=list(as.character(zvals)), 
+            lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2))
+        key <- c(key, key.args) 
         print(xyplot(eval(parse( 
                 text=paste("fit ~", predictors[x.var], 
                     if (n.predictors > 2) paste(" |", 
@@ -540,9 +549,7 @@ plot.eff <- function(x, x.var=which.max(levels),
                 z=x[,z.var],
                 zvals=zvals,
                 main=main,
-                key=list(title=predictors[z.var], cex.title=1, border=TRUE,
-                    text=list(as.character(zvals)), 
-                    lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2)), 
+                key=key, 
                 data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
                     alternating=alternating), ...), split=split, more=more)
             }

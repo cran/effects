@@ -1,6 +1,6 @@
 Package: effects
-Version: 1.0-11
-Date: 2007/10/08
+Version: 1.0-12
+Date: 2008/04/05
 Title: Effect Displays for Linear and Generalized Linear Models
 Author: John Fox <jfox@mcmaster.ca>. I am grateful to Robert Andersen, David Firth, and 
   Michael Friendly, for various suggestions.
@@ -13,4 +13,4 @@ Description:
   and generalised linear models.
 License: GPL (>= 2)
 URL: http://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/
-Packaged: Mon Oct  8 21:23:41 2007; John Fox
+Packaged: Sat Apr  5 09:33:40 2008; John Fox
