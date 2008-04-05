@@ -58,6 +58,10 @@ Version 1.0-11
 
 o Replaced obsolete \non_function{} markup in Rd files (reported by Kurt Hornik).
 
+Version 1.0-12
+
+o key.args argument added to plot.eff() (coutesy of Michael Friendly), to allow conrol over, e.g., placement of legend.
+
 
 
 
