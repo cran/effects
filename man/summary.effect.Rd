@@ -1,76 +1,114 @@
 \name{summary.eff}
 \alias{print.eff}
-\alias{print.eff.list}
+\alias{print.effpoly}
+\alias{print.efflatent}
+\alias{print.efflist}
 \alias{print.summary.eff}
 \alias{summary.eff}
-\alias{summary.eff.list}
+\alias{summary.effpoly}
+\alias{summary.efflatent}
+\alias{summary.efflist}
 \alias{plot.eff}
-\alias{plot.eff.list}
+\alias{plot.effpoly}
+\alias{plot.efflist}
 
 \title{Summarizing, Printing, and Plotting Effects}
 
 \description{
-\code{summary}, \code{print}, and \code{plot} methods for \code{eff}
-and \code{eff.list} objects.
+\code{summary}, \code{print}, and \code{plot} methods for \code{eff}, \code{effpoly},
+and \code{efflist} objects.
 }
 
 \usage{
 \method{print}{eff}(x, type=c("response", "link"), ...)
-\method{print}{eff.list}(x, ...)
+\method{print}{effpoly}(x, type=c("probability", "logits"), ...)
+\method{print}{efflatent}(x, ...)
+\method{print}{efflist}(x, ...)
 \method{print}{summary.eff}(x, ...)
 \method{summary}{eff}(object, type=c("response", "link"), ...)
-\method{summary}{eff.list}(object, ...)
+\method{summary}{effpoly}(object, type=c("probability", "logits"), ...)
+\method{summary}{efflatent}(object, ...)
+\method{summary}{efflist}(object, ...)
 \method{plot}{eff}(x, x.var=which.max(levels),
     z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
-    ylab=x$response, main=paste(effect, "effect plot"),
+    ylab, main=paste(effect, "effect plot"),
     colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
     factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, rescale.axis=TRUE, key.args=NULL,
+    alternating=TRUE, layout, rescale.axis=TRUE, key.args=NULL,
     row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
-\method{plot}{eff.list}(x, selection, ask=TRUE, ...)
+\method{plot}{effpoly}(x, type=c("probability", "logit"),
+	x.var=which.max(levels), rug=TRUE, xlab,
+	ylab=paste(x$response, " (", type, ")", sep=""), 
+	main=paste(effect, "effect plot"),
+	colors=palette(), symbols=1:10, lines=1:10, cex=1.5, 
+	factor.names=TRUE, style=c("lines", "stacked"),
+	confint=(style == "lines" && !is.null(x$confidence.level)), 
+	ylim, alternating=TRUE, layout, key.args=NULL,
+	row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
+\method{plot}{efflist}(x, selection, ask=TRUE, graphics=TRUE, ...)
 }
 
 \arguments{
-  \item{x}{an object of type \code{"effect"}, \code{"summary.effect"}, or \code{"effect.list"},
+  \item{x}{an object of class \code{"eff"}, \code{"effpoly"}, \code{"efflist"}, 
+  	or \code{"summary.eff"}, as appropriate.}
+  \item{object}{an object of class \code{"eff"}, \code{"effpoly"}, or \code{"efflist"},
     as appropriate.}
-  \item{object}{an object of type \code{"effect"} or \code{"effect.list"},
-    as appropriate.}
-  \item{type}{if \code{"response"} (the default), effects are printed 
+  \item{type}{for linear and generalized linear models, 
+  	if \code{"response"} (the default), effects are printed 
     or the vertical axis is labelled on the scale of the response
     variable; if \code{"link"}, effects are printed 
-    or the vertical axis labelled on the scale of the linear predictor.}
+    or the vertical axis labelled on the scale of the linear predictor.
+    For polytomous logit models, this argument takes either \code{"probability"}
+    or \code{"logit"}, with the former as the default.}
   \item{x.var}{the index (number) or quoted name of the covariate or factor to place on the 
     horizontal axis of each panel of the effect plot. The default is the 
     predictor with the largest number of levels or values.}
-  \item{z.var}{the index (number) or quoted name of the covariate or factor for which
+  \item{z.var}{for linear or generalized linear models,
+  	the index (number) or quoted name of the covariate or factor for which
     individual lines are to be drawn in each panel of the effect plot. The default is the 
     predictor with the smallest number of levels or values. This argument is only
     used if \code{multiline = TRUE}.}
-  \item{multiline}{if \code{TRUE}, each panel of the display represents combinations
+  \item{multiline}{for linear or generalized linear models,
+  	if \code{TRUE}, each panel of the display represents combinations
     of values of two predictors, with one predictor (corresponding to \code{x.var})
     on the horzontal axis, and the other (corresponding to \code{z.var}) used to define
     lines in the graph; defaults to \code{TRUE} if there are no standard errors in
     the object being plotted, and \code{FALSE} otherwise.}
+  \item{confint}{plot point-wise confidence bands around fitted effects (for
+  	multinomial and proportional-odds logit models); defaults to \code{TRUE},
+  	in which case separate panels are used for different response levels.}
   \item{rug}{if \code{TRUE}, the default, a rug plot is shown giving the marginal 
     distribution of the predictor on the horizontal axis, if this predictor is
     a covariate.}
   \item{xlab}{the label for the horizontal axis of the effect plot; if missing, the
     function will use the name of the predictor on the horizontal axis.}
-  \item{ylab}{the label for the vertical axis of the effect plot; the default is the
+  \item{ylab}{the label for the vertical axis of the effect plot; the default is 
+	constructed from the name of the
     response variable for the model from which the effect was computed.}
   \item{main}{the title for the plot, printed at the top; the default title is constructed from the
     name of the effect.}
   \item{colors}{\code{colors[1]} is used to plot effects, \code{colors[2]} to plot 
     confidence bands. In a mulitline plot, the successive \code{colors} correspond
-    to the levels of the \code{z.var} covariate or factor.}
+    to the levels of the \code{z.var} covariate or factor. In a stacked plot or a plot
+    without confidence bands for a
+    multinomial or proportional-odds logit model, the successive \code{colors}
+    correspond to the levels of the response factor. \bold{Warning:} This argument
+    \emph{cannot} be abbreviated to \code{col}, which is used for a different
+    purpose (see below).}
   \item{symbols, lines}{corresponding to the levels of the \code{z.var} covariate
-    or factor on a multiline plot. These arguments are used only if \code{multiline = TRUE};
-    in this case a legend is drawn at the top of the display.}
-  \item{cex}{character expansion for plotted symbols; default is \code{1}.}
+    or factor on a multiline plot, or to the successive levels of the response factor
+    in a line plot for a polytomous logit model. 
+    These arguments are used only if \code{multiline = TRUE}
+    or for polytomous logit models where the effects are plotted without confidence bands;
+    in these cases a legend is drawn at the top of the display.}
+  \item{cex}{character expansion for plotted symbols; default is \code{1.5}.}
   \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
     if \code{NULL}, the default, then the vertical axes are scaled from the data.}
   \item{factor.names}{a logical value, default \code{TRUE}, that controls the inclusion of
     factor names in conditioning-variable labels.}
+  \item{style}{(for multinomial or proportional-odds logit models) \code{"lines"} (the default
+    for a line plot, or \code{"stacked"} for a stacked-bar or stacked-area plot. In the latter
+    case only fitted probabilities may be plotted and confidence envelopes cannot be shown.}
   \item{ticks}{a two-item list controlling the placement of tick marks on the vertical axis,
     with elements \code{at} and \code{n}. If \code{at=NULL} (the default), the program
     attempts to find `nice' locations for the ticks, and the value of \code{n} (default, 
@@ -80,27 +118,36 @@ and \code{eff.list} objects.
   \item{alternating}{if \code{TRUE} (the default), the tick labels alternate by panels in
     multi-panel displays from left to right and top to bottom; if \code{FALSE}, tick labels
     appear at the bottom and on the left.}
+  \item{layout}{the \code{layout} argument to the \pkg{lattice} function \code{\link[lattice]{xyplot}}
+  	(or, in some cases \code{\link[lattice]{densityplot}}), which
+  	is used to draw the effect display; if not specified, the plot will be formatted so that
+  	it appears on a single page.}
   \item{rescale.axis}{if \code{TRUE} (the default), the tick marks on the vertical axis
     are labelled on the response scale (e.g., the probability scale for effects computed on
     the logit scale for a binomial GLM).}
-  \item{key.args}{additional arguments to be passed to the \code{key} trellis option to 
-    code{\link[lattice]{xyplot}}, e.g., to position the key (legend) in the plotting region.}
+  \item{key.args}{additional arguments to be passed to the \code{key} trellis argument to 
+    \code{\link[lattice]{xyplot}} or \code{\link[lattice]{densityplot}}, 
+    e.g., to position the key (legend) in the plotting region.}
   \item{row, col, nrow, ncol, more}{These arguments are used to graph an effect as part of an
     array of plots; \code{row}, \code{col}, \code{nrow}, and \code{ncol} are used to compose
     the \code{split} argument and \code{more} the \code{more} argument to \code{\link[lattice]{print.trellis}}.
-    Normally these arguments are not set by the user, but by \code{print.effect.list}.}
+    Normally these arguments are not set by the user, but by \code{plot.efflist}.
+    \bold{Warning:} Note that \code{col} is \emph{not} used to specify colors;
+    use \code{colors} instead (see above).}
   \item{selection}{the optional index (number) or quoted name of the effect in an effect
     list to be plotted; if not supplied, a menu of high-order terms is presented or all effects
     are plotted.}
   \item{ask}{if \code{selection} is not supplied and \code{ask} is \code{TRUE} (the default),
     a menu of high-order terms is presented; if \code{ask} is \code{FALSE}, effects for all
     high-order terms are plotted in an array.}
+  \item{graphics}{if \code{TRUE} (the default), then the menu of terms to plot is presented
+    in a dialog box rather than as a text menu.}
   \item{...}{arguments to be passed down.}
 }
 
 \details{ 
   In a generalized linear model, by default, the \code{print} and \code{summary} methods for 
-  \code{effect} objects print the computed effects on the scale of the
+  \code{eff} objects print the computed effects on the scale of the
   response variable using the inverse of the 
   link function. In a logit model, for example, this means that the effects are expressed on the probability
   scale. 
@@ -110,6 +157,9 @@ and \code{eff.list} objects.
   interpretation on what is usually a more familiar scale.
   This approach may also be used with linear models, for example to display effects on the scale of the
   response even if the data are analyzed on a transformed scale, such as log or square-root.
+  
+  In a polytomous (multinomial or proportional-odds) logit model, by default effects are plotted on the
+  probability scale; they may be alternatively plotted on the scale of the individual-level logits.
 }
 
 \value{
@@ -124,40 +174,20 @@ and \code{eff.list} objects.
 }
  
     
-\author{John Fox \email{jfox@mcmaster.ca}.}
+\author{John Fox \email{jfox@mcmaster.ca} and Jangman Hong.}
 
 
-\seealso{\code{\link{effect}}, \code{\link{all.effects}}, \code{\link[lattice]{xyplot}}}
+\seealso{\code{\link{effect}}, \code{\link{allEffects}}, \code{\link[lattice]{xyplot}},
+	\code{\link[lattice]{densityplot}}, \code{\link[lattice]{print.trellis}}}
 
 \examples{
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 
     data=Cowles, family=binomial)
-eff.cowles <- all.effects(mod.cowles, xlevels=list(neuroticism=0:24, 
+eff.cowles <- allEffects(mod.cowles, xlevels=list(neuroticism=0:24, 
     extraversion=seq(0, 24, 6)))
 eff.cowles
-    \dontrun{
-    model: volunteer ~ sex + neuroticism * extraversion
-    
-    sex effect
-    sex
-    female      male 
-    0.4409441 0.3811941 
-    
-    neuroticism*extraversion effect
-            extraversion
-    neuroticism          0         6        12        18        24
-            0  0.07801066 0.1871263 0.3851143 0.6301824 0.8225756
-            1  0.08636001 0.1963396 0.3870453 0.6200668 0.8083638
-            2  0.09551039 0.2058918 0.3889798 0.6098458 0.7932997
-            3  0.10551835 0.2157839 0.3909179 0.5995275 0.7773775
-           . . .
-            23 0.51953129 0.4747277 0.4303273 0.3870199 0.3454282
-            24 0.54709527 0.4895731 0.4323256 0.3768303 0.3243880
-    }
+
 plot(eff.cowles, 'sex', ylab="Prob(Volunteer)")
-    \dontrun{
-    Loading required package: lattice 
-    }
 
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
@@ -167,16 +197,30 @@ plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
     
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
-\dontrun{
-    Warning message: 
-    sex:neuroticism:extraversion does not appear in the model in: 
-      effect("sex:neuroticism:extraversion", mod.cowles, 
-      xlevels = list(neuroticism = 0:24,
-}
+
+mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
+				economic.cond.household + Blair + Hague + Kennedy +
+				Europe*political.knowledge, data=BEPS)
+plot(effect("Europe*political.knowledge", mod.beps, 
+	xlevels=list(Europe=1:11, political.knowledge=0:3)))
+	
+plot(effect("Europe*political.knowledge", mod.beps, 
+		xlevels=list(Europe=1:11, political.knowledge=0:3),
+		given.values=c(gendermale=0.5)),
+	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
+	
+mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
+	data=WVS)
+plot(effect("country*poly(age, 3)", mod.wvs))
+
+plot(effect("country*poly(age, 3)", mod.wvs), style="stacked", 
+	colors=c("gray75", "gray50", "gray25"))
+	
+plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
-eff.pres <- all.effects(mod.pres, default.levels=50)
+eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres, ask=FALSE)
 
 }

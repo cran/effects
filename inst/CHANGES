@@ -62,9 +62,10 @@ Version 1.0-12
 
 o key.args argument added to plot.eff() (coutesy of Michael Friendly), to allow conrol over, e.g., placement of legend.
 
+Version 2.0-0
 
+o Jangman Hong joins project.
 
+o support added for multinomial and proportional-odds logit models, as fit by multinom() (in nnet package) and polr() (in MASS) package, following results in Fox and Andersen (2006).
 
-
-
-   
+o added the argument given.values to effect() methods for finer-grain control of displays.
