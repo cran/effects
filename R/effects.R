@@ -1,6 +1,6 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 19 October 2008 by J. Fox
+#  last modified 3 December 2008 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -297,7 +297,7 @@ effect.polr <- function(term, mod,
 	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
 	if (discrepancy > 0.1) warning(paste("There is a discrepancy of", round(discrepancy, 3),
 				"percent \n     in the 'safe' predictions used to generate effect", term))
-	X0 <- X0[,-1]
+	X0 <- X0[,-1, drop=FALSE]
 	b <- coef(mod)
 	p <- length(b)  # corresponds to p - 1 in the text
 	alpha <- - mod$zeta  # intercepts are negatives of thresholds
