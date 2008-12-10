@@ -73,3 +73,7 @@ o added the argument given.values to effect() methods for finer-grain control of
 Version 2.0-1
 
 o Fixed bug in effect.polr() that prevented computation for a model with a single term (reported by Paul Prew).
+
+Version 2.0-2
+
+o Fixed bug in print(), summary(), and plot() methods for polytomous logit models with a response with numbered levels (reported by Paul Prew).

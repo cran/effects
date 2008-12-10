@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 20 October 2008 by J. Fox
+#  last modified 10 Decemeber 2008 by J. Fox
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -412,9 +412,11 @@ print.effpoly <- function(x, type=c("probability", "logits"), ...){
 	n.predictors <- length(names(x$x))
 	predictors <- names(x.frame)[1:n.predictors]
 	y.lev <- x$y.lev
-	y.categories <-matrix(0, nrow=length(x.frame[,predictors[1]]), ncol=length(y.lev))
+	ylevel.names <- make.names(paste("prob",y.lev))
+	colnames(x$prob) <- colnames(x$logit) <- ylevel.names
+	y.categories <- matrix(0, nrow=length(x.frame[,predictors[1]]), ncol=length(y.lev))
 	for (i in 1:length(y.lev)){
-		level<- grep(colnames(x$prob)[i], make.names(paste("prob",y.lev)) )
+		level <- which(colnames(x$prob)[i] == ylevel.names)
 		y.categories[,i] <-  rep(y.lev[level], length(y.categories[,i]))
 	}
 	y.categories <- as.vector(y.categories)
@@ -439,10 +441,14 @@ summary.effpoly <- function(object, type=c("probability", "logits"), ...){
 	n.predictors <- length(names(object$x))
 	predictors <- names(x.frame)[1:n.predictors]
 	y.lev <- object$y.lev
+	ylevel.names <- make.names(paste("prob",y.lev))
+	colnames(object$prob) <- colnames(object$logit) <- 
+		colnames(object$lower.logit) <- colnames(object$upper.logit) <- 
+		colnames(object$lower.prob) <- colnames(object$upper.prob)<- ylevel.names
 	y.categories <-matrix(0, nrow=length(x.frame[,predictors[1]]), ncol=length(y.lev))
 	for (i in 1:length(y.lev)){
-		level<- grep(colnames(object$prob)[i], make.names(paste("prob",y.lev)) )
-		y.categories[,i] <-  rep(y.lev[level], length(y.categories[,i]))
+		level <- which(colnames(object$prob)[i] == ylevel.names)
+		y.categories[,i] <- rep(y.lev[level], length(y.categories[,i]))
 	}
 	y.categories <- as.vector(y.categories)
 	y.categories <- factor(y.categories)
@@ -511,6 +517,10 @@ plot.effpoly <- function(x,
 	n.predictors <- length(names(x$x))
 	y.lev <- x$y.lev
 	n.y.lev <- length(y.lev)
+	ylevel.names <- make.names(paste("prob",y.lev))
+	colnames(x$prob) <- colnames(x$logit) <- 
+		colnames(x$lower.logit) <- colnames(x$upper.logit) <- 
+		colnames(x$lower.prob) <- colnames(x$upper.prob)<- ylevel.names
 	x.frame <-as.data.frame(x)
 	predictors <- names(x.frame)[1:n.predictors]
 	levels <- if (n.predictors==1) length (x.frame[,predictors])
@@ -523,8 +533,8 @@ plot.effpoly <- function(x,
 	x.vals <- x.frame[, names(x.frame)[x.var]]	
 	response <-matrix(0, nrow=nrow(x.frame), ncol=n.y.lev)
 	for (i in 1:length(x$y.lev)){
-		level<- grep(colnames(x$prob)[i], make.names(paste("prob",x$y.lev)) )
-		response[,i] <-  rep(x$y.lev[level], length(response[,i]))
+		level <- which(colnames(x$prob)[i] == ylevel.names)
+		response[,i] <- rep(x$y.lev[level], length(response[,i]))
 	}
 	prob <- as.vector(x$prob)
 	logit <- as.vector(x$logit)
