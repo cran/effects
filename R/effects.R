@@ -1,6 +1,6 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 3 December 2008 by J. Fox
+#  last modified 11 December 2008 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -30,7 +30,7 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 		xlev=factor.levels)
 	mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
 	mod.matrix <- mod.matrix.all[-(1:nrow.X),]
-	fit.1 <- predict(mod)
+	fit.1 <- na.omit(predict(mod))
 	wts <- mod$weights
 	if (is.null(wts)) wts <- rep(1, length(fit.1))
 	mod.2 <- lm.wfit(mod.matrix.all[1:nrow.X,], fit.1, wts)
@@ -136,7 +136,7 @@ effect.multinom <- function(term, mod,
 	nrow.X <- nrow(X)
 	data <- rbind(X[,names(newdata),drop=FALSE], newdata)
 	data$wt <- rep(0, nrow(data))
-	data$wt[1:nrow.X] <- weights(mod)
+	data$wt[1:nrow.X] <- na.omit(weights(mod))
 	mod.matrix.all <- model.matrix(formula.rhs, data=data, contrasts.arg=mod$contrasts)
 	X0 <- mod.matrix.all[-(1:nrow.X),]
 	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols, 
@@ -145,7 +145,7 @@ effect.multinom <- function(term, mod,
 	resp.names <- c(resp.names[-1], resp.names[1]) # make the last level the reference level
 	mod <- multinom(formula(mod), data=data, Hess=TRUE, weights=wt)	
 	fit2 <- predict(mod, type="probs")[1:nrow.X,]
-	fit1 <- as.vector(p2logit(fit1))
+	fit1 <- na.omit(as.vector(p2logit(fit1)))
 	fit2 <- as.vector(p2logit(fit2))
 	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
 	if (discrepancy > 0.1) warning(paste("There is a discrepancy of", round(discrepancy, 3),
@@ -268,7 +268,7 @@ effect.polr <- function(term, mod,
 	x <- model.components$x
 	X.mod <- model.components$X.mod
 	cnames <- model.components$cnames
-	X <- model.components$X
+#	X <- na.omit(model.components$X)
 	formula.rhs <- formula(mod)[c(1,3)]
 	newdata <- predict.data
 	newdata[[as.character(formula(mod)[2])]] <- rep(mod$lev[1], nrow(newdata))
@@ -279,6 +279,7 @@ effect.polr <- function(term, mod,
 				mod$call$data <- environment(formula(mod))
 			expand.model.frame(mod, extras)
 		}
+	X <- na.omit(X)
 	nrow.X <- nrow(X)
 	data <- rbind(X[,names(newdata),drop=FALSE], newdata)
 	wts <- mod$model[["(weights)"]]
@@ -292,8 +293,8 @@ effect.polr <- function(term, mod,
 	resp.names <- make.names(mod$lev, unique=TRUE)
 	mod <- polr(formula(mod), data=data, Hess=TRUE, weights=wt)
 	fit2 <- predict(mod, type="probs")[1:nrow.X,]
-	fit1 <- as.vector(p2logit(fit1))
-	fit2 <- as.vector(p2logit(fit2))
+	fit1 <- na.omit(as.vector(p2logit(fit1)))
+	fit2 <- na.omit(as.vector(p2logit(fit2)))
 	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
 	if (discrepancy > 0.1) warning(paste("There is a discrepancy of", round(discrepancy, 3),
 				"percent \n     in the 'safe' predictions used to generate effect", term))
