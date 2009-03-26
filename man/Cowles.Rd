@@ -24,5 +24,8 @@ of volunteering for psychological research.
  \emph{British Journal of Social Psychology} \bold{26}, 97--102.
 }
  
+\examples{
+summary(Cowles)
+}
 
 \keyword{datasets}

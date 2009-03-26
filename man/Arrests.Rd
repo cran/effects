@@ -43,4 +43,8 @@ data set featured in a series of articles in the Toronto Star newspaper.
   Personal communication from Michael Friendly, York University.
 }
 
+\examples{
+  summary(Arrests)
+}
+
 \keyword{datasets}

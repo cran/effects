@@ -130,6 +130,7 @@ allEffects(mod, ...)
   \item{model.matrix}{the model matrix from which the effect was calculated.}
   \item{data}{a data frame with the data on which the fitted model was based.}
   \item{discrepancy}{the percentage discrepancy for the `safe' predictions of the original fit; should be very close to 0.}
+  \item{model}{(for \code{"effpoly"} objects) \code{"multinom"} or \code{"polor"}, as appropriate.}
   \item{se}{(for \code{"eff"} objects) a vector of standard errors for the effect, on the scale of the linear predictor.}
   \item{se.prob, se.logit}{(for \code{"effpoly"} objects) matrices of standard errors for the effect, on the probability and logit scales.}
   \item{lower, upper}{(for \code{"eff"} objects) one-column matrices of confidence limits, on the
@@ -212,8 +213,7 @@ mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
 
-plot(effect("country*poly(age, 3)", mod.wvs), style="stacked", 
-	colors=c("gray75", "gray50", "gray25"))
+plot(effect("country*poly(age, 3)", mod.wvs), style="stacked")
 	
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 

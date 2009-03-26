@@ -40,7 +40,7 @@ and \code{efflist} objects.
 	x.var=which.max(levels), rug=TRUE, xlab,
 	ylab=paste(x$response, " (", type, ")", sep=""), 
 	main=paste(effect, "effect plot"),
-	colors=palette(), symbols=1:10, lines=1:10, cex=1.5, 
+	colors, symbols=1:10, lines=1:10, cex=1.5, 
 	factor.names=TRUE, style=c("lines", "stacked"),
 	confint=(style == "lines" && !is.null(x$confidence.level)), 
 	ylim, alternating=TRUE, layout, key.args=NULL,
@@ -92,7 +92,12 @@ and \code{efflist} objects.
     to the levels of the \code{z.var} covariate or factor. In a stacked plot or a plot
     without confidence bands for a
     multinomial or proportional-odds logit model, the successive \code{colors}
-    correspond to the levels of the response factor. \bold{Warning:} This argument
+    correspond to the levels of the response factor. In all but stacked plots,
+    \code{colors} defaults to \code{palette()}; for stacked multinomial-logit plots,
+    \code{colors} defautls to \code{rainbow_hcl(levels)}, where \code{levels} is
+    the number of levels of the response variable; for stacked proportional-odds model
+    plots, \code{colors} defautls to \code{sequential_hcl(levels)}.
+    \bold{Warning:} This argument
     \emph{cannot} be abbreviated to \code{col}, which is used for a different
     purpose (see below).}
   \item{symbols, lines}{corresponding to the levels of the \code{z.var} covariate
@@ -178,7 +183,8 @@ and \code{efflist} objects.
 
 
 \seealso{\code{\link{effect}}, \code{\link{allEffects}}, \code{\link[lattice]{xyplot}},
-	\code{\link[lattice]{densityplot}}, \code{\link[lattice]{print.trellis}}}
+	\code{\link[lattice]{densityplot}}, \code{\link[lattice]{print.trellis}}
+	\code{\link[colorspace]{rainbow_hcl}}, \code{\link[colorspace]{sequential_hcl}}}
 
 \examples{
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 
