@@ -1,6 +1,6 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 11 December 2008 by J. Fox
+#  last modified 6 March 2009 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -195,7 +195,7 @@ effect.multinom <- function(term, mod,
 	}
 	result <- list(term=term, formula=formula(mod), response=response.name(mod),
 		y.levels=mod$lev, variables=x, x=predict.data[,1:n.basic, drop=FALSE],
-		model.matrix=X0, data=X, discrepancy=discrepancy,
+		model.matrix=X0, data=X, discrepancy=discrepancy, model="multinom",
 		prob=P, logit=Logit)
 	if (se) result <- c(result, list(se.prob=SE.P, se.logit=SE.logit,
 				lower.logit=Lower.logit, upper.logit=Upper.logit, 
@@ -306,7 +306,7 @@ effect.polr <- function(term, mod,
 	result <- list(term=term, formula=formula(mod), response=response.name(mod),
 		y.levels=mod$lev, variables=x, 
 		x=predict.data[,1:n.basic, drop=FALSE],
-		model.matrix=X0, data=X, discrepancy=discrepancy)
+		model.matrix=X0, data=X, discrepancy=discrepancy, model="polr")
 	if (latent){
 		res <- eff.latent(X0, b, vcov(mod)[1:p, 1:p])
 		result$fit <- res$fit

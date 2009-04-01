@@ -1,6 +1,6 @@
 # utilities and common functions for effects package
 # John Fox and Jangman Hong
-#  last modified 19 October 2008 by J. Fox
+#  last modified 26 March 2009 by J. Fox
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
@@ -235,18 +235,47 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 		x=x, X.mod=X.mod, cnames=cnames, X=X)   
 }
 
+#fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
+#	factor.cols, cnames, term, typical, given.values){
+#	attr(mod.matrix, "assign") <- attr(mod.matrix.all, "assign")
+#	stranger.cols <- factor.cols & 
+#		apply(outer(strangers(term, mod, mod.aug), attr(mod.matrix,'assign'), '=='), 2, any)
+#	if (has.intercept(mod)) stranger.cols[1] <- TRUE
+#	if (any(stranger.cols)) {
+#		mod.matrix[,stranger.cols] <- 
+#			matrix(apply(as.matrix(X.mod[,stranger.cols]), 2, typical), 
+#				nrow=nrow(mod.matrix), ncol=sum(stranger.cols), byrow=TRUE)
+#		if (!is.null(given.values)){
+#			stranger.names <- names(stranger.cols[stranger.cols])
+#			given <- stranger.names %in% names(given.values)
+#			if (any(given)) mod.matrix[,stranger.names[given]] <- given.values[stranger.names[given]]
+#		} 
+#	}
+#	for (name in cnames){
+#		components <- unlist(strsplit(name, ':'))
+#		if (length(components) > 1) 
+#			mod.matrix[,name] <- apply(mod.matrix[,components], 1, prod)
+#	}
+#	mod.matrix
+#}
+
 fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
 	factor.cols, cnames, term, typical, given.values){
 	attr(mod.matrix, "assign") <- attr(mod.matrix.all, "assign")
-	stranger.cols <- factor.cols & 
+	stranger.cols <-  
 		apply(outer(strangers(term, mod, mod.aug), attr(mod.matrix,'assign'), '=='), 2, any)
 	if (has.intercept(mod)) stranger.cols[1] <- TRUE
 	if (any(stranger.cols)) {
-		mod.matrix[,stranger.cols] <- 
-			matrix(apply(as.matrix(X.mod[,stranger.cols]), 2, typical), 
-				nrow=nrow(mod.matrix), ncol=sum(stranger.cols), byrow=TRUE)
+		facs <- factor.cols & stranger.cols
+		covs <- (!factor.cols) & stranger.cols
+		if (any(facs)) mod.matrix[,facs] <- 
+				matrix(apply(as.matrix(X.mod[,facs]), 2, mean), 
+					nrow=nrow(mod.matrix), ncol=sum(facs), byrow=TRUE)
+		if (any(covs)) mod.matrix[,covs] <- 
+				matrix(apply(as.matrix(X.mod[,covs]), 2, typical), 
+					nrow=nrow(mod.matrix), ncol=sum(covs), byrow=TRUE)
 		if (!is.null(given.values)){
-			stranger.names <- names(stranger.cols[stranger.cols])
+			stranger.names <- cnames[stranger.cols]
 			given <- stranger.names %in% names(given.values)
 			if (any(given)) mod.matrix[,stranger.names[given]] <- given.values[stranger.names[given]]
 		} 

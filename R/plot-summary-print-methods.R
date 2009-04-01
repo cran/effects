@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 10 Decemeber 2008 by J. Fox
+#  last modified 19 March 2009 by J. Fox
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -492,7 +492,7 @@ plot.effpoly <- function(x,
 	xlab,
 	ylab=paste(x$response, " (", type, ")", sep=""), 
 	main=paste(effect, "effect plot"),
-	colors=palette(), symbols=1:10, lines=1:10, cex=1.5, 
+	colors, symbols=1:10, lines=1:10, cex=1.5, 
 	factor.names=TRUE, style=c("lines", "stacked"), 
 	confint=(style == "lines" && !is.null(x$confidence.level)), 
 	ylim,  alternating=TRUE, layout, key.args=NULL,
@@ -511,6 +511,13 @@ plot.effpoly <- function(x,
 			confint <- FALSE
 			warning('confint set to FALSE for stacked plot')
 		}
+	}
+	if (missing(colors)){
+		if (style == "stacked"){
+			colors <- if (x$model == "multinom") rainbow_hcl(length(x$y.levels))
+				else sequential_hcl(length(x$y.levels))
+		}
+		else colors <- palette()
 	}
 	effect <- paste(sapply(x$variables, "[[", "name"), collapse="*")
 	split <- c(col, row, ncol, nrow)
@@ -557,8 +564,11 @@ plot.effpoly <- function(x,
 		function(x) length(unique(x)))
 	if (length(n.predictor.cats) == 0) n.predictor.cats <- 1
 	if (!confint){ # plot without confidence bands
-		layout <- if (missing(layout)) c(prod(n.predictor.cats[-(n.predictors - 1)]), 
+		layout <- if (missing(layout)){
+			lay <- c(prod(n.predictor.cats[-(n.predictors - 1)]), 
 					n.predictor.cats[(n.predictors - 1)], 1)
+			if (lay[1] > 1) lay else lay[c(2, 1, 3)]
+			}
 			else layout
 		if (style == "lines"){ # line plot
 			if (n.y.lev > min(c(length(colors), length(lines), length(symbols))))
@@ -594,7 +604,7 @@ plot.effpoly <- function(x,
 						main=main,
 						key=c(key, key.args),
 						layout=layout,
-						data=data),
+						data=data, ...),
 					split=split, more=more)
 			}
 			else { # x-variable numeric
@@ -625,7 +635,7 @@ plot.effpoly <- function(x,
 						main=main,
 						key=c(key, key.args),
 						layout=layout,
-						data=data),
+						data=data, ...),
 					split=split, more=more)						
 			}
 		}
@@ -684,7 +694,7 @@ plot.effpoly <- function(x,
 						scales=list(alternating=alternating),
 						main=main,
 						key=c(key, key.args),
-						layout=layout),
+						layout=layout, ...),
 					split=split, more=more)
 			}
 		}
@@ -730,7 +740,7 @@ plot.effpoly <- function(x,
 					upper=upper, 
 					scales=list(x=list(at=1:length(levs), labels=levs), alternating=alternating),
 					layout=layout,
-					data=data),
+					data=data, ...),
 				split=split, more=more)
 		}
 		else { # x-variable numeric
@@ -764,7 +774,7 @@ plot.effpoly <- function(x,
 					upper=upper, 
 					scales=list(alternating=alternating),
 					layout=layout,
-					data=data),
+					data=data, ...),
 				split=split, more=more)			
 		}
 	}

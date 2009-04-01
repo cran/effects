@@ -26,4 +26,8 @@
   \emph{Sociological Methodology} \bold{36}, 225--255.
 }
 
+\examples{
+summary(WVS)
+}
+
 \keyword{datasets}
