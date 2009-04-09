@@ -32,6 +32,17 @@
 
 \examples{
 summary(BEPS)
+
+require(splines)  # for bs()
+beps <- multinom(vote ~ age + gender + economic.cond.national + economic.cond.household 
+	+ Blair + Hague + Kennedy + bs(Europe, 3)*political.knowledge, data=BEPS)
+europe.knowledge <- effect("bs(Europe, 3)*political.knowledge", beps, 
+	xlevels=list(Europe=seq(1, 11, length=50), political.knowledge=0:3),
+  	given.values=c(gendermale=0.5))
+  
+plot(europe.knowledge)
+  
+plot(europe.knowledge, style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
 }
 
 \keyword{datasets}
