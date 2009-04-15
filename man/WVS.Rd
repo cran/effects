@@ -28,6 +28,18 @@
 
 \examples{
 summary(WVS)
+
+require(splines)  # for bs()
+wvs <- polr(poverty ~ gender + country*(religion + degree + bs(age, 4)), data=WVS)
+
+plot(effect("country*bs(age,4)", wvs, xlevels=list(age=18:83),
+  given.values=c(gendermale=0.5)), rug=FALSE)
+
+plot(effect("country*bs(age,4)", wvs, xlevels=list(age=18:83),
+  given.values=c(gendermale=0.5)), rug=FALSE, style="stacked")
+
+plot(effect("country*bs(age,4)", wvs, xlevels=list(age=18:83),
+  given.values=c(gendermale=0.5), latent=TRUE), rug=FALSE)
 }
 
 \keyword{datasets}

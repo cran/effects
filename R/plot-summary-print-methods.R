@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 19 March 2009 by J. Fox
+#  last modified 9 April 2009 by J. Fox
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -38,16 +38,16 @@ summary.eff <- function(object, type=c("response", "link"), ...){
 
 print.summary.eff <- function(x, ...){
 	cat(x$header)
-	print(x$effect)
+	print(x$effect, ...)
 	if (!is.null(x$lower)){
 		cat(x$lower.header)
-		print(x$lower)
+		print(x$lower, ...)
 		cat(x$upper.header)
-		print(x$upper)
+		print(x$upper, ...)
 	}
 	if (!is.null(x$thresholds)){
 		cat("\nThresholds:\n")
-		print(x$thresholds)
+		print(x$thresholds, ...)
 	}
 	if (!is.null(x$warning)) cat(x$warning)
 	invisible(x)
@@ -60,7 +60,7 @@ print.eff <- function(x, type=c("response", "link"), ...){
 	table <- array(x$fit,     
 		dim=sapply(x$variables, function(x) length(x$levels)),
 		dimnames=lapply(x$variables, function(x) x$levels))
-	print(table)
+	print(table, ...)
 	if (x$discrepancy > 1e-3) cat(paste("\nWarning: There is an average discrepancy of", 
 				round(x$discrepancy, 3),
 				"percent \n     in the 'safe' predictions for effect", x$term, '\n'))
@@ -427,7 +427,7 @@ print.effpoly <- function(x, type=c("probability", "logits"), ...){
 				else {x$logit[y.categories==y.lev[i]]},     
 			dim=sapply(x$variables, function(x) length(x$levels)),
 			dimnames=lapply(x$variables, function(x) x$levels))
-		print(table)
+		print(table, ...)
 	}
 	if (x$discrepancy > 0.1) cat(paste("\nWarning: There is an average discrepancy of", 
 				round(x$discrepancy, 2),
@@ -458,7 +458,7 @@ summary.effpoly <- function(object, type=c("probability", "logits"), ...){
 				else {object$logit[y.categories==y.lev[i]]},     
 			dim=sapply(object$variables, function(x) length(x$levels)),
 			dimnames=lapply(object$variables, function(x) x$levels))
-		print(table)
+		print(table, ...)
 	}
 	if (is.null(object$confidence.level)) return(invisible(NULL))
 	for (i in 1:length(y.lev)){
@@ -468,7 +468,7 @@ summary.effpoly <- function(object, type=c("probability", "logits"), ...){
 		table <- array(table[y.categories==y.lev[i]],     
 			dim=sapply(object$variables, function(x) length(x$levels)),
 			dimnames=lapply(object$variables, function(x) x$levels))
-		print(table)
+		print(table, ...)
 	}
 	for (i in 1:length(y.lev)){
 		cat(paste("\n", 'Upper', object$confidence.level*100, 'Percent Confidence Limits for'
@@ -477,7 +477,7 @@ summary.effpoly <- function(object, type=c("probability", "logits"), ...){
 		table <- array(table[y.categories==y.lev[i]],     
 			dim=sapply(object$variables, function(x) length(x$levels)),
 			dimnames=lapply(object$variables, function(x) x$levels))
-		print(table)
+		print(table, ...)
 	}
 	if (object$discrepancy > 0.1) cat(paste("\nWarning: There is an average discrepancy of", 
 				round(object$discrepancy, 2),
@@ -785,9 +785,9 @@ print.efflatent <- function(x, ...){
 	table <- array(x$fit,     
 		dim=sapply(x$variables, function(x) length(x$levels)),
 		dimnames=lapply(x$variables, function(x) x$levels))
-	print(table)
+	print(table, ...)
 	cat("\nThresholds:\n")
-	print(x$thresholds)
+	print(x$thresholds, ...)
 	if (x$discrepancy > 0.1) cat(paste("\nWarning: There is an average discrepancy of", 
 				round(x$discrepancy, 3),
 				"percent \n     in the 'safe' predictions for effect", x$term, '\n'))

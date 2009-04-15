@@ -91,3 +91,9 @@ o Fixed bug in handling of typical= argument to effect() (argument was effective
 o Added Titanic and Wells data sets.
 
 o Small changes.
+
+Version 2.0-5
+
+o Added examples for Titanic, BEPS, and WVS data sets.
+
+o Arguments ... (e.g., digits) passed through in print() methods.

@@ -38,6 +38,16 @@
   New York: Springer.
 }
 \examples{
-  summary(Titanic)
+summary(Titanic)
+  
+titanic <- glm(survived ~ (passengerClass + sex + age)^2, data=Titanic, family=binomial)
+  
+titanic.all <- allEffects(titanic, typical=median, 
+	given.values=c(passengerClass2nd=1/3, passengerClass3rd=1/3, sexmale=0.5))
+  	
+plot(titanic.all, ticks=list(at=c(.01, .05, seq(.1, .9, by=.2), .95, .99)), ask=FALSE)
+
+plot(effect("passengerClass*sex*age", titanic, xlevels=list(age=0:65)), 
+	ticks=list(at=c(.001, .005, .01, .05, seq(.1, .9, by=.2), .95, .99, .995))) 
 }
 \keyword{datasets}

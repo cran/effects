@@ -146,6 +146,13 @@ allEffects(mod, ...)
   corresponding to the high-order terms of the model.
 }
 
+\section{Warning}{
+  The \code{effect} function handles factors and covariates differently, and becomes confused if one is changed to the other
+  in a model formula. Consequently, formulas that include calls to \code{as.factor}, \code{factor}, or \code{numeric}
+  (as, e.g., in \code{as.factor(income)}) will cause errors. Instead, create the modified variables outside of the model
+  formula (e.g., \code{fincome <- as.factor(income)}) and use these in the model formula.
+  }
+
 \references{
     Fox, J. (1987)
     Effect displays for generalized linear models.
