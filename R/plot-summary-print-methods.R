@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 9 April 2009 by J. Fox
+#  last modified 20 April 2009 by J. Fox
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -67,10 +67,11 @@ print.eff <- function(x, type=c("response", "link"), ...){
 	invisible(x)
 }
 
-
 print.efflist <- function(x, ...){
 	cat(" model: ")
-	print(x[[1]]$formula)
+	form <- x[[1]]$formula
+	attributes(form) <- NULL
+	print(form)
 	for (effect in names(x)){
 		print(x[[effect]], ...)
 	}
@@ -79,7 +80,9 @@ print.efflist <- function(x, ...){
 
 summary.efflist <- function(object, ...){
 	cat(" model: ")
-	print(object[[1]]$formula)
+	form <- object[[1]]$formula
+	attributes(form) <- NULL
+	print(form)
 	for (effect in names(object)){
 		print(summary(object[[effect]], ...))
 	}
@@ -565,9 +568,9 @@ plot.effpoly <- function(x,
 	if (length(n.predictor.cats) == 0) n.predictor.cats <- 1
 	if (!confint){ # plot without confidence bands
 		layout <- if (missing(layout)){
-			lay <- c(prod(n.predictor.cats[-(n.predictors - 1)]), 
-					n.predictor.cats[(n.predictors - 1)], 1)
-			if (lay[1] > 1) lay else lay[c(2, 1, 3)]
+				lay <- c(prod(n.predictor.cats[-(n.predictors - 1)]), 
+					prod(n.predictor.cats[(n.predictors - 1)]), 1)
+				if (lay[1] > 1) lay else lay[c(2, 1, 3)]
 			}
 			else layout
 		if (style == "lines"){ # line plot
