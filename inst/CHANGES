@@ -97,3 +97,11 @@ Version 2.0-5
 o Added examples for Titanic, BEPS, and WVS data sets.
 
 o Arguments ... (e.g., digits) passed through in print() methods.
+
+Version 2.0-6
+
+o Fixed small bugs in print.efflist(), summary.efflist(), and plot.effpoly() methods.
+
+o Corrected error in missing-data handling that sometimes surfaced in effect.multinom().
+
+o Added .Rd file for package.

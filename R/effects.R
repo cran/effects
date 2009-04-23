@@ -1,6 +1,6 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 6 March 2009 by J. Fox
+#  last modified 21 April 2009 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -133,10 +133,11 @@ effect.multinom <- function(term, mod,
 				mod$call$data <- environment(formula(mod))
 			expand.model.frame(mod, extras)
 		}
+	X <- na.omit(X)
 	nrow.X <- nrow(X)
 	data <- rbind(X[,names(newdata),drop=FALSE], newdata)
 	data$wt <- rep(0, nrow(data))
-	data$wt[1:nrow.X] <- na.omit(weights(mod))
+	data$wt[1:nrow.X] <- weights(mod)
 	mod.matrix.all <- model.matrix(formula.rhs, data=data, contrasts.arg=mod$contrasts)
 	X0 <- mod.matrix.all[-(1:nrow.X),]
 	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols, 
