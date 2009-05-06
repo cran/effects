@@ -1,6 +1,6 @@
 # utilities and common functions for effects package
 # John Fox and Jangman Hong
-#  last modified 26 March 2009 by J. Fox
+#  last modified 06 May 2009 by J. Fox
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
@@ -277,7 +277,9 @@ fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug,
 		if (!is.null(given.values)){
 			stranger.names <- cnames[stranger.cols]
 			given <- stranger.names %in% names(given.values)
-			if (any(given)) mod.matrix[,stranger.names[given]] <- given.values[stranger.names[given]]
+			if (any(given)) mod.matrix[,stranger.names[given]] <- 
+						matrix(given.values[stranger.names[given]], nrow=nrow(mod.matrix), 
+								ncol=length(stranger.names[given]), byrow=TRUE)
 		} 
 	}
 	for (name in cnames){
