@@ -90,8 +90,8 @@ allEffects(mod, ...)
   Normally, the functions to be used directly are \code{allEffects}, to return
   a list of high-order effects, and the generic \code{plot} function to plot the effects.
   (see \code{\link{plot.efflist}}, \code{\link{plot.eff}}, and \code{\link{plot.effpoly}}).
-  Plots are drawn using the \code{\link[lattice]{xyplot}} (or in some cases, 
-  the \code{\link[lattice]{densityplot}}) function in the 
+  Plots are drawn using the \code{\link{xyplot}} (or in some cases, 
+  the \code{\link{densityplot}}) function in the 
   \code{lattice} package. Effects may also be printed (implicitly or explicitly via
   \code{print}) or summarized (using \code{summary})
   (see \code{\link{print.efflist}}, \code{\link{summary.efflist}},
@@ -165,9 +165,15 @@ allEffects(mod, ...)
     \bold{8:15}, 1--27, <\url{http://www.jstatsoft.org/counter.php?id=75&url=v08/i15/effect-displays-revised.pdf&ct=1}>.
     
   	Fox, J. and R. Andersen (2006)
-   	Effect displays  for multinomial and proportional-odds logit models.
+   	Effect displays for multinomial and proportional-odds logit models.
   	\emph{Sociological Methodology} 
   	\bold{36}, 225--255.
+  	
+  	Fox, J. and J. Hong (2009).
+    Effect displays in R for multinomial and proportional-ddds logit models: 
+    	    Extensions to the effects package.
+    \emph{Journal of Statistical Software}
+    \bold{32:1}, 1--24.", <\url{http://www.jstatsoft.org/v32/i01/}>.
     
     Hastie, T. J. (1992)
     Generalized additive models.
@@ -184,8 +190,8 @@ allEffects(mod, ...)
     \code{\link{print.summary.eff}}, 
     \code{\link{print.effpoly}}, \code{\link{summary.effpoly}}, \code{\link{plot.effpoly}},
     \code{\link{print.efflist}}, \code{\link{summary.efflist}},
-    \code{\link{plot.efflist}}, \code{\link[lattice]{xyplot}}, 
-    \code{\link[lattice]{densityplot}}}
+    \code{\link{plot.efflist}}, \code{\link{xyplot}}, 
+    \code{\link{densityplot}}}
 
 \examples{
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 

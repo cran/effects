@@ -15,14 +15,13 @@ generalized linear, multinomial-logit, and proportional-odds logit models.
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 2.0-7\cr
-Date: \tab 2009/05/06\cr
+Version: \tab 2.0-8\cr
+Date: \tab 2009/10/07\cr
 Depends: \tab R (>= 2.4.0), lattice, grid, MASS, nnet, colorspace\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
 License: \tab GPL (>= 2)\cr
 URL: \tab http://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/\cr
-Built: \tab R 2.9.0; ; 2009-04-21 01:56:09 UTC; windows\cr
 }
 
 Index:

@@ -1,0 +1,38 @@
+citHeader("To cite effects in publications use:")
+
+citEntry(entry = "Article",
+  title        = "Effect Displays in {R} for Generalised Linear Models",
+  author       = as.person("John Fox"),
+  journal      = "Journal of Statistical Software",
+  year         = "2003",
+  volume       = "8",
+  number       = "15",
+  pages        = "1--27",
+  url          = "http://www.jstatsoft.org/v08/i15/",
+
+  textVersion  =
+  paste("John Fox (2003).",
+        "Effect Displays in R for Generalised Linear Models.",
+        "Journal of Statistical Software, 8(15), 1-27.",
+        "URL http://www.jstatsoft.org/v08/i15/.")
+)
+
+citEntry(entry = "Article",
+  title        = "Effect Displays in {R} for Multinomial and Proportional-Odds Logit Models: Extensions to the {effects} Package",
+  author       = personList(as.person("John Fox"),
+                   as.person("Jangman Hong")),
+  journal      = "Journal of Statistical Software",
+  year         = "2009",
+  volume       = "32",
+  number       = "1",
+  pages        = "1--24",
+  url          = "http://www.jstatsoft.org/v32/i01/",
+
+  textVersion  =
+  paste("John Fox, Jangman Hong (2009).",
+        "Effect Displays in R for Multinomial and Proportional-Odds Logit Models: Extensions to the effects Package.",
+        "Journal of Statistical Software, 32(1), 1-24.",
+        "URL http://www.jstatsoft.org/v32/i01/."),
+
+  header = "For usage in multinomial and proportional-odds logit models also cite:"
+)
