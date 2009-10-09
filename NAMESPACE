@@ -1,4 +1,4 @@
-# last modified 19 October 2008 by J. Fox
+# last modified 12 August 2009 by J. Fox
 
 import(grid, lattice)
 export(effect, allEffects, all.effects)
@@ -7,6 +7,7 @@ S3method(effect, multinom)
 S3method(effect, polr)
 S3method(print, eff)
 S3method(print, efflist)
+S3method(print, summary.eff)
 S3method(summary, eff)
 S3method(summary, efflist)
 S3method(as.data.frame, eff)

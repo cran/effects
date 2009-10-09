@@ -123,19 +123,19 @@ and \code{efflist} objects.
   \item{alternating}{if \code{TRUE} (the default), the tick labels alternate by panels in
     multi-panel displays from left to right and top to bottom; if \code{FALSE}, tick labels
     appear at the bottom and on the left.}
-  \item{layout}{the \code{layout} argument to the \pkg{lattice} function \code{\link[lattice]{xyplot}}
-  	(or, in some cases \code{\link[lattice]{densityplot}}), which
+  \item{layout}{the \code{layout} argument to the \pkg{lattice} function \code{\link{xyplot}}
+  	(or, in some cases \code{\link{densityplot}}), which
   	is used to draw the effect display; if not specified, the plot will be formatted so that
   	it appears on a single page.}
   \item{rescale.axis}{if \code{TRUE} (the default), the tick marks on the vertical axis
     are labelled on the response scale (e.g., the probability scale for effects computed on
     the logit scale for a binomial GLM).}
   \item{key.args}{additional arguments to be passed to the \code{key} trellis argument to 
-    \code{\link[lattice]{xyplot}} or \code{\link[lattice]{densityplot}}, 
+    \code{\link{xyplot}} or \code{\link{densityplot}}, 
     e.g., to position the key (legend) in the plotting region.}
   \item{row, col, nrow, ncol, more}{These arguments are used to graph an effect as part of an
     array of plots; \code{row}, \code{col}, \code{nrow}, and \code{ncol} are used to compose
-    the \code{split} argument and \code{more} the \code{more} argument to \code{\link[lattice]{print.trellis}}.
+    the \code{split} argument and \code{more} the \code{more} argument to \code{\link{print.trellis}}.
     Normally these arguments are not set by the user, but by \code{plot.efflist}.
     \bold{Warning:} Note that \code{col} is \emph{not} used to specify colors;
     use \code{colors} instead (see above).}
@@ -182,9 +182,9 @@ and \code{efflist} objects.
 \author{John Fox \email{jfox@mcmaster.ca} and Jangman Hong.}
 
 
-\seealso{\code{\link{effect}}, \code{\link{allEffects}}, \code{\link[lattice]{xyplot}},
-	\code{\link[lattice]{densityplot}}, \code{\link[lattice]{print.trellis}}
-	\code{\link[colorspace]{rainbow_hcl}}, \code{\link[colorspace]{sequential_hcl}}}
+\seealso{\code{\link{effect}}, \code{\link{allEffects}}, \code{\link{xyplot}},
+	\code{\link{densityplot}}, \code{\link{print.trellis}}
+	\code{\link[colorspace]{rainbow_hcl}}, \code{\link[colorspace:rainbow_hcl]{sequential_hcl}}}
 
 \examples{
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 

@@ -109,3 +109,13 @@ o Added .Rd file for package.
 Version 2.0-7
 
 o Fixed bug in handling of given.values argument to effect().
+
+Version 2.0-8
+
+o The S3 method print.summary.eff is now declared in NAMESPACE (as it should have been all along).
+
+o Added CITATION.txt file (courtesy of Achim Zeileis).
+
+o Version corresponding to John Fox, Jangman Hong (2009), Effect Displays in R for Multinomial and Proportional-Odds Logit Models: Extensions to the effects Package. Journal of Statistical Software, 32(1), 1-24 <http://www.jstatsoft.org/v32/i01/>.
+
+O Fixed [pgk] markup in .Rd file cross-references.
