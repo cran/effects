@@ -170,7 +170,7 @@ allEffects(mod, ...)
   	\bold{36}, 225--255.
   	
   	Fox, J. and J. Hong (2009).
-    Effect displays in R for multinomial and proportional-ddds logit models: 
+    Effect displays in R for multinomial and proportional-odds logit models: 
     	    Extensions to the effects package.
     \emph{Journal of Statistical Software}
     \bold{32:1}, 1--24.", <\url{http://www.jstatsoft.org/v32/i01/}>.
