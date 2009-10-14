@@ -1,17 +1,18 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 21 April 2009 by J. Fox
+#  patches contributed by Ian Fellows 28 August 2009 (marked I-* in the sources)
+#  last modified 11 October 2009 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
 }
 
 effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.values,
-	se=TRUE, confidence.level=.95, 
-	transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
+	se=TRUE, confidence.level=.95,
+	transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv),
 	typical=mean, ...){	
 	if (missing(given.values)) given.values <- NULL
-	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+	else if (!all(which <- names(given.values) %in% names(coef(mod))))
 		stop("given.values (", names(given.values[!which]),") not in the model")
 	model.components <- analyze.model(term, mod, xlevels, default.levels)
 	predict.data <- model.components$predict.data
@@ -24,11 +25,17 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 	X.mod <- model.components$X.mod
 	cnames <- model.components$cnames
 	X <- model.components$X	
-	formula.rhs <- formula(mod)[c(1,3)]  
+	formula.rhs <- formula(mod)[c(1,3)]
 	nrow.X <- nrow(X)
-	mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
+	for(i in names(predict.data))	#I-add
+		if(is.numeric(predict.data[[i]])) X[,i] <- as.numeric(X[,i]) #I-add
+	warn <- options(warn=-1) # calls to model.frame() and model.matrix() can generate spurious warnings
+	mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data), drop=FALSE], predict.data),  
 		xlev=factor.levels)
-	mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
+	mod.matrix.all <- model.matrix(formula.rhs, data=mf, 	#I-add   
+		contrasts.arg=mod$contrasts[names(factor.levels)]) 	#I-add
+	options(warn)
+	#I-rem mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
 	mod.matrix <- mod.matrix.all[-(1:nrow.X),]
 	fit.1 <- na.omit(predict(mod))
 	wts <- mod$weights
@@ -37,12 +44,12 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 	discrepancy <- 100*sqrt(mean(mod.2$residuals^2)/mean(mod$residuals^2))
 	if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
 				"percent \n     in the 'safe' predictions used to generate effect", term))
-	mod.matrix <- fixup.model.matrix(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
+	mod.matrix <- fixup.model.matrix(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug,
 		factor.cols, cnames, term, typical, given.values)	
 	effect <- mod.matrix %*% mod.2$coefficients
 	result <- list(term=term, formula=formula(mod), response=response.name(mod),
-		variables=x, fit=effect, 
-		x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix, 
+		variables=x, fit=effect,
+		x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix,
 		data=X, discrepancy=discrepancy)
 	if (se){
 		if (any(family(mod)$family == c('binomial', 'poisson'))){
@@ -56,7 +63,7 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 		mod.2$terms <- mod$terms
 		V <- dispersion * summary.lm(mod.2)$cov
 		var <- diag(mod.matrix %*% V %*% t(mod.matrix))
-		result$se <- sqrt(var)        
+		result$se <- sqrt(var)
 		result$lower <- effect - z*result$se
 		result$upper <- effect + z*result$se
 		result$confidence.level <- confidence.level
@@ -70,8 +77,8 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 	result
 }
 
-effect.multinom <- function(term, mod, 
-	confidence.level=.95, xlevels=list(), default.levels=10, 
+effect.multinom <- function(term, mod,
+	confidence.level=.95, xlevels=list(), default.levels=10,
 	given.values, se=TRUE, typical=mean, ...){	
 	eff.mul <- function(x0){
 		mu <- exp(x0 %*% B)
@@ -107,7 +114,7 @@ effect.multinom <- function(term, mod,
 	}
 	if (length(mod$lev) < 3) stop("effects for multinomial logit model only available for response levels > 2")
 	if (missing(given.values)) given.values <- NULL
-	else if (!all(which <- colnames(given.values) %in% names(coef(mod)))) 
+	else if (!all(which <- colnames(given.values) %in% names(coef(mod))))
 		stop("given.values (", colnames(given.values[!which]),") not in the model")
 	# refit model to produce 'safe' predictions when the model matrix includes
 	#   terms -- e.g., poly(), bs() -- whose basis depends upon the data
@@ -135,12 +142,18 @@ effect.multinom <- function(term, mod,
 		}
 	X <- na.omit(X)
 	nrow.X <- nrow(X)
+	for(i in names(predict.data))	
+		if(is.numeric(predict.data[[i]])) X[,i] <- as.numeric(X[,i])
 	data <- rbind(X[,names(newdata),drop=FALSE], newdata)
 	data$wt <- rep(0, nrow(data))
 	data$wt[1:nrow.X] <- weights(mod)
-	mod.matrix.all <- model.matrix(formula.rhs, data=data, contrasts.arg=mod$contrasts)
+#	mod.matrix.all <- model.matrix(formula.rhs, data=data, contrasts.arg=mod$contrasts)
+	warn <- options(warn=-1) # call to model.matrix() can generate spurious warnings
+	mod.matrix.all <- model.matrix(formula.rhs, data=data, 	
+		contrasts.arg=mod$contrasts[names(factor.levels)]) 	
+	options(warn)	
 	X0 <- mod.matrix.all[-(1:nrow.X),]
-	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols, 
+	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols,
 		cnames, term, typical, given.values)
 	resp.names <- make.names(mod$lev, unique=TRUE)
 	resp.names <- c(resp.names[-1], resp.names[1]) # make the last level the reference level
@@ -199,19 +212,19 @@ effect.multinom <- function(term, mod,
 		model.matrix=X0, data=X, discrepancy=discrepancy, model="multinom",
 		prob=P, logit=Logit)
 	if (se) result <- c(result, list(se.prob=SE.P, se.logit=SE.logit,
-				lower.logit=Lower.logit, upper.logit=Upper.logit, 
+				lower.logit=Lower.logit, upper.logit=Upper.logit,
 				lower.prob=Lower.P, upper.prob=Upper.P,
 				confidence.level=confidence.level))
 	class(result) <-'effpoly'
 	result
 }
 
-effect.polr <- function(term, mod, 
-	confidence.level=.95, xlevels=list(), default.levels=10, 
+effect.polr <- function(term, mod,
+	confidence.level=.95, xlevels=list(), default.levels=10,
 	given.values, se=TRUE, typical=mean, latent=FALSE, ...){
 	if (mod$method != "logistic") stop('method argument to polr must be "logistic"')	
 	if (missing(given.values)) given.values <- NULL
-	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+	else if (!all(which <- names(given.values) %in% names(coef(mod))))
 		stop("given.values (", names(given.values[!which]),") not in the model")
 	eff.polr <- function(x0){
 		eta0 <- x0 %*% b
@@ -282,14 +295,20 @@ effect.polr <- function(term, mod,
 		}
 	X <- na.omit(X)
 	nrow.X <- nrow(X)
+	for(i in names(predict.data))	
+		if(is.numeric(predict.data[[i]])) X[,i] <- as.numeric(X[,i]) 
 	data <- rbind(X[,names(newdata),drop=FALSE], newdata)
 	wts <- mod$model[["(weights)"]]
 	if (is.null(wts)) wts <- 1
 	data$wt <- rep(0, nrow(data))
 	data$wt[1:nrow.X] <- wts
-	mod.matrix.all <- model.matrix(formula.rhs, data=data, contrasts.arg=mod$contrasts)
+#	mod.matrix.all <- model.matrix(formula.rhs, data=data, contrasts.arg=mod$contrasts)
+	warn <- options(warn=-1) # call to model.matrix() can generate spurious warnings
+	mod.matrix.all <- model.matrix(formula.rhs, data=data, 	 
+		contrasts.arg=mod$contrasts[names(factor.levels)]) 	 
+	options(warn)	
 	X0 <- mod.matrix.all[-(1:nrow.X),]
-	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols, 
+	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols,
 		cnames, term, typical, given.values)
 	resp.names <- make.names(mod$lev, unique=TRUE)
 	mod <- polr(formula(mod), data=data, Hess=TRUE, weights=wt)
@@ -305,7 +324,7 @@ effect.polr <- function(term, mod,
 	alpha <- - mod$zeta  # intercepts are negatives of thresholds
 	z <- qnorm(1 - (1 - confidence.level)/2)
 	result <- list(term=term, formula=formula(mod), response=response.name(mod),
-		y.levels=mod$lev, variables=x, 
+		y.levels=mod$lev, variables=x,
 		x=predict.data[,1:n.basic, drop=FALSE],
 		model.matrix=X0, data=X, discrepancy=discrepancy, model="polr")
 	if (latent){
@@ -362,7 +381,7 @@ effect.polr <- function(term, mod,
 	result$logit <- Logit
 	if (se) result <- c(result,
 			list(se.prob=SE.P, se.logit=SE.Logit,
-				lower.logit=Lower.logit, upper.logit=Upper.logit, 
+				lower.logit=Lower.logit, upper.logit=Upper.logit,
 				lower.prob=Lower.P, upper.prob=Upper.P,
 				confidence.level=confidence.level))
 	class(result) <-'effpoly'
