@@ -118,7 +118,7 @@ o Added CITATION.txt file (courtesy of Achim Zeileis).
 
 o Version corresponding to John Fox, Jangman Hong (2009), Effect Displays in R for Multinomial and Proportional-Odds Logit Models: Extensions to the effects Package. Journal of Statistical Software, 32(1), 1-24 <http://www.jstatsoft.org/v32/i01/>.
 
-o Fixed [pgk] markup in .Rd file cross-references.
+O Fixed [pgk] markup in .Rd file cross-references.
 
 Version 2.0-9
 
@@ -127,3 +127,8 @@ o Applied patches contributed by Ian Fellows to allow logical predictors and var
 o Fixed name of CITATION file (was CITATION.txt).
 
 o Small changes to docs.
+
+Version 2.0-10
+
+o Backed out Ian Fellows's patches because of errors.
+

@@ -15,8 +15,8 @@ generalized linear, multinomial-logit, and proportional-odds logit models.
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 2.0-9\cr
-Date: \tab 2009/10/11\cr
+Version: \tab 2.0-10\cr
+Date: \tab 2009/10/14\cr
 Depends: \tab R (>= 2.4.0), lattice, grid, MASS, nnet, colorspace\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
@@ -49,7 +49,7 @@ See \code{?effect} and \code{?plot.eff} for details.
 
 \author{
 John Fox <jfox@mcmaster.ca> and Jangman Hong. We are grateful to Robert Andersen, David Firth, and
-Michael Friendly, for various suggestions, and to Ian Fellows for contributing patches..
+Michael Friendly, for various suggestions.
 
 Maintainer: John Fox <jfox@mcmaster.ca>
 }
@@ -69,12 +69,6 @@ Maintainer: John Fox <jfox@mcmaster.ca>
     Effect displays  for multinomial and proportional-odds logit models.
     \emph{Sociological Methodology} 
     \bold{36}, 225--255.
-    
-    Fox, J. and J. Hong (2009).
-    Effect displays in R for multinomial and proportional-odds logit models: 
-    	    Extensions to the effects package.
-    \emph{Journal of Statistical Software}
-    \bold{32:1}, 1--24.", <\url{http://www.jstatsoft.org/v32/i01/}>.
 }
 
 
