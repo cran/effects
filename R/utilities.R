@@ -1,7 +1,7 @@
 # utilities and common functions for effects package
 # John Fox and Jangman Hong
-#  patches contributed by Ian Fellows 28 August 2009 (marked I-* in the sources)
-#  last modified 11 October 2009 by J. Fox
+#  last modified 06 May 2009 by J. Fox (reverted 14 October 2009 by J. Fox)
+
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -27,7 +27,7 @@ expand.model.frame <- function (model, extras, envir = environment(formula(model
 	f <- formula(model)
 	data <- eval(model$call$data, envir)
 	ff <- foo ~ bar + baz
-	if (is.call(extras))
+	if (is.call(extras)) 
 		gg <- extras
 	else gg <- parse(text = paste("~", paste(extras, collapse = "+")))[[1]]
 	ff[[2]] <- f[[2]]
@@ -43,7 +43,7 @@ expand.model.frame <- function (model, extras, envir = environment(formula(model
 	}
 	else {
 		subset <- model$call$subset
-		rval <- eval(call("model.frame", ff, data = data, subset = subset,
+		rval <- eval(call("model.frame", ff, data = data, subset = subset, 
 				na.action = I), envir)
 		oldmf <- model.frame(model)
 		keep <- match(rownames(oldmf), rownames(rval))
@@ -71,9 +71,9 @@ ancestors <- function(term, mod,...){
 		if (0 ==  length(result)) which.term else result
 	}
 	else {
-		factors <- attr(mod$terms, "factors")
+		factors <- attr(mod$terms, "factors")     
 		rownames(factors) <- gsub(" ", "", rownames(factors))
-		colnames(factors) <- gsub(" ", "", colnames(factors))
+		colnames(factors) <- gsub(" ", "", colnames(factors))   
 		result<-(1:length(names))[-which.term][sapply(names[-which.term],
 				function(term2) is.relative(term2, term, factors))]
 		if (0 ==  length(result)) which.term else result
@@ -147,14 +147,14 @@ strangers <- function(term, mod,...){
 }
 
 analyze.model <- function(term, mod, xlevels, default.levels){
-	if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude")
+	if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude") 
 		class(mod$na.action) <- "omit"
 	term <- gsub(" ", "", gsub("\\*", ":", term))
 	intercept <- has.intercept(mod)
 	terms <- term.names(mod)
 	if (intercept) terms <- terms[-1]
 	which.term <- which(term==terms)
-	mod.aug <- list()
+	mod.aug<- list()
 	if (length(which.term) == 0){
 		warning(paste(term,"does not appear in the model"))
 		mod.aug <- update(formula(mod), eval(parse(text=paste(". ~ . +", term))))
@@ -177,7 +177,7 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 		all.vars <- all.vars(as.formula(paste ("~", paste(terms[all.vars], collapse="+"))))
 		basic.vars <- all.vars(as.formula(paste ("~", paste(terms[basic.vars], collapse="+"))))
 	}
-	excluded.vars <- if (length(excluded.vars) > 0)
+	excluded.vars <- if (length(excluded.vars) > 0) 
 			all.vars(as.formula(paste ("~", paste(terms[excluded.vars], collapse="+"))))
 		else NULL
 	X.mod <- model.matrix(mod)
@@ -185,65 +185,33 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 	factor.cols <- rep(FALSE, length(cnames))
 	names(factor.cols) <- cnames
 	X <- model.frame(mod)
-	##begin I-add##
-	storType <- attr(terms(mod), "dataClasses")
-	for (name in names(storType[storType=="factor" | storType=="logical"])){
-		name <- gsub("[()]", ".", gsub("\\.", "\\\\.", name))
-		factor.cols[grep(paste("^", name, sep=""), cnames)] <- TRUE
+	for (name in all.vars){
+		if (is.factor(X[[name]])) factor.cols[grep(paste("^", name, sep=""), cnames)] <- TRUE
 	}
-	factor.cols[grep(":", cnames,extended=FALSE)] <- FALSE
+	factor.cols[grep(":", cnames)] <- FALSE   
 	X <- na.omit(expand.model.frame(mod, all.vars))
-	factor.levels <- list()
-	basicType<-rep(NA,length(basic.vars))
-	factor.vars<-c()
-	for(factor.term in names(storType)[storType=="factor"| storType=="logical"]){
-		factor.vars<-unique(c(factor.vars,all.vars(as.formula(paste("~",factor.term)))))
-	}
-	##end I-add##
-	#I-rem factor.cols[grep(":", cnames)] <- FALSE
-	#I-rem X <- na.omit(expand.model.frame(mod, all.vars))
-	x <- list()
+	x<-list()
 	factor.levels <- list()
 	for (name in basic.vars){
 		levels <- mod$xlevels[[name]]
-		if(is.null(levels)) levels<-levels(factor(X[,name])) #I-add
-		fac <- name %in%factor.vars #I-add
-		#I-rem fac <- !is.null(levels)
+		fac <- !is.null(levels)
 		if (!fac) {
 			levels <- if (is.null(xlevels[[name]]))
-					seq(min(as.numeric(X[, name])), max(as.numeric(X[,name])), length=default.levels) 
-				#I-chg seq(min(X[, name]), max(X[,name]), length=default.levels)
+					seq(min(X[, name]), max(X[,name]), length=default.levels)
 				else xlevels[[name]]
 		}
-		else if(!is.null(levels)){ #I-add
-			factor.levels[[name]] <- levels#I-add
-		}else{#I-add
-			factor.levels[[name]] <-levels(factor(X[,name]))#I-add
-		}#I-add
-		#I-rem else factor.levels[[name]] <- levels
+		else factor.levels[[name]] <- levels
 		x[[name]] <- list(name=name, is.factor=fac, levels=levels)
 	}
 	x.excluded <- list()
-	##begin I-add#
 	for (name in excluded.vars){
 		levels <- mod$xlevels[[name]]
-		fac <- name %in%factor.vars		
-		if(is.null(levels)) levels <- levels(factor(X[,name]))
-		level <- if (fac) levels[1] else mean(as.numeric(X[, name]))
+		fac <- !is.null(levels)
+		level <- if (fac) levels[1] else mean(X[, name])
 		if (fac) factor.levels[[name]] <- levels
 		x.excluded[[name]] <- list(name=name, is.factor=fac,
 			level=level)
 	}
-	#end I-add#
-	
-#I-rem#
-#	for (name in excluded.vars){
-#		levels <- mod$xlevels[[name]]
-#		fac <- !is.null(levels)
-#		if (fac) factor.levels[[name]] <- levels
-#		x.excluded[[name]] <- list(name=name, is.factor=fac,
-#			level=level)
-#	}
 	dims <- sapply(x, function(x) length(x$levels))
 	len <- prod(dims)
 	n.basic <- length(basic.vars)
@@ -262,37 +230,61 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 	colnames(predict.data) <- c(sapply(x, function(x) x$name),
 		sapply(x.excluded, function(x) x$name))
 	predict.data <- matrix.to.df(predict.data)
-	list(predict.data=predict.data, factor.levels=factor.levels,
+	list(predict.data=predict.data, factor.levels=factor.levels, 
 		factor.cols=factor.cols, mod.aug=mod.aug, term=term, n.basic=n.basic,
-		x=x, X.mod=X.mod, cnames=cnames, X=X)
+		x=x, X.mod=X.mod, cnames=cnames, X=X)   
 }
 
-fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug,
+#fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
+#	factor.cols, cnames, term, typical, given.values){
+#	attr(mod.matrix, "assign") <- attr(mod.matrix.all, "assign")
+#	stranger.cols <- factor.cols & 
+#		apply(outer(strangers(term, mod, mod.aug), attr(mod.matrix,'assign'), '=='), 2, any)
+#	if (has.intercept(mod)) stranger.cols[1] <- TRUE
+#	if (any(stranger.cols)) {
+#		mod.matrix[,stranger.cols] <- 
+#			matrix(apply(as.matrix(X.mod[,stranger.cols]), 2, typical), 
+#				nrow=nrow(mod.matrix), ncol=sum(stranger.cols), byrow=TRUE)
+#		if (!is.null(given.values)){
+#			stranger.names <- names(stranger.cols[stranger.cols])
+#			given <- stranger.names %in% names(given.values)
+#			if (any(given)) mod.matrix[,stranger.names[given]] <- given.values[stranger.names[given]]
+#		} 
+#	}
+#	for (name in cnames){
+#		components <- unlist(strsplit(name, ':'))
+#		if (length(components) > 1) 
+#			mod.matrix[,name] <- apply(mod.matrix[,components], 1, prod)
+#	}
+#	mod.matrix
+#}
+
+fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
 	factor.cols, cnames, term, typical, given.values){
 	attr(mod.matrix, "assign") <- attr(mod.matrix.all, "assign")
-	stranger.cols <-
+	stranger.cols <-  
 		apply(outer(strangers(term, mod, mod.aug), attr(mod.matrix,'assign'), '=='), 2, any)
 	if (has.intercept(mod)) stranger.cols[1] <- TRUE
 	if (any(stranger.cols)) {
 		facs <- factor.cols & stranger.cols
 		covs <- (!factor.cols) & stranger.cols
-		if (any(facs)) mod.matrix[,facs] <-
-				matrix(apply(as.matrix(X.mod[,facs]), 2, mean),
+		if (any(facs)) mod.matrix[,facs] <- 
+				matrix(apply(as.matrix(X.mod[,facs]), 2, mean), 
 					nrow=nrow(mod.matrix), ncol=sum(facs), byrow=TRUE)
-		if (any(covs)) mod.matrix[,covs] <-
-				matrix(apply(as.matrix(X.mod[,covs]), 2, typical),
+		if (any(covs)) mod.matrix[,covs] <- 
+				matrix(apply(as.matrix(X.mod[,covs]), 2, typical), 
 					nrow=nrow(mod.matrix), ncol=sum(covs), byrow=TRUE)
 		if (!is.null(given.values)){
 			stranger.names <- cnames[stranger.cols]
 			given <- stranger.names %in% names(given.values)
-			if (any(given)) mod.matrix[,stranger.names[given]] <-
-					matrix(given.values[stranger.names[given]], nrow=nrow(mod.matrix),
+			if (any(given)) mod.matrix[,stranger.names[given]] <- 
+					matrix(given.values[stranger.names[given]], nrow=nrow(mod.matrix), 
 						ncol=length(stranger.names[given]), byrow=TRUE)
-		}
+		} 
 	}
 	for (name in cnames){
 		components <- unlist(strsplit(name, ':'))
-		if (length(components) > 1)
+		if (length(components) > 1) 
 			mod.matrix[,name] <- apply(mod.matrix[,components], 1, prod)
 	}
 	mod.matrix
@@ -333,3 +325,5 @@ lrug <- function(x) {
 	grid.segments(x, unit(0, "npc"), x, unit(0.5, "lines"),
 		default.units="native")
 }
+
+
