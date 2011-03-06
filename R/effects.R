@@ -1,6 +1,6 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 21 April 2009 by J. Fox (reverted 14 October 2009 by J. Fox)
+#  last modified 6 Februrary 2011 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -34,7 +34,9 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 	wts <- mod$weights
 	if (is.null(wts)) wts <- rep(1, length(fit.1))
 	mod.2 <- lm.wfit(mod.matrix.all[1:nrow.X,], fit.1, wts)
-	discrepancy <- 100*sqrt(mean(mod.2$residuals^2)/mean(mod$residuals^2))
+	class(mod.2) <- "lm"
+	y <- if(inherits(mod, "glm")) mod$y else na.omit(model.response(model.frame(mod)))
+	discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
 	if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
 				"percent \n     in the 'safe' predictions used to generate effect", term))
 	mod.matrix <- fixup.model.matrix(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
@@ -55,7 +57,10 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 		}
 		mod.2$terms <- mod$terms
 		V <- dispersion * summary.lm(mod.2)$cov
-		var <- diag(mod.matrix %*% V %*% t(mod.matrix))
+		vcov <- mod.matrix %*% V %*% t(mod.matrix)
+		rownames(vcov) <- colnames(vcov) <- NULL
+		var <- diag(vcov)
+		result$vcov <- vcov
 		result$se <- sqrt(var)        
 		result$lower <- effect - z*result$se
 		result$upper <- effect + z*result$se
@@ -69,6 +74,73 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 	class(result)<-'eff'
 	result
 }
+
+
+effect.gls <- function (term, mod, xlevels=list(), default.levels=10, given.values,
+		se=TRUE, confidence.level=.95, 
+		transformation=NULL, 
+		typical=mean, ...){	
+	if (missing(given.values)) given.values <- NULL
+	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+		stop("given.values (", names(given.values[!which]),") not in the model")
+	mod.lm <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
+	model.components <- analyze.model(term, mod.lm, xlevels, default.levels)
+	predict.data <- model.components$predict.data
+	factor.levels <- model.components$factor.levels
+	factor.cols <- model.components$factor.cols
+	mod.aug <- model.components$mod.aug
+	term <- model.components$term
+	n.basic <- model.components$n.basic
+	x <- model.components$x
+	X.mod <- model.components$X.mod
+	cnames <- model.components$cnames
+	X <- model.components$X	
+	formula.rhs <- formula(mod)[c(1,3)]  
+	nrow.X <- nrow(X)
+	mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
+			xlev=factor.levels)
+	mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
+	mod.matrix <- mod.matrix.all[-(1:nrow.X),]
+	fit.1 <- na.omit(predict(mod))
+	mod.2 <- lm.fit(mod.matrix.all[1:nrow.X,], fit.1)
+	class(mod.2) <- "lm"
+	assign(".y", na.omit(model.response.gls(mod)), envir=.GlobalEnv)
+	assign(".X", na.omit(mod.matrix.all[1:nrow.X,]), envir=.GlobalEnv)
+	mod.3 <- update(mod, .y ~ .X - 1)
+	remove(".X", ".y", envir=.GlobalEnv)
+	discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
+	if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
+						"percent \n     in the 'safe' predictions used to generate effect", term))
+	mod.matrix <- fixup.model.matrix(mod.lm, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
+			factor.cols, cnames, term, typical, given.values)	
+	effect <- mod.matrix %*% mod.2$coefficients
+	result <- list(term=term, formula=formula(mod), response=response.name(mod),
+			variables=x, fit=effect, 
+			x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix, 
+			data=X, discrepancy=discrepancy)
+	if (se){
+		df.res <- mod$dims[["N"]] - mod$dims[["p"]]
+		z <- qt(1 - (1 - confidence.level)/2, df=df.res)
+		mod.2$terms <- terms(mod)
+		V <- vcov(mod.3)
+		vcov <- mod.matrix %*% V %*% t(mod.matrix)
+		rownames(vcov) <- colnames(vcov) <- NULL
+		var <- diag(vcov)
+		result$vcov <- vcov
+		result$se <- sqrt(var)        
+		result$lower <- effect - z*result$se
+		result$upper <- effect + z*result$se
+		result$confidence.level <- confidence.level
+	}
+	if (is.null(transformation$link) && is.null(transformation$inverse)){
+		transformation$link <- I
+		transformation$inverse <- I
+	}
+	result$transformation <- transformation
+	class(result)<-'eff'
+	result
+}
+
 
 effect.multinom <- function(term, mod, 
 	confidence.level=.95, xlevels=list(), default.levels=10, 
@@ -148,7 +220,8 @@ effect.multinom <- function(term, mod,
 	fit2 <- predict(mod, type="probs")[1:nrow.X,]
 	fit1 <- na.omit(as.vector(p2logit(fit1)))
 	fit2 <- as.vector(p2logit(fit2))
-	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
+#	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
+	discrepancy <- 100*mean(abs(fit1 - fit2)/(1e-10 + mean(abs(fit1))))
 	if (discrepancy > 0.1) warning(paste("There is a discrepancy of", round(discrepancy, 3),
 				"percent \n     in the 'safe' predictions used to generate effect", term))
 	B <- t(coef(mod))
@@ -296,7 +369,8 @@ effect.polr <- function(term, mod,
 	fit2 <- predict(mod, type="probs")[1:nrow.X,]
 	fit1 <- na.omit(as.vector(p2logit(fit1)))
 	fit2 <- na.omit(as.vector(p2logit(fit2)))
-	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
+#	discrepancy <- 100*sqrt(mean((fit1 - fit2)^2)/mean(fit1^2))
+	discrepancy <- 100*mean(abs(fit1 - fit2)/(1e-10 + mean(abs(fit1))))
 	if (discrepancy > 0.1) warning(paste("There is a discrepancy of", round(discrepancy, 3),
 				"percent \n     in the 'safe' predictions used to generate effect", term))
 	X0 <- X0[,-1, drop=FALSE]
@@ -369,8 +443,28 @@ effect.polr <- function(term, mod,
 	result
 }
 
-allEffects <- function(mod, ...){
+allEffects <- function(mod, ...) UseMethod("allEffects")
+
+allEffects.default <- function(mod, ...){
 	high.order.terms <- function(mod){
+		names <- term.names(mod)
+		if (has.intercept(mod)) names<-names[-1]
+		rel <- lapply(names, descendants, mod=mod)
+		(1:length(names))[sapply(rel, function(x) length(x)==0)]
+	}
+	names <- term.names(mod)
+	if (has.intercept(mod)) names <- names[-1]
+	if (length(names) == 0) stop("the model contains no terms (beyond a constant)")
+	terms <- names[high.order.terms(mod)]
+	result <- lapply(terms, effect, mod=mod, ...)
+	names(result) <- terms
+	class(result) <- 'efflist'
+	result
+}
+
+allEffects.gls <- function(mod, ...){
+	high.order.terms <- function(mod){
+		mod <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
 		names <- term.names(mod)
 		if (has.intercept(mod)) names<-names[-1]
 		rel <- lapply(names, descendants, mod=mod)

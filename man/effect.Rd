@@ -1,18 +1,20 @@
 \name{effect}
 \alias{effect}
 \alias{effect.lm}
+\alias{effect.gls}
 \alias{effect.multinom}
 \alias{effect.polr}
 \alias{allEffects}
 \alias{as.data.frame.eff}
 \alias{as.data.frame.effpoly}
 \alias{as.data.frame.efflatent}
+\alias{vcov.eff}
 
 \title{Functions For Constructing Effect Plots}
 \description{
   \code{effect} constructs an \code{"eff"} object for a term (usually a high-order term) 
-  in a linear or generalized linear model, or an \code{"effpoly"} object for a term in a
-   multinomial or proportional-odds logit model, 
+  in a linear (fit by \code{lm} or \code{gls}) or generalized linear model (fit by \code{glm}), or an \code{"effpoly"} object for a term in a
+   multinomial or proportional-odds logit model (fit respectively by \code{multinom} or \code{polr}), 
   absorbing the lower-order terms marginal
   to the term in question, and averaging over other terms in the model. 
   
@@ -28,6 +30,9 @@ effect(term, mod, ...)
     transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
     typical=mean, ...)
     
+\method{effect}{gls}(term, mod, xlevels=list(), default.levels=10, given.values,
+	se=TRUE, confidence.level=.95, transformation=NULL, typical=mean, ...)
+    
 \method{effect}{multinom}(term, mod, confidence.level=.95, xlevels=list(), default.levels=10, 
 	given.values, se=TRUE, typical=mean, ...)
 		
@@ -41,6 +46,8 @@ allEffects(mod, ...)
 \method{as.data.frame}{effpoly}(x, row.names=NULL, optional=TRUE, ...)
 
 \method{as.data.frame}{efflatent}(x, row.names=NULL, optional=TRUE, ...)
+
+\method{vcov}{eff}(object, ...)
 }
 
 \arguments{
@@ -48,7 +55,7 @@ allEffects(mod, ...)
     term in the model. The term must be given exactly as it appears in the printed
     model, although either colons (\code{:}) or asterisks (\code{*}) may be used
     for interactions.}
-  \item{mod}{an object of class \code{"lm"}, \code{"glm"}, \code{"multinom"}, or \code{"polr"}.}
+  \item{mod}{an object of class \code{"lm"}, \code{"gls"}, \code{"glm"}, \code{"multinom"}, or \code{"polr"}.}
   \item{xlevels}{an optional list of values at which to set covariates,
     with components of the form \code{covariate.name = vector.of.values}.}
   \item{default.levels}{number of values for covariates that are not
@@ -83,6 +90,7 @@ allEffects(mod, ...)
   	and logits.}
   \item{x}{an object of class \code{"eff"} or \code{"effpoly"}.}
   \item{row.names, optional}{not used.}
+  \item{object}{an object of class \code{"eff"} for which the covariance matrix of the effects is desired.}
   \item{...}{arguments to be passed down.}
 }
 
@@ -130,7 +138,8 @@ allEffects(mod, ...)
   \item{model.matrix}{the model matrix from which the effect was calculated.}
   \item{data}{a data frame with the data on which the fitted model was based.}
   \item{discrepancy}{the percentage discrepancy for the `safe' predictions of the original fit; should be very close to 0.}
-  \item{model}{(for \code{"effpoly"} objects) \code{"multinom"} or \code{"polor"}, as appropriate.}
+  \item{model}{(for \code{"effpoly"} objects) \code{"multinom"} or \code{"polr"}, as appropriate.}
+  \item{vcov}{(for \code{"eff"} objects) a covariance matrix for the effect, on the scale of the linear predictor.}
   \item{se}{(for \code{"eff"} objects) a vector of standard errors for the effect, on the scale of the linear predictor.}
   \item{se.prob, se.logit}{(for \code{"effpoly"} objects) matrices of standard errors for the effect, on the probability and logit scales.}
   \item{lower, upper}{(for \code{"eff"} objects) one-column matrices of confidence limits, on the
@@ -162,7 +171,7 @@ allEffects(mod, ...)
     Fox, J. (2003)
     Effect displays in R for generalised linear models.
     \emph{Journal of Statistical Software}
-    \bold{8:15}, 1--27, <\url{http://www.jstatsoft.org/counter.php?id=75&url=v08/i15/effect-displays-revised.pdf&ct=1}>.
+    \bold{8:15}, 1--27, <\url{http://www.jstatsoft.org/v08/i15/}>.
     
   	Fox, J. and R. Andersen (2006)
    	Effect displays for multinomial and proportional-odds logit models.
@@ -235,6 +244,9 @@ mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
 eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres, ask=FALSE)
 
+mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel, 
+    correlation=corARMA(p=2, q=0), method="ML")
+plot(allEffects(mod.hart), ask=FALSE)
 }
 
 \keyword{hplot}

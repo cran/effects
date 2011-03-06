@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 20 April 2009 by J. Fox
+#  last modified 9 February 2011 by J. Fox
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -177,8 +177,11 @@ plot.eff <- function(x, x.var=which.max(levels),
 					alternating=alternating),
 				main=main,
 				lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...)
-			print(update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
-						else layout), split=split, more=more)
+			result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
+					else layout)
+			result$split <- split
+			result$more <- more
+			class(result) <- c("plot.eff", class(result))
 		}        
 		else {
 			x.vals <- x.data[, names(x)[1]]
@@ -208,10 +211,13 @@ plot.eff <- function(x, x.var=which.max(levels),
 				lower=x$lower, upper=x$upper, has.se=has.se, data=x, 
 				scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
 					alternating=alternating), ...)
-			print(update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
-						else layout), split=split, more=more)
+			result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
+					else layout)
+			result$split <- split
+			result$more <- more
+			class(result) <- c("plot.eff", class(result))
 		}
-		return(invisible())
+		return(result)
 	}
 	predictors <- names(x)[1:n.predictors]
 	levels <- sapply(apply(x[,predictors], 2, unique), length)
@@ -272,8 +278,11 @@ plot.eff <- function(x, x.var=which.max(levels),
 				main=main,
 				key=key,
 				data=x, ...)
-			print(update(plot, layout = if (missing(layout)) 
-							c(0, prod(dim(plot))) else layout), split=split, more=more)
+			result <- update(plot, layout = if (missing(layout)) 
+						c(0, prod(dim(plot))) else layout)
+			result$split <- split
+			result$more <- more
+			class(result) <- c("plot.eff", class(result))
 		}    
 		else{
 			x.vals <- x.data[, names(x)[x.var]]
@@ -310,10 +319,13 @@ plot.eff <- function(x, x.var=which.max(levels),
 				key=key, 
 				data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
 					alternating=alternating), ...)
-			print(update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
-						else layout), split=split, more=more)
+			result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
+					else layout)
+			result$split <- split
+			result$more <- more
+			class(result) <- c("plot.eff", class(result))
 		}
-		return(invisible())
+		return(result)
 	}
 	if (is.factor(x[,x.var])){
 		levs <- levels(x[,x.var])
@@ -343,8 +355,10 @@ plot.eff <- function(x, x.var=which.max(levels),
 				alternating=alternating),
 			main=main,
 			lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...)
-		print(update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) else layout), 
-			split=split, more=more)
+		result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) else layout)
+		result$split <- split
+		result$more <- more
+		class(result) <- c("plot.eff", class(result))
 	}    
 	else{
 		x.vals <- x.data[, names(x)[x.var]]
@@ -375,39 +389,49 @@ plot.eff <- function(x, x.var=which.max(levels),
 			lower=x$lower, upper=x$upper, has.se=has.se, data=x, 
 			scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
 				alternating=alternating), ...)
-		print(update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) else layout), 
-			split=split, more=more)
+		result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) else layout)
+		result$split <- split
+		result$more <- more
+		class(result) <- c("plot.eff", class(result))
 	}
+	return(result)
 }
 
-plot.efflist <- function(x, selection, ask=TRUE, graphics=TRUE, ...){
+print.plot.eff <- function(x, ...){
+	NextMethod(split=x$split, more=x$more, ...)
+	invisible(x)
+}
+
+plot.efflist <- function(x, selection, rows, cols, ask=TRUE, graphics=TRUE, ...){
 	if (!missing(selection)){
 		if (is.character(selection)) selection <- gsub(" ", "", selection)
-		plot(x[[selection]], ...)
-		return(invisible())
+		return(plot(x[[selection]], ...))
 	}
 	effects <- gsub(":", "*", names(x))
 	if (ask){
 		repeat {
 			selection <- menu(effects, graphics=graphics, title="Select Term to Plot")
 			if (selection == 0) break
-			else plot(x[[selection]], ...)
+			else print(plot(x[[selection]], ...))
 		}
 	}
 	else {
 		neffects <- length(x)
 		mfrow <- mfrow(neffects)
-		rows <- mfrow[1]
-		cols <- mfrow[2]
+		if (missing(rows) || missing(cols)){
+			rows <- mfrow[1]
+			cols <- mfrow[2]
+		}
 		for (i in 1:rows) {
 			for (j in 1:cols){
 				if ((i-1)*cols + j > neffects) break
 				more <- !((i-1)*cols + j == neffects)
-				plot(x[[(i-1)*cols + j]], row=i, col=j, nrow=rows, ncol=cols, more=more, ...)
+				print(plot(x[[(i-1)*cols + j]], row=i, col=j, nrow=rows, ncol=cols, more=more, ...))
 			}
 		}
 	}
 }
+
 
 print.effpoly <- function(x, type=c("probability", "logits"), ...){
 	type <- match.arg(type)
@@ -489,17 +513,17 @@ summary.effpoly <- function(object, type=c("probability", "logits"), ...){
 }
 
 plot.effpoly <- function(x,
-	type=c("probability", "logit"),
-	x.var=which.max(levels),
-	rug=TRUE,
-	xlab,
-	ylab=paste(x$response, " (", type, ")", sep=""), 
-	main=paste(effect, "effect plot"),
-	colors, symbols=1:10, lines=1:10, cex=1.5, 
-	factor.names=TRUE, style=c("lines", "stacked"), 
-	confint=(style == "lines" && !is.null(x$confidence.level)), 
-	ylim,  alternating=TRUE, layout, key.args=NULL,
-	row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){ 	
+		type=c("probability", "logit"),
+		x.var=which.max(levels),
+		rug=TRUE,
+		xlab,
+		ylab=paste(x$response, " (", type, ")", sep=""), 
+		main=paste(effect, "effect plot"),
+		colors, symbols=1:10, lines=1:10, cex=1.5, 
+		factor.names=TRUE, style=c("lines", "stacked"), 
+		confint=(style == "lines" && !is.null(x$confidence.level)), 
+		ylim,  alternating=TRUE, layout, key.args=NULL,
+		row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){ 	
 	require(lattice)
 	type <- match.arg(type)
 	style <- match.arg(style)
@@ -518,7 +542,7 @@ plot.effpoly <- function(x,
 	if (missing(colors)){
 		if (style == "stacked"){
 			colors <- if (x$model == "multinom") rainbow_hcl(length(x$y.levels))
-				else sequential_hcl(length(x$y.levels))
+					else sequential_hcl(length(x$y.levels))
 		}
 		else colors <- palette()
 	}
@@ -529,12 +553,12 @@ plot.effpoly <- function(x,
 	n.y.lev <- length(y.lev)
 	ylevel.names <- make.names(paste("prob",y.lev))
 	colnames(x$prob) <- colnames(x$logit) <- 
-		colnames(x$lower.logit) <- colnames(x$upper.logit) <- 
-		colnames(x$lower.prob) <- colnames(x$upper.prob)<- ylevel.names
+			colnames(x$lower.logit) <- colnames(x$upper.logit) <- 
+			colnames(x$lower.prob) <- colnames(x$upper.prob)<- ylevel.names
 	x.frame <-as.data.frame(x)
 	predictors <- names(x.frame)[1:n.predictors]
 	levels <- if (n.predictors==1) length (x.frame[,predictors])
-		else sapply(apply(x.frame[,predictors], 2, unique), length)
+			else sapply(apply(x.frame[,predictors], 2, unique), length)
 	if (is.character(x.var)) {
 		which.x <- which(x.var == predictors)
 		if (length(which.x) == 0) stop(paste("x.var = '", x.var, "' is not in the model.", sep=""))
@@ -564,38 +588,38 @@ plot.effpoly <- function(x,
 	}
 	levs <- levels(x$data[[predictors[x.var]]])
 	n.predictor.cats <- sapply(data[, predictors[-c(x.var)], drop=FALSE], 
-		function(x) length(unique(x)))
+			function(x) length(unique(x)))
 	if (length(n.predictor.cats) == 0) n.predictor.cats <- 1
 	if (!confint){ # plot without confidence bands
 		layout <- if (missing(layout)){
-				lay <- c(prod(n.predictor.cats[-(n.predictors - 1)]), 
-					prod(n.predictor.cats[(n.predictors - 1)]), 1)
-				if (lay[1] > 1) lay else lay[c(2, 1, 3)]
-			}
-			else layout
+					lay <- c(prod(n.predictor.cats[-(n.predictors - 1)]), 
+							prod(n.predictor.cats[(n.predictors - 1)]), 1)
+					if (lay[1] > 1) lay else lay[c(2, 1, 3)]
+				}
+				else layout
 		if (style == "lines"){ # line plot
 			if (n.y.lev > min(c(length(colors), length(lines), length(symbols))))
 				stop(paste('Not enough colors, lines, or symbols to plot', n.y.lev, 'lines'))
 			if (is.factor(x$data[[predictors[x.var]]])){ # x-variable a factor
 				key <- list(title=x$response, cex.title=1, border=TRUE,
-					text=list(as.character(unique(response))),
-					lines=list(col=colors[1:n.y.lev], lty=lines[1:n.y.lev], lwd=2),
-					points=list(pch=symbols[1:n.y.lev], col=colors[1:n.y.lev]))
-				print(xyplot(eval(if (type=="probability") 
-									parse(text=if (n.predictors==1) 
-												paste("prob ~ as.numeric(", predictors[x.var], ")")
-											else paste("prob ~ as.numeric(", predictors[x.var],") | ", 
-													paste(predictors[-x.var], collapse="*")))
-								else parse(text=if (n.predictors==1) 
-												paste("logit ~ as.numeric(", predictors[x.var], ")")
-											else paste("logit ~ as.numeric(", predictors[x.var],") | ", 
-													paste(predictors[-x.var], collapse="*")))), 
+						text=list(as.character(unique(response))),
+						lines=list(col=colors[1:n.y.lev], lty=lines[1:n.y.lev], lwd=2),
+						points=list(pch=symbols[1:n.y.lev], col=colors[1:n.y.lev]))
+				result <- xyplot(eval(if (type=="probability") 
+											parse(text=if (n.predictors==1) 
+																paste("prob ~ as.numeric(", predictors[x.var], ")")
+															else paste("prob ~ as.numeric(", predictors[x.var],") | ", 
+																		paste(predictors[-x.var], collapse="*")))
+										else parse(text=if (n.predictors==1) 
+																paste("logit ~ as.numeric(", predictors[x.var], ")")
+															else paste("logit ~ as.numeric(", predictors[x.var],") | ", 
+																		paste(predictors[-x.var], collapse="*")))), 
 						strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 						panel=function(x, y, subscripts, rug, z, x.vals, ...){
 							for (i in 1:n.y.lev){
 								sub <- z[subscripts] == y.lev[i]
 								llines(x[sub], y[sub], lwd=2, type="b", col=colors[i], lty=lines[i], 
-									pch=symbols[i], cex=cex, ...)
+										pch=symbols[i], cex=cex, ...)
 							}
 						},
 						ylab=ylab,
@@ -607,20 +631,22 @@ plot.effpoly <- function(x,
 						main=main,
 						key=c(key, key.args),
 						layout=layout,
-						data=data, ...),
-					split=split, more=more)
+						data=data, ...)
+				result$split <- split
+				result$more <- more
+				class(result) <- c("plot.eff", class(result))			
 			}
 			else { # x-variable numeric
 				key <- list(title=x$response, cex.title=1, border=TRUE,
-					text=list(as.character(unique(response))), 
-					lines=list(col=colors[1:n.y.lev], lty=lines[1:n.y.lev], lwd=2))
-				print(xyplot(eval(if (type=="probability") 
-									parse(text=if (n.predictors==1) paste("prob ~ ", predictors[x.var])
-											else paste("prob ~ ", predictors[x.var],"|", 
-													paste(predictors[-x.var], collapse="*")))
-								else parse(text=if (n.predictors==1) paste("logit ~ ", predictors[x.var])
-											else paste("logit ~ ", predictors[x.var]," | ", 
-													paste(predictors[-x.var], collapse="*")))), 
+						text=list(as.character(unique(response))), 
+						lines=list(col=colors[1:n.y.lev], lty=lines[1:n.y.lev], lwd=2))
+				result <- xyplot(eval(if (type=="probability") 
+											parse(text=if (n.predictors==1) paste("prob ~ ", predictors[x.var])
+															else paste("prob ~ ", predictors[x.var],"|", 
+																		paste(predictors[-x.var], collapse="*")))
+										else parse(text=if (n.predictors==1) paste("logit ~ ", predictors[x.var])
+															else paste("logit ~ ", predictors[x.var]," | ", 
+																		paste(predictors[-x.var], collapse="*")))), 
 						strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 						panel=function(x, y, subscripts, rug, z, x.vals, ...){
 							if (rug) lrug(x.vals)
@@ -638,8 +664,10 @@ plot.effpoly <- function(x,
 						main=main,
 						key=c(key, key.args),
 						layout=layout,
-						data=data, ...),
-					split=split, more=more)						
+						data=data, ...)
+				result$split <- split
+				result$more <- more
+				class(result) <- c("plot.eff", class(result))			
 			}
 		}
 		else { # stacked plot
@@ -647,10 +675,10 @@ plot.effpoly <- function(x,
 				stop(paste('Not enough colors to plot', n.y.lev, 'regions'))
 			key <- list(text=list(lab=rev(y.lev)), rectangle=list(col=rev(colors[1:n.y.lev])))
 			if (is.factor(x$data[[predictors[x.var]]])){ # x-variable a factor
-				print(barchart(eval(parse(text=if (n.predictors == 1) 
-										paste("prob ~ ", predictors[x.var], sep="")
-									else paste("prob ~ ", predictors[x.var]," | ", 
-											paste(predictors[-x.var], collapse="*")))), 
+				result <- barchart(eval(parse(text=if (n.predictors == 1) 
+													paste("prob ~ ", predictors[x.var], sep="")
+												else paste("prob ~ ", predictors[x.var]," | ", 
+															paste(predictors[-x.var], collapse="*")))), 
 						strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 						groups = response,
 						col=colors,
@@ -663,14 +691,16 @@ plot.effpoly <- function(x,
 						scales=list(alternating=alternating),
 						main=main,
 						key=c(key, key.args),
-						layout=layout),
-					split=split, more=more)
+						layout=layout)
+				result$split <- split
+				result$more <- more
+				class(result) <- c("plot.eff", class(result))			
 			}
 			else { # x-variable numeric
-				print(densityplot(eval(parse(text=if (n.predictors == 1)
-										paste("~ ", predictors[x.var], sep="")
-									else paste("~ ", predictors[x.var], " | ",
-											paste(predictors[-x.var], collapse="*")))),
+				result <- densityplot(eval(parse(text=if (n.predictors == 1)
+													paste("~ ", predictors[x.var], sep="")
+												else paste("~ ", predictors[x.var], " | ",
+															paste(predictors[-x.var], collapse="*")))),
 						probs=x$prob,
 						strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 						panel =  function(x, subscripts, rug, x.vals, probs=probs, col=colors, ...){
@@ -697,14 +727,16 @@ plot.effpoly <- function(x,
 						scales=list(alternating=alternating),
 						main=main,
 						key=c(key, key.args),
-						layout=layout, ...),
-					split=split, more=more)
+						layout=layout, ...)
+				result$split <- split
+				result$more <- more
+				class(result) <- c("plot.eff", class(result))
 			}
 		}
 	}
 	else{ # plot with confidence bands
 		layout <- if(missing(layout)) c(prod(n.predictor.cats), length(levels(response)), 1) 
-			else layout
+				else layout
 		if (type == "probability"){
 			lower <- lower.prob
 			upper <- upper.prob
@@ -715,17 +747,17 @@ plot.effpoly <- function(x,
 		}
 		if (is.factor(x$data[[predictors[x.var]]])){ # x-variable a factor
 			levs <- levels(x$data[[predictors[x.var]]])
-			print(xyplot(eval(if (type=="probability") 
-								parse(text=if (n.predictors==1) 
-											paste("prob ~ as.numeric(", predictors[x.var],") |", x$response)
-										else paste("prob ~ as.numeric(", predictors[x.var],") |", 
-												paste(predictors[-x.var], collapse="*"), 
-												paste("*", x$response)))
-							else parse(text=if (n.predictors==1) 
-											paste("logit ~ as.numeric(", predictors[x.var],") |", x$response)
-										else paste("logit ~ as.numeric(", predictors[x.var],")|", 
-												paste(predictors[-x.var], collapse="*"), 
-												paste("*", x$response)))),
+			result <- xyplot(eval(if (type=="probability") 
+										parse(text=if (n.predictors==1) 
+															paste("prob ~ as.numeric(", predictors[x.var],") |", x$response)
+														else paste("prob ~ as.numeric(", predictors[x.var],") |", 
+																	paste(predictors[-x.var], collapse="*"), 
+																	paste("*", x$response)))
+									else parse(text=if (n.predictors==1) 
+															paste("logit ~ as.numeric(", predictors[x.var],") |", x$response)
+														else paste("logit ~ as.numeric(", predictors[x.var],")|", 
+																	paste(predictors[-x.var], collapse="*"), 
+																	paste("*", x$response)))),
 					par.strip.text=list(cex=0.8),							
 					strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 					panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
@@ -743,21 +775,23 @@ plot.effpoly <- function(x,
 					upper=upper, 
 					scales=list(x=list(at=1:length(levs), labels=levs), alternating=alternating),
 					layout=layout,
-					data=data, ...),
-				split=split, more=more)
+					data=data, ...)
+			result$split <- split
+			result$more <- more
+			class(result) <- c("plot.eff", class(result))
 		}
 		else { # x-variable numeric
-			print(xyplot(eval(if (type=="probability") 
-								parse(text=if (n.predictors==1) 
-											paste("prob ~ ", predictors[x.var]," |", x$response)
-										else paste("prob ~ ", predictors[x.var]," |", 
-												paste(predictors[-x.var], collapse="*"), 
-												paste("*", x$response)))
-							else parse(text=if (n.predictors==1) 
-											paste("logit ~ ", predictors[x.var]," |", x$response)
-										else paste("logit ~ ", predictors[x.var],"|", 
-												paste(predictors[-x.var], collapse="*"), 
-												paste("*", x$response)))
+			result <- xyplot(eval(if (type=="probability") 
+										parse(text=if (n.predictors==1) 
+															paste("prob ~ ", predictors[x.var]," |", x$response)
+														else paste("prob ~ ", predictors[x.var]," |", 
+																	paste(predictors[-x.var], collapse="*"), 
+																	paste("*", x$response)))
+									else parse(text=if (n.predictors==1) 
+															paste("logit ~ ", predictors[x.var]," |", x$response)
+														else paste("logit ~ ", predictors[x.var],"|", 
+																	paste(predictors[-x.var], collapse="*"), 
+																	paste("*", x$response)))
 					),
 					par.strip.text=list(cex=0.8),							
 					strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
@@ -777,10 +811,13 @@ plot.effpoly <- function(x,
 					upper=upper, 
 					scales=list(alternating=alternating),
 					layout=layout,
-					data=data, ...),
-				split=split, more=more)			
+					data=data, ...)
+			result$split <- split
+			result$more <- more
+			class(result) <- c("plot.eff", class(result))
 		}
 	}
+	result
 }
 
 print.efflatent <- function(x, ...){

@@ -45,7 +45,7 @@ and \code{efflist} objects.
 	confint=(style == "lines" && !is.null(x$confidence.level)), 
 	ylim, alternating=TRUE, layout, key.args=NULL,
 	row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
-\method{plot}{efflist}(x, selection, ask=TRUE, graphics=TRUE, ...)
+\method{plot}{efflist}(x, selection, rows, cols, ask=TRUE, graphics=TRUE, ...)
 }
 
 \arguments{
@@ -142,6 +142,8 @@ and \code{efflist} objects.
   \item{selection}{the optional index (number) or quoted name of the effect in an effect
     list to be plotted; if not supplied, a menu of high-order terms is presented or all effects
     are plotted.}
+  \item{rows, cols}{Number of rows and columns in the ``meta-array'' of plots produced for an \code{efflist} object;
+  	if either argument is missing, then the meta-layout will be computed by the \code{plot} method.}
   \item{ask}{if \code{selection} is not supplied and \code{ask} is \code{TRUE} (the default),
     a menu of high-order terms is presented; if \code{ask} is \code{FALSE}, effects for all
     high-order terms are plotted in an array.}

@@ -1,6 +1,6 @@
 # utilities and common functions for effects package
 # John Fox and Jangman Hong
-#  last modified 06 May 2009 by J. Fox (reverted 14 October 2009 by J. Fox)
+#  last modified 6 Februrary 2011 by J. Fox
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
@@ -60,8 +60,8 @@ is.relative <- function(term1, term2, factors) {
 ancestors <- function(term, mod,...){
 	names <- term.names(mod)
 	if (has.intercept(mod)) names <- names[-1]
-	if(length(names)==1) return(NULL)
-	which.term<-which(term==names)
+	if(length(names) == 1) return(NULL)
+	which.term <- which(term == names)
 	if (length(which.term) == 0){
 		factors <- attr(terms(...), "factors")
 		rownames(factors) <- gsub(" ", "", rownames(factors))
@@ -71,7 +71,7 @@ ancestors <- function(term, mod,...){
 		if (0 ==  length(result)) which.term else result
 	}
 	else {
-		factors <- attr(mod$terms, "factors")     
+		factors <- attr(terms(mod), "factors")     
 		rownames(factors) <- gsub(" ", "", rownames(factors))
 		colnames(factors) <- gsub(" ", "", colnames(factors))   
 		result<-(1:length(names))[-which.term][sapply(names[-which.term],
@@ -80,11 +80,11 @@ ancestors <- function(term, mod,...){
 	}
 }
 
-descendants<-function(term, mod,...){
+descendants <- function(term, mod, ...){
 	names <- term.names(mod)
 	if (has.intercept(mod)) names <- names[-1]
 	if(length(names)==1) return(NULL)
-	which.term<-which(term==names)
+	which.term <- which(term == names)
 	if (length(which.term) == 0){
 		factors <- attr(terms(...), "factors")
 		rownames(factors) <- gsub(" ", "", rownames(factors))
@@ -93,7 +93,7 @@ descendants<-function(term, mod,...){
 				function(term2) is.relative(term, term2, factors))]
 	}
 	else {
-		factors <- attr(mod$terms, "factors")
+		factors <- attr(terms(mod), "factors")
 		rownames(factors) <- gsub(" ", "", rownames(factors))
 		colnames(factors) <- gsub(" ", "", colnames(factors))
 		(1:length(names))[-which.term][sapply(names[-which.term],
@@ -103,7 +103,7 @@ descendants<-function(term, mod,...){
 
 first.order.ancestors <- function(term, mod,...){
 	ancestors <- ancestors(term, mod, ...)
-	ancestors[attr(mod$terms, 'order')[ancestors]==1]
+	ancestors[attr(terms(mod), 'order')[ancestors] == 1]
 }
 
 is.high.order.term <- function(term, mod,...){
@@ -139,10 +139,10 @@ matrix.to.df <- function(matrix){
 strangers <- function(term, mod,...){
 	names <- term.names(mod)
 	if (has.intercept(mod)) names <- names[-1]
-	self <- which(names==term)
+	self <- which(names == term)
 	ancestors <- ancestors(term, mod, ...)
 	descendants <- descendants(term, mod, ...)
-	sort(setdiff(1:ncol(attr(mod$terms, "factors")),
+	sort(setdiff(1:ncol(attr(terms(mod), "factors")),
 			union(union(ancestors, descendants), self)))
 }
 
@@ -153,7 +153,7 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 	intercept <- has.intercept(mod)
 	terms <- term.names(mod)
 	if (intercept) terms <- terms[-1]
-	which.term <- which(term==terms)
+	which.term <- which(term == terms)
 	mod.aug<- list()
 	if (length(which.term) == 0){
 		warning(paste(term,"does not appear in the model"))
@@ -162,8 +162,8 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 	if (!is.high.order.term(term, mod, mod.aug))
 		warning(paste(term, 'is not a high-order term in the model'))
 	basic.vars <- first.order.ancestors(term, mod, mod.aug)
-	all.vars <- (1:nrow(attr(mod$terms, 'factors')))[
-		0 != apply(attr(mod$terms, 'factors'), 1, sum) ]
+	all.vars <- (1:nrow(attr(terms(mod), 'factors')))[
+		0 != apply(attr(terms(mod), 'factors'), 1, sum) ]
 	if (intercept) all.vars <- all.vars - 1
 	if (inherits(mod, "multinom")) all.vars <- all.vars - 1
 	if (inherits(mod, "polr")) all.vars <- all.vars - 1
@@ -326,4 +326,22 @@ lrug <- function(x) {
 		default.units="native")
 }
 
+#model.matrix.gls <- function(object, ...){
+#	model.matrix(as.formula(object$call$model), data=eval(object$call$data))
+##	model.matrix(lm(as.formula(object$call$model), data=eval(object$call$data)))
+#}
+#
+#model.frame.gls <- function(formula, ...){
+#	model.frame(as.formula(formula$call$model), data=eval(formula$call$data))
+##	model.matrix(lm(as.formula(object$call$model), data=eval(object$call$data)))
+#}
+#
+## model.response not generic
+model.response.gls <- function(model){
+	model.response(model.frame(as.formula(model$call$model), data=eval(model$call$data)))
+}
+
+## vcov method for eff objects
+
+vcov.eff <- function(object, ...) object$vcov
 
