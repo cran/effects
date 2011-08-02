@@ -147,3 +147,13 @@ o plot.eff() and plot.effpoly now return an object, printed by print.plot.eff() 
 o New effect.gls() method, various changes for compatibility (after a question by Oriol Verdeny Vilalta).
 
 o effect.lm() now stores the covariance matrix of the effects (after a question by Bernhard Kaess).
+
+Version 2.0-13
+
+o effect.multinom() and effect.polr() now use update() to refit the model rather than calling multinom() or polr() directly; update for effect.multinom() sets trace=FALSE (after suggestions by David Armstrong).
+
+o Added [.efflist method (after a question by Andreas Roesch).
+
+Version 2.1-0
+
+o added support for 'mer' objects from lme4 and 'lme' objects from 'nlme'.  Added 'rotx', 'roty' and 'grid' arguments to the plot methods.

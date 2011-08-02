@@ -1,10 +1,13 @@
-# last modified 6 February 2011 by J. Fox
+# modified 9 June 2011 by J. Fox
+# modified 28 July 2011 by S. Weisberg
 
 import(grid, lattice)
 export(effect, allEffects, all.effects)
 S3method(effect, lm)
 S3method(effect, gls)
 S3method(effect, multinom)
+S3method(effect, mer)
+S3method(effect, lme)
 S3method(effect, polr)
 S3method(print, eff)
 S3method(print, efflist)
@@ -24,4 +27,7 @@ S3method(print, efflatent)
 S3method(summary, efflatent)
 S3method(allEffects, default)
 S3method(allEffects, gls)
+S3method(allEffects, mer)
+S3method(allEffects, lme)
 S3method(vcov, eff)
+S3method(`[`, efflist)

@@ -1,6 +1,6 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 6 Februrary 2011 by J. Fox
+#  last modified 29 May 2011 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -56,7 +56,11 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 			z <- qt(1 - (1 - confidence.level)/2, df=mod$df.residual)
 		}
 		mod.2$terms <- mod$terms
-		V <- dispersion * summary.lm(mod.2)$cov
+# new lines begin 
+    V2 <- dispersion * summary.lm(mod.2)$cov
+    V1 <- vcov(mod)
+		V <-  if(inherits(mod, "fakeglm")) V1 else V2
+# new lines end
 		vcov <- mod.matrix %*% V %*% t(mod.matrix)
 		rownames(vcov) <- colnames(vcov) <- NULL
 		var <- diag(vcov)
@@ -216,7 +220,8 @@ effect.multinom <- function(term, mod,
 		cnames, term, typical, given.values)
 	resp.names <- make.names(mod$lev, unique=TRUE)
 	resp.names <- c(resp.names[-1], resp.names[1]) # make the last level the reference level
-	mod <- multinom(formula(mod), data=data, Hess=TRUE, weights=wt)	
+#	mod <- multinom(formula(mod), data=data, Hess=TRUE, weights=wt)	
+	mod <- update(mod, formula(mod), data=data, Hess=TRUE, weights=wt, trace=FALSE)	
 	fit2 <- predict(mod, type="probs")[1:nrow.X,]
 	fit1 <- na.omit(as.vector(p2logit(fit1)))
 	fit2 <- as.vector(p2logit(fit2))
@@ -365,7 +370,8 @@ effect.polr <- function(term, mod,
 	X0 <- fixup.model.matrix(mod, X0, mod.matrix.all, X.mod, mod.aug, factor.cols, 
 		cnames, term, typical, given.values)
 	resp.names <- make.names(mod$lev, unique=TRUE)
-	mod <- polr(formula(mod), data=data, Hess=TRUE, weights=wt)
+#	mod <- polr(formula(mod), data=data, Hess=TRUE, weights=wt)
+	mod <- update(mod, formula(mod), data=data, Hess=TRUE, weights=wt)
 	fit2 <- predict(mod, type="probs")[1:nrow.X,]
 	fit1 <- na.omit(as.vector(p2logit(fit1)))
 	fit2 <- na.omit(as.vector(p2logit(fit2)))

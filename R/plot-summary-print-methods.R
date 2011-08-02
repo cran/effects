@@ -1,6 +1,8 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
 #  last modified 9 February 2011 by J. Fox
+#  29 June 2011 added grid, rotx and roty arguments to the two plot methods
+#   by S. Weisberg
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -96,7 +98,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 	ylab, main=paste(effect, "effect plot"),
 	colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
 	factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5),  
-	alternating=TRUE, layout, rescale.axis=TRUE, key.args=NULL, 
+	alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis=TRUE, 
+  key.args=NULL, 
 	row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){
 	make.ticks <- function(range, link, inverse, at, n) {
 		link <- if (is.null(link)) 
@@ -151,12 +154,13 @@ plot.eff <- function(x, x.var=which.max(levels),
 		tickmarks <- make.ticks(ylim, link=trans.link, inverse=trans.inverse, 
 			at=ticks$at, n=ticks$n)
 		if (is.factor(x[,1])){
-			levs <- levels(x[,1])
+			levs <- levels(x[,1])  
 			plot <- xyplot(eval(parse(
 						text=paste("fit ~ as.numeric(", names(x)[1], ")"))), 
 				strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 				panel=function(x, y, lower, upper, has.se, ...){
-					llines(x, y, lwd=2, col=colors[1], type='b', pch=19, cex=cex, ...)
+				  if (grid) panel.grid()
+ 					llines(x, y, lwd=2, col=colors[1], type='b', pch=19, cex=cex, ...)
 					if (has.se){
 						llines(x, lower, lty=2, col=colors[2])
 						llines(x, upper, lty=2, col=colors[2])
@@ -172,9 +176,9 @@ plot.eff <- function(x, x.var=which.max(levels),
 				ylim=ylim,
 				ylab=ylab,
 				xlab=if (missing(xlab)) names(x)[1] else xlab,
-				scales=list(x=list(at=1:length(levs), labels=levs), 
-					y=list(at=tickmarks$at, labels=tickmarks$labels),
-					alternating=alternating),
+				scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx), 
+					y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
+					alternating=alternating, y=roty),
 				main=main,
 				lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...)
 			result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
@@ -184,12 +188,13 @@ plot.eff <- function(x, x.var=which.max(levels),
 			class(result) <- c("plot.eff", class(result))
 		}        
 		else {
-			x.vals <- x.data[, names(x)[1]]
+			x.vals <- x.data[, names(x)[1]]   
 			plot <- xyplot(eval(parse(
 						text=paste("fit ~", names(x)[1]))),
 				strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 				panel=function(x, y, x.vals, rug, lower, upper, has.se, ...){
-					llines(x, y, lwd=2, col=colors[1], ...)
+				  if (grid) panel.grid()
+ 					llines(x, y, lwd=2, col=colors[1], ...)
 					if (rug) lrug(x.vals)
 					if (has.se){
 						llines(x, lower, lty=2, col=colors[2])
@@ -209,8 +214,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 				x.vals=x.vals, rug=rug,
 				main=main,
 				lower=x$lower, upper=x$upper, has.se=has.se, data=x, 
-				scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-					alternating=alternating), ...)
+				scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
+					x=list(rot=rotx), alternating=alternating), ...)
 			result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
 					else layout)
 			result$split <- split
@@ -254,6 +259,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 									paste(predictors[-c(x.var, z.var)])), collapse="*"))),
 				strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 				panel=function(x, y, subscripts, z, ...){
+				  if (grid) panel.grid()
 					for (i in 1:length(zvals)){
 						sub <- z[subscripts] == zvals[i]
 						llines(x[sub], y[sub], lwd=2, type='b', col=colors[i], 
@@ -271,8 +277,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 				ylab=ylab,
 				xlab=if (missing(xlab)) predictors[x.var] else xlab,
 				z=x[,z.var],
-				scales=list(x=list(at=1:length(levs), labels=levs), 
-					y=list(at=tickmarks$at, labels=tickmarks$labels),
+				scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx), 
+					y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
 					alternating=alternating),
 				zvals=zvals,
 				main=main,
@@ -296,6 +302,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 									paste(predictors[-c(x.var, z.var)])), collapse="*"))),
 				strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 				panel=function(x, y, subscripts, x.vals, rug, z, ...){
+				  if (grid) panel.grid()
 					if (rug) lrug(x.vals)
 					for (i in 1:length(zvals)){
 						sub <- z[subscripts] == zvals[i]
@@ -318,7 +325,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 				main=main,
 				key=key, 
 				data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-					alternating=alternating), ...)
+          rot=roty, x=list(rot=rotx), alternating=alternating),  ...)
 			result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) 
 					else layout)
 			result$split <- split
@@ -334,6 +341,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 						paste(predictors[-x.var], collapse="*")))),
 			strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 			panel=function(x, y, subscripts, lower, upper, has.se, ...){
+			  if (grid) panel.grid()
 				llines(x, y, lwd=2, type='b', col=colors[1], pch=19, cex=cex, ...)
 				if (has.se){
 					llines(x, lower[subscripts], lty=2, col=colors[2])
@@ -350,8 +358,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 			ylim=ylim,
 			ylab=ylab,
 			xlab=if (missing(xlab)) predictors[x.var] else xlab,
-			scales=list(x=list(at=1:length(levs), labels=levs), 
-				y=list(at=tickmarks$at, labels=tickmarks$labels),
+			scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx), 
+				y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
 				alternating=alternating),
 			main=main,
 			lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...)
@@ -367,6 +375,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 						paste(predictors[-x.var], collapse="*")))),
 			strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 			panel=function(x, y, subscripts, x.vals, rug, lower, upper, has.se, ...){
+	      if (grid) panel.grid()
 				llines(x, y, lwd=2, col=colors[1], ...)
 				if (rug) lrug(x.vals)
 				if (has.se){
@@ -387,8 +396,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 			x.vals=x.vals, rug=rug,
 			main=main,
 			lower=x$lower, upper=x$upper, has.se=has.se, data=x, 
-			scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-				alternating=alternating), ...)
+			scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
+				x=list(rot=rotx), alternating=alternating), ...)
 		result <- update(plot, layout = if (missing(layout)) c(0, prod(dim(plot))) else layout)
 		result$split <- split
 		result$more <- more
@@ -522,7 +531,8 @@ plot.effpoly <- function(x,
 		colors, symbols=1:10, lines=1:10, cex=1.5, 
 		factor.names=TRUE, style=c("lines", "stacked"), 
 		confint=(style == "lines" && !is.null(x$confidence.level)), 
-		ylim,  alternating=TRUE, layout, key.args=NULL,
+		ylim, rotx=0, alternating=TRUE, roty=0, grid=FALSE,
+    layout, key.args=NULL,
 		row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){ 	
 	require(lattice)
 	type <- match.arg(type)
@@ -616,6 +626,7 @@ plot.effpoly <- function(x,
 																		paste(predictors[-x.var], collapse="*")))), 
 						strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 						panel=function(x, y, subscripts, rug, z, x.vals, ...){
+				      if (grid) panel.grid()
 							for (i in 1:n.y.lev){
 								sub <- z[subscripts] == y.lev[i]
 								llines(x[sub], y[sub], lwd=2, type="b", col=colors[i], lty=lines[i], 
@@ -627,7 +638,9 @@ plot.effpoly <- function(x,
 						x.vals=x$data[[predictors[x.var]]], 
 						rug=rug,
 						z=response,
-						scales=list(x=list(at=1:length(levs), labels=levs), alternating=alternating),
+						scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx),
+                   y=list(rot=roty),  
+                   alternating=alternating),
 						main=main,
 						key=c(key, key.args),
 						layout=layout,
@@ -649,6 +662,7 @@ plot.effpoly <- function(x,
 																		paste(predictors[-x.var], collapse="*")))), 
 						strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 						panel=function(x, y, subscripts, rug, z, x.vals, ...){
+				      if (grid) panel.grid()
 							if (rug) lrug(x.vals)
 							for (i in 1:n.y.lev){
 								sub <- z[subscripts] == y.lev[i]
@@ -660,7 +674,8 @@ plot.effpoly <- function(x,
 						x.vals=x$data[[predictors[x.var]]], 
 						rug=rug,
 						z=response,
-						scales=list(alternating=alternating),
+						scales=list(x=list(rot=rotx), y=list(rot=roty),
+                   alternating=alternating),
 						main=main,
 						key=c(key, key.args),
 						layout=layout,
@@ -688,7 +703,8 @@ plot.effpoly <- function(x,
 						ylim=if (missing(ylim)) 0:1 else ylim,
 						ylab=ylab, 
 						xlab=if (missing(xlab)) predictors[x.var] else xlab,
-						scales=list(alternating=alternating),
+						scales=list(x=list(rot=rotx), y=list(rot=roty), 
+                   alternating=alternating),
 						main=main,
 						key=c(key, key.args),
 						layout=layout)
@@ -724,7 +740,8 @@ plot.effpoly <- function(x,
 						ylim=if (missing(ylim)) 0:1 else ylim,
 						ylab=ylab,
 						xlab=if (missing(xlab)) predictors[x.var] else xlab,
-						scales=list(alternating=alternating),
+						scales=list(x=list(rot=rotx), y=list(rot=roty),
+                   alternating=alternating),
 						main=main,
 						key=c(key, key.args),
 						layout=layout, ...)
@@ -761,6 +778,7 @@ plot.effpoly <- function(x,
 					par.strip.text=list(cex=0.8),							
 					strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 					panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
+	          if (grid) panel.grid()
 						llines(x, y, lwd=2, type="b", pch=19, col=colors[1], cex=cex, ...)
 						llines(x, lower[subscripts+as.numeric(rownames(data)[1])-1], lty=2, col=colors[2])
 						llines(x, upper[subscripts+as.numeric(rownames(data)[1])-1], lty=2, col=colors[2])
@@ -773,7 +791,8 @@ plot.effpoly <- function(x,
 					rug=rug,
 					lower=lower,
 					upper=upper, 
-					scales=list(x=list(at=1:length(levs), labels=levs), alternating=alternating),
+					scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx), 
+                 y=list(rot=roty), alternating=alternating),
 					layout=layout,
 					data=data, ...)
 			result$split <- split
@@ -796,11 +815,12 @@ plot.effpoly <- function(x,
 					par.strip.text=list(cex=0.8),							
 					strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
 					panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
-						if (rug) lrug(x.vals)
+					  if (grid) panel.grid()
+					  if (rug) lrug(x.vals)
 						llines(x, y, lwd=2, col=colors[1], ...)
 						llines(x, lower[subscripts+as.numeric(rownames(data)[1])-1], lty=2, col=colors[2])
 						llines(x, upper[subscripts+as.numeric(rownames(data)[1])-1], lty=2, col=colors[2])
-					},
+          },
 					ylab=ylab,
 					ylim= if (missing(ylim)) c(min(lower), max(upper)) else ylim,
 					xlab=if (missing(xlab)) predictors[x.var] else xlab,
@@ -809,7 +829,8 @@ plot.effpoly <- function(x,
 					rug=rug,
 					lower=lower,
 					upper=upper, 
-					scales=list(alternating=alternating),
+					scales=list(y=list(rot=roty), x=list(rot=rotx),
+                 alternating=alternating),
 					layout=layout,
 					data=data, ...)
 			result$split <- split
