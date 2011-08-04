@@ -4,7 +4,11 @@
 \alias{effect.gls}
 \alias{effect.multinom}
 \alias{effect.polr}
+\alias{effect.mer}
+\alias{effect.lme}
 \alias{allEffects}
+\alias{allEffects.mer}
+\alias{allEffects.lme}
 \alias{as.data.frame.eff}
 \alias{as.data.frame.effpoly}
 \alias{as.data.frame.efflatent}
@@ -16,7 +20,10 @@
   in a linear (fit by \code{lm} or \code{gls}) or generalized linear model (fit by \code{glm}), or an \code{"effpoly"} object for a term in a
    multinomial or proportional-odds logit model (fit respectively by \code{multinom} or \code{polr}), 
   absorbing the lower-order terms marginal
-  to the term in question, and averaging over other terms in the model. 
+  to the term in question, and averaging over other terms in the model.  The function can
+  also be used with mixed-effects models fit with \code{lmer} from the \code{lme4} package,
+  or fit with \code{lme} from the \code{nlme} package.  In mixed effects models the
+  analysis is for the fixed effects only, not for random effects. 
   
   \code{allEffects} identifies all of the high-order terms in a model and returns
   a list of \code{"eff"} or \code{"effpoly"} objects (i.e., an object of type \code{"efflist"}).
@@ -38,8 +45,16 @@ effect(term, mod, ...)
 		
 \method{effect}{polr}(term, mod, confidence.level=.95, xlevels=list(), default.levels=10, 
 	given.values, se=TRUE, typical=mean, latent=FALSE, ...)
+	
+\method{effect}{mer}(term, mod, ...)
+
+\method{effect}{lme}(term, mod, ...)
     
 allEffects(mod, ...)
+
+\method{allEffects}{mer}(mod, ...)
+
+\method{allEffects}{lme}(mod, ...)
 
 \method{as.data.frame}{eff}(x, row.names=NULL, optional=TRUE, ...)
 
@@ -55,7 +70,8 @@ allEffects(mod, ...)
     term in the model. The term must be given exactly as it appears in the printed
     model, although either colons (\code{:}) or asterisks (\code{*}) may be used
     for interactions.}
-  \item{mod}{an object of class \code{"lm"}, \code{"gls"}, \code{"glm"}, \code{"multinom"}, or \code{"polr"}.}
+  \item{mod}{an object of class \code{"lm"}, \code{"gls"}, \code{"glm"}, 
+    \code{"multinom"}, \code{"polr"} \code{"mer"} or \code{"lme"}. }
   \item{xlevels}{an optional list of values at which to set covariates,
     with components of the form \code{covariate.name = vector.of.values}.}
   \item{default.levels}{number of values for covariates that are not
@@ -64,7 +80,7 @@ allEffects(mod, ...)
     the data.}
   \item{given.values}{a numeric vector of named elements, setting particular
   	columns of the model matrix to specific values for terms \emph{not}
-  	appearing in an effect; if specified, takes precedence over the
+  	appearing in an effect; if specified, this argument takes precedence over the
   	application of the function given in the \code{typical} argument
   	(below). Care must be taken in specifying these values --- e.g.,
   	for a factor, the values of all contrasts should be given and these
@@ -118,7 +134,8 @@ allEffects(mod, ...)
 }
 
 \value{
-  For \code{lm} and \code{glm}, \code{effect} returns an \code{"eff"} object, and for \code{multinom}
+  For \code{lm}, \code{glm}, \code{mer} and \code{lme}, \code{effect} returns 
+  an \code{"eff"} object, and for \code{multinom}
   and \code{polr}, an \code{"effpoly"} object, with the following components:
   \item{term}{the term to which the effect pertains.}
   \item{formula}{the complete model formula.}
@@ -155,11 +172,19 @@ allEffects(mod, ...)
   corresponding to the high-order terms of the model.
 }
 
-\section{Warning}{
+\section{Warnings and Limitations}{
   The \code{effect} function handles factors and covariates differently, and becomes confused if one is changed to the other
   in a model formula. Consequently, formulas that include calls to \code{as.factor}, \code{factor}, or \code{numeric}
   (as, e.g., in \code{as.factor(income)}) will cause errors. Instead, create the modified variables outside of the model
   formula (e.g., \code{fincome <- as.factor(income)}) and use these in the model formula.
+  
+  Factors cannot have colons in level names (e.g., \code{"level:A"}); the \code{effect} function will confuse the
+  colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
+  
+  Binomial generalized linear models cannot have a matrix of successes and failures on the left-hand side of the model formula;
+  instead specify the \emph{proportion} of successes (i.e., successes/(successes + failures)) as the response, and give the number of
+  binomial trials (i.e., successes + failures) in the weights argument to \code{\link[stats]{glm}}.
+  
   }
 
 \references{
@@ -192,7 +217,8 @@ allEffects(mod, ...)
     
     
     
-\author{John Fox \email{jfox@mcmaster.ca} and Jangman Hong.}
+\author{John Fox \email{jfox@mcmaster.ca} and Jangman Hong.  Extension to
+\code{mer} and \code{lme} objects by Sanford Weisberg \email{sandy@umn.edu}.}
 
 
 \seealso{\code{\link{print.eff}}, \code{\link{summary.eff}}, \code{\link{plot.eff}}, 
@@ -247,6 +273,22 @@ plot(eff.pres, ask=FALSE)
 mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel, 
     correlation=corARMA(p=2, q=0), method="ML")
 plot(allEffects(mod.hart), ask=FALSE)
+
+\dontrun{
+data(cake, package="lme4")
+require(lme4)
+fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
+                   REML = FALSE)
+plot(effect("recipe:temperature", fm1), grid=TRUE)
+# lme4 and nlme conflict, so detach lme4
+detach(package:lme4)
+library(nlme)
+cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
+fm2 <- lme(angle ~ recipe * temperature, data=cake,
+                   random = ~ 1 | rep, method="ML")
+plot(effect("recipe:temperature", fm2), grid=TRUE)
+}
+
 }
 
 \keyword{hplot}

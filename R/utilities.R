@@ -1,6 +1,6 @@
 # utilities and common functions for effects package
 # John Fox and Jangman Hong
-#  last modified 6 Februrary 2011 by J. Fox
+#  last modified 9 June 2011 by J. Fox
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
@@ -344,4 +344,13 @@ model.response.gls <- function(model){
 ## vcov method for eff objects
 
 vcov.eff <- function(object, ...) object$vcov
+
+## [ method for efflist objects
+
+`[.efflist` <- function(x, ...){
+	y <- NextMethod("[")
+	class(y) <- class(x)
+	y
+}
+
 

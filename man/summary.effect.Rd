@@ -11,11 +11,12 @@
 \alias{plot.eff}
 \alias{plot.effpoly}
 \alias{plot.efflist}
+\alias{[.efflist}
 
 \title{Summarizing, Printing, and Plotting Effects}
 
 \description{
-\code{summary}, \code{print}, and \code{plot} methods for \code{eff}, \code{effpoly},
+\code{summary}, \code{print}, \code{plot}, and \code{[} methods for \code{eff}, \code{effpoly},
 and \code{efflist} objects.
 }
 
@@ -29,23 +30,24 @@ and \code{efflist} objects.
 \method{summary}{effpoly}(object, type=c("probability", "logits"), ...)
 \method{summary}{efflatent}(object, ...)
 \method{summary}{efflist}(object, ...)
-\method{plot}{eff}(x, x.var=which.max(levels),
-    z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
-    ylab, main=paste(effect, "effect plot"),
-    colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
-    factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5), 
-    alternating=TRUE, layout, rescale.axis=TRUE, key.args=NULL,
-    row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
-\method{plot}{effpoly}(x, type=c("probability", "logit"),
-	x.var=which.max(levels), rug=TRUE, xlab,
-	ylab=paste(x$response, " (", type, ")", sep=""), 
-	main=paste(effect, "effect plot"),
-	colors, symbols=1:10, lines=1:10, cex=1.5, 
-	factor.names=TRUE, style=c("lines", "stacked"),
-	confint=(style == "lines" && !is.null(x$confidence.level)), 
-	ylim, alternating=TRUE, layout, key.args=NULL,
-	row=1, col=1, nrow=1, ncol=1, more=FALSE, ...)
+\method{plot}{eff}(x, x.var = which.max(levels), z.var = which.min(levels), 
+    multiline = is.null(x$se), rug = TRUE, xlab, ylab, main = paste(effect, 
+        "effect plot"), colors = palette(), symbols = 1:10, lines = 1:10, 
+    cex = 1.5, ylim, factor.names = TRUE, type = c("response", 
+        "link"), ticks = list(at = NULL, n = 5), alternating = TRUE, 
+    rotx = 0, roty = 0, grid = FALSE, layout, rescale.axis = TRUE, 
+    key.args = NULL, row = 1, col = 1, nrow = 1, ncol = 1, more = FALSE, 
+    ...)
+\method{plot}{effpoly}(x, type = c("probability", "logit"), x.var = which.max(levels), 
+    rug = TRUE, xlab, ylab = paste(x$response, " (", type, ")", 
+        sep = ""), main = paste(effect, "effect plot"), colors, 
+    symbols = 1:10, lines = 1:10, cex = 1.5, factor.names = TRUE, 
+    style = c("lines", "stacked"), confint = (style == "lines" && 
+        !is.null(x$confidence.level)), ylim, rotx = 0, alternating = TRUE, 
+    roty = 0, grid = FALSE, layout, key.args = NULL, row = 1, 
+    col = 1, nrow = 1, ncol = 1, more = FALSE, ...)
 \method{plot}{efflist}(x, selection, rows, cols, ask=TRUE, graphics=TRUE, ...)
+\method{[}{efflist}(x, ...)
 }
 
 \arguments{
@@ -63,12 +65,12 @@ and \code{efflist} objects.
   \item{x.var}{the index (number) or quoted name of the covariate or factor to place on the 
     horizontal axis of each panel of the effect plot. The default is the 
     predictor with the largest number of levels or values.}
-  \item{z.var}{for linear or generalized linear models,
+  \item{z.var}{for linear, generalized linear or mixed models,
   	the index (number) or quoted name of the covariate or factor for which
     individual lines are to be drawn in each panel of the effect plot. The default is the 
     predictor with the smallest number of levels or values. This argument is only
     used if \code{multiline = TRUE}.}
-  \item{multiline}{for linear or generalized linear models,
+  \item{multiline}{for linear, generalized linear or mixed models,
   	if \code{TRUE}, each panel of the display represents combinations
     of values of two predictors, with one predictor (corresponding to \code{x.var})
     on the horzontal axis, and the other (corresponding to \code{z.var}) used to define
@@ -94,7 +96,7 @@ and \code{efflist} objects.
     multinomial or proportional-odds logit model, the successive \code{colors}
     correspond to the levels of the response factor. In all but stacked plots,
     \code{colors} defaults to \code{palette()}; for stacked multinomial-logit plots,
-    \code{colors} defautls to \code{rainbow_hcl(levels)}, where \code{levels} is
+    \code{colors} defaults to \code{rainbow_hcl(levels)}, where \code{levels} is
     the number of levels of the response variable; for stacked proportional-odds model
     plots, \code{colors} defautls to \code{sequential_hcl(levels)}.
     \bold{Warning:} This argument
@@ -123,6 +125,9 @@ and \code{efflist} objects.
   \item{alternating}{if \code{TRUE} (the default), the tick labels alternate by panels in
     multi-panel displays from left to right and top to bottom; if \code{FALSE}, tick labels
     appear at the bottom and on the left.}
+  \item{rotx, roty}{rotation angles for the horizontal and vertical tick marks, 
+    respectively.  Default is 0.}
+  \item{grid}{if \code{TRUE}, add grid lines to the plot.  Default is FALSE.}
   \item{layout}{the \code{layout} argument to the \pkg{lattice} function \code{\link{xyplot}}
   	(or, in some cases \code{\link{densityplot}}), which
   	is used to draw the effect display; if not specified, the plot will be formatted so that
@@ -178,6 +183,8 @@ and \code{efflist} objects.
   \item{lower}{an array containing the lower confidence limits.}
   \item{upper.header}{a character string to label the upper confidence limits.}
   \item{upper}{an array containing the upper confidence limits.}
+  
+  The \code{[} method for \code{"efflist"} objects is used to subset an \code{"efflist"} object and returns an object of the same class.
 }
  
     
@@ -195,7 +202,7 @@ eff.cowles <- allEffects(mod.cowles, xlevels=list(neuroticism=0:24,
     extraversion=seq(0, 24, 6)))
 eff.cowles
 
-plot(eff.cowles, 'sex', ylab="Prob(Volunteer)")
+plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90)
 
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
@@ -230,6 +237,7 @@ mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres, ask=FALSE)
+plot(eff.pres[1:2], ask=FALSE)
 
 }
 
