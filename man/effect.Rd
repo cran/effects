@@ -207,7 +207,7 @@ allEffects(mod, ...)
     Effect displays in R for multinomial and proportional-odds logit models: 
     	    Extensions to the effects package.
     \emph{Journal of Statistical Software}
-    \bold{32:1}, 1--24.", <\url{http://www.jstatsoft.org/v32/i01/}>.
+    \bold{32:1}, 1--24, <\url{http://www.jstatsoft.org/v32/i01/}>.
     
     Hastie, T. J. (1992)
     Generalized additive models.
@@ -270,25 +270,26 @@ mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
 eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres, ask=FALSE)
 
-mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel, 
-    correlation=corARMA(p=2, q=0), method="ML")
-plot(allEffects(mod.hart), ask=FALSE)
-
 \dontrun{
-data(cake, package="lme4")
-require(lme4)
-fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
-                   REML = FALSE)
-plot(effect("recipe:temperature", fm1), grid=TRUE)
-# lme4 and nlme conflict, so detach lme4
-detach(package:lme4)
-library(nlme)
-cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
-fm2 <- lme(angle ~ recipe * temperature, data=cake,
-                   random = ~ 1 | rep, method="ML")
-plot(effect("recipe:temperature", fm2), grid=TRUE)
-}
+	library(nlme) # for gls()
+	mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel, 
+	    correlation=corARMA(p=2, q=0), method="ML")
+	plot(allEffects(mod.hart), ask=FALSE)
 
+	library(lme4)
+	data(cake, package="lme4")
+	fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
+                   REML = FALSE)
+	plot(effect("recipe:temperature", fm1), grid=TRUE)
+
+	detach(package:lme4) # if previously attached
+	library(nlme)
+	data(cake, package="lme4")
+	cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
+	fm2 <- lme(angle ~ recipe * temperature, data=cake,
+               random = ~ 1 | rep, method="ML")
+	plot(effect("recipe:temperature", fm2), grid=TRUE)
+}
 }
 
 \keyword{hplot}

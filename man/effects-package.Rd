@@ -15,27 +15,13 @@ generalized linear, multinomial-logit, and proportional-odds logit models.
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 2.1-0\cr
-Date: \tab 2011/08/02\cr
+Version: \tab 2.1-1\cr
+Date: \tab 2012/04/05\cr
 Depends: \tab R (>= 2.4.0), lattice, grid, MASS, nnet, colorspace\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
 License: \tab GPL (>= 2)\cr
 URL: \tab http://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/\cr
-}
-
-Index:
-\preformatted{
-Arrests                 Arrests for Marijuana Possession
-BEPS                    British Election Panel Study
-Cowles                  Cowles and Davis's Data on Volunteering
-Prestige                Prestige of Canadian Occupations
-Titanic                 Survival of Passengers on the Titanic
-WVS                     World Values Surveys
-Wells                   Well Switching in Bangladesh
-effect                  Functions For Constructing Effect Plots
-effects-deprecated      Deprecated Function in effects Package
-summary.eff             Summarizing, Printing, and Plotting Effects
 }
 
 This package creates effect displays for various kinds of models, as explained in the references.
@@ -69,6 +55,12 @@ Maintainer: John Fox <jfox@mcmaster.ca>
     Effect displays  for multinomial and proportional-odds logit models.
     \emph{Sociological Methodology} 
     \bold{36}, 225--255.
+    
+    Fox, J. and J. Hong (2009).
+    Effect displays in R for multinomial and proportional-odds logit models: 
+    	    Extensions to the effects package.
+    \emph{Journal of Statistical Software}
+    \bold{32:1}, 1--24, <\url{http://www.jstatsoft.org/v32/i01/}>.
 }
 
 

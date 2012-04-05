@@ -1,0 +1,18 @@
+Version 2.1-1
+
+o plot.effpoly() now honors ylim argument when no confidence intervals are plotted (fixing problem reported by Achim Zeileis).
+
+o safe predictions simplified in effect.lm(), producing correct results for mixed models (other methods to follow).
+
+o plot.eff() now honors type argument.
+
+o nlme and lme4 moved to Suggests.
+
+o effect() now works when options(OutDec= ',') (suggestion of Guomundur Arnkelsson).
+
+
+Version 2.1-0
+
+o added support for 'mer' objects from lme4 and 'lme' objects from 'nlme'.  Added 'rotx', 'roty' and 'grid' arguments to the plot methods.
+
+o See CHANGES file for changes to older versions.
