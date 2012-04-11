@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 9 February 2011 by J. Fox
+#  last modified 2012-02-15 by J. Fox
 #  29 June 2011 added grid, rotx and roty arguments to the two plot methods
 #   by S. Weisberg
 
@@ -99,7 +99,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 	colors=palette(), symbols=1:10, lines=1:10, cex=1.5, ylim,
 	factor.names=TRUE, type=c("response", "link"), ticks=list(at=NULL, n=5),  
 	alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis=TRUE, 
-  key.args=NULL, 
+  	key.args=NULL, 
 	row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){
 	make.ticks <- function(range, link, inverse, at, n) {
 		link <- if (is.null(link)) 
@@ -114,6 +114,7 @@ plot.eff <- function(x, x.var=which.max(levels),
 		ticks <- sapply(labels, link)
 		list(at=ticks, labels=as.character(labels))
 	}
+	type <- match.arg(type)
 	thresholds <- x$thresholds
 	has.thresholds <- !is.null(thresholds)
 	if (missing(ylab)){
@@ -151,8 +152,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 		range <- if (has.se) range(c(x$lower, x$upper)) else range(x$fit)
 		ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
 					range[2] + .025*(range[2] - range[1]))
-		tickmarks <- make.ticks(ylim, link=trans.link, inverse=trans.inverse, 
-			at=ticks$at, n=ticks$n)
+		tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
+					else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
 		if (is.factor(x[,1])){
 			levs <- levels(x[,1])  
 			plot <- xyplot(eval(parse(
@@ -240,8 +241,8 @@ plot.eff <- function(x, x.var=which.max(levels),
 	range <- if (has.se && (!multiline)) range(c(x$lower, x$upper)) else range(x$fit)
 	ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
 				range[2] + .025*(range[2] - range[1]))
-	tickmarks <- make.ticks(ylim, link=trans.link, inverse=trans.inverse, 
-		at=ticks$at, n=ticks$n)
+	tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
+				else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
 	if (multiline){
 		zvals <- unique(x[, z.var])
 		if (length(zvals) > min(c(length(colors), length(lines), length(symbols))))
@@ -634,6 +635,9 @@ plot.effpoly <- function(x,
 							}
 						},
 						ylab=ylab,
+						ylim= if (missing(ylim))
+									if (type == "probability") range(prob) else range(logit)
+								else ylim,
 						xlab=if (missing(xlab)) predictors[x.var] else xlab,
 						x.vals=x$data[[predictors[x.var]]], 
 						rug=rug,
@@ -670,6 +674,9 @@ plot.effpoly <- function(x,
 							}
 						},
 						ylab=ylab,
+						ylim= if (missing(ylim))
+								if (type == "probability") range(prob) else range(logit)
+							else ylim,
 						xlab=if (missing(xlab)) predictors[x.var] else xlab,
 						x.vals=x$data[[predictors[x.var]]], 
 						rug=rug,

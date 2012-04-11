@@ -1,18 +1,91 @@
 # effect generic and methods; allEffects
 # John Fox and Jangman Hong
-#  last modified 29 May 2011 by J. Fox
+#  last modified 2012-04-05 by J. Fox
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
 }
 
-effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.values,
-	se=TRUE, confidence.level=.95, 
-	transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-	typical=mean, ...){	
-	if (missing(given.values)) given.values <- NULL
+#effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.values,
+#	se=TRUE, confidence.level=.95, 
+#	transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
+#	typical=mean, ...){	
+#	if (missing(given.values)) given.values <- NULL
+#	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+#		stop("given.values (", names(given.values[!which]),") not in the model")
+#	model.components <- analyze.model(term, mod, xlevels, default.levels)
+#	predict.data <- model.components$predict.data
+#	factor.levels <- model.components$factor.levels
+#	factor.cols <- model.components$factor.cols
+#	mod.aug <- model.components$mod.aug
+#	term <- model.components$term
+#	n.basic <- model.components$n.basic
+#	x <- model.components$x
+#	X.mod <- model.components$X.mod
+#	cnames <- model.components$cnames
+#	X <- model.components$X	
+#	formula.rhs <- formula(mod)[c(1,3)]  
+#	nrow.X <- nrow(X)
+#	mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
+#		xlev=factor.levels)
+#	mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
+#	mod.matrix <- mod.matrix.all[-(1:nrow.X),]
+#	fit.1 <- na.omit(predict(mod))
+#	wts <- mod$weights
+#	if (is.null(wts)) wts <- rep(1, length(fit.1))
+#	mod.2 <- lm.wfit(mod.matrix.all[1:nrow.X,], fit.1, wts)
+#	class(mod.2) <- "lm"
+#	y <- if(inherits(mod, "glm")) mod$y else na.omit(model.response(model.frame(mod)))
+#	discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
+#	if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
+#				"percent \n     in the 'safe' predictions used to generate effect", term))
+#	mod.matrix <- fixup.model.matrix(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
+#		factor.cols, cnames, term, typical, given.values)	
+#	effect <- mod.matrix %*% mod.2$coefficients
+#	result <- list(term=term, formula=formula(mod), response=response.name(mod),
+#		variables=x, fit=effect, 
+#		x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix, 
+#		data=X, discrepancy=discrepancy)
+#	if (se){
+#		if (any(family(mod)$family == c('binomial', 'poisson'))){
+#			dispersion <-  1
+#			z <- qnorm(1 - (1 - confidence.level)/2)
+#		}
+#		else {
+#			dispersion <- sum(wts * mod$residuals^2)/mod$df.residual
+#			z <- qt(1 - (1 - confidence.level)/2, df=mod$df.residual)
+#		}
+#		mod.2$terms <- mod$terms
+## new lines begin 
+#    V2 <- dispersion * summary.lm(mod.2)$cov
+#    V1 <- vcov(mod)
+#		V <-  if(inherits(mod, "fakeglm")) V1 else V2
+## new lines end
+#		vcov <- mod.matrix %*% V %*% t(mod.matrix)
+#		rownames(vcov) <- colnames(vcov) <- NULL
+#		var <- diag(vcov)
+#		result$vcov <- vcov
+#		result$se <- sqrt(var)        
+#		result$lower <- effect - z*result$se
+#		result$upper <- effect + z*result$se
+#		result$confidence.level <- confidence.level
+#	}
+#	if (is.null(transformation$link) && is.null(transformation$inverse)){
+#		transformation$link <- I
+#		transformation$inverse <- I
+#	}
+#	result$transformation <- transformation
+#	class(result)<-'eff'
+#	result
+#}
+
+effect.lm <- function (term, mod, xlevels = list(), default.levels = 10, given.values, 
+		se = TRUE, confidence.level = 0.95, transformation = list(link = family(mod)$linkfun, 
+				inverse = family(mod)$linkinv), typical = mean, ...){
+	if (missing(given.values)) 
+		given.values <- NULL
 	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
-		stop("given.values (", names(given.values[!which]),") not in the model")
+		stop("given.values (", names(given.values[!which]), ") not in the model")
 	model.components <- analyze.model(term, mod, xlevels, default.levels)
 	predict.data <- model.components$predict.data
 	factor.levels <- model.components$factor.levels
@@ -23,67 +96,75 @@ effect.lm <- function (term, mod, xlevels=list(), default.levels=10, given.value
 	x <- model.components$x
 	X.mod <- model.components$X.mod
 	cnames <- model.components$cnames
-	X <- model.components$X	
-	formula.rhs <- formula(mod)[c(1,3)]  
-	nrow.X <- nrow(X)
-	mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
-		xlev=factor.levels)
-	mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
-	mod.matrix <- mod.matrix.all[-(1:nrow.X),]
-	fit.1 <- na.omit(predict(mod))
+	X <- model.components$X
+	formula.rhs <- formula(mod)[c(1, 3)]
+#	nrow.X <- nrow(X)
+#     mf <- model.frame(formula.rhs, data = rbind(X[, names(predict.data), 
+#                                                   drop = FALSE], predict.data), xlev = factor.levels)
+	Terms <- delete.response(terms(mod))
+	mf <- model.frame(Terms, predict.data, xlev = factor.levels)
+	mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+#     mod.matrix <- mod.matrix.all[-(1:nrow.X), ]
+#     fit.1 <- na.omit(predict(mod))
 	wts <- mod$weights
-	if (is.null(wts)) wts <- rep(1, length(fit.1))
-	mod.2 <- lm.wfit(mod.matrix.all[1:nrow.X,], fit.1, wts)
-	class(mod.2) <- "lm"
-	y <- if(inherits(mod, "glm")) mod$y else na.omit(model.response(model.frame(mod)))
-	discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
-	if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
-				"percent \n     in the 'safe' predictions used to generate effect", term))
-	mod.matrix <- fixup.model.matrix(mod, mod.matrix, mod.matrix.all, X.mod, mod.aug, 
-		factor.cols, cnames, term, typical, given.values)	
-	effect <- mod.matrix %*% mod.2$coefficients
-	result <- list(term=term, formula=formula(mod), response=response.name(mod),
-		variables=x, fit=effect, 
-		x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix, 
-		data=X, discrepancy=discrepancy)
-	if (se){
-		if (any(family(mod)$family == c('binomial', 'poisson'))){
-			dispersion <-  1
+	if (is.null(wts)) 
+		wts <- rep(1, length(residuals(mod)))
+#     mod.2 <- lm.wfit(mod.matrix.all[1:nrow.X, ], fit.1, wts)
+#     class(mod.2) <- "lm"
+#     y <- if (inherits(mod, "glm")) 
+#         mod$y
+#     else na.omit(model.response(model.frame(mod)))
+#     discrepancy <- 100 * mean(abs(fitted(mod.2) - fit.1)/(1e-10 + 
+#         mean(abs(fit.1))))
+#     if (discrepancy > 0.001) 
+#         warning(paste("There is a discrepancy of", round(discrepancy, 
+#                                                          3), "percent \n     in the 'safe' predictions used to generate effect", 
+#                       term))
+	mod.matrix <- fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+			X.mod, mod.aug, factor.cols, cnames, term, typical, given.values)
+	effect <- mod.matrix %*% mod$coefficients
+	result <- list(term = term, formula = formula(mod), response = response.name(mod), 
+			variables = x, fit = effect, x = predict.data[, 1:n.basic, 
+					drop = FALSE], model.matrix = mod.matrix, data = X, 
+			discrepancy = 0)
+	if (se) {
+		if (any(family(mod)$family == c("binomial", "poisson"))) {
+			dispersion <- 1
 			z <- qnorm(1 - (1 - confidence.level)/2)
 		}
 		else {
 			dispersion <- sum(wts * mod$residuals^2)/mod$df.residual
-			z <- qt(1 - (1 - confidence.level)/2, df=mod$df.residual)
+			z <- qt(1 - (1 - confidence.level)/2, df = mod$df.residual)
 		}
-		mod.2$terms <- mod$terms
-# new lines begin 
-    V2 <- dispersion * summary.lm(mod.2)$cov
-    V1 <- vcov(mod)
-		V <-  if(inherits(mod, "fakeglm")) V1 else V2
-# new lines end
+#        mod.2$terms <- mod$terms
+		V2 <- dispersion * summary.lm(mod)$cov
+		V1 <- vcov(mod)
+		V <- if (inherits(mod, "fakeglm")) 
+					V1
+				else V2
 		vcov <- mod.matrix %*% V %*% t(mod.matrix)
 		rownames(vcov) <- colnames(vcov) <- NULL
 		var <- diag(vcov)
 		result$vcov <- vcov
-		result$se <- sqrt(var)        
-		result$lower <- effect - z*result$se
-		result$upper <- effect + z*result$se
+		result$se <- sqrt(var)
+		result$lower <- effect - z * result$se
+		result$upper <- effect + z * result$se
 		result$confidence.level <- confidence.level
 	}
-	if (is.null(transformation$link) && is.null(transformation$inverse)){
+	if (is.null(transformation$link) && is.null(transformation$inverse)) {
 		transformation$link <- I
 		transformation$inverse <- I
 	}
 	result$transformation <- transformation
-	class(result)<-'eff'
+	class(result) <- "eff"
 	result
 }
-
 
 effect.gls <- function (term, mod, xlevels=list(), default.levels=10, given.values,
 		se=TRUE, confidence.level=.95, 
 		transformation=NULL, 
 		typical=mean, ...){	
+	if (!require(nlme)) stop("the nlme package is not installed")
 	if (missing(given.values)) given.values <- NULL
 	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
 		stop("given.values (", names(given.values[!which]),") not in the model")
@@ -145,6 +226,60 @@ effect.gls <- function (term, mod, xlevels=list(), default.levels=10, given.valu
 	result
 }
 
+# the following is a failed attempt to produce better "safe" predictions for gls models
+
+#effect.gls <- function (term, mod, xlevels=list(), default.levels=10, given.values,
+#		se=TRUE, confidence.level=.95, 
+#		transformation=NULL, 
+#		typical=mean, ...){	
+#	if (!require(nlme)) stop("the nlme package is not installed")
+#	if (missing(given.values)) given.values <- NULL
+#	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+#		stop("given.values (", names(given.values[!which]),") not in the model")
+#	mod.lm <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
+#	model.components <- analyze.model(term, mod.lm, xlevels, default.levels)
+#	predict.data <- model.components$predict.data
+#	factor.levels <- model.components$factor.levels
+#	factor.cols <- model.components$factor.cols
+#	mod.aug <- model.components$mod.aug
+#	term <- model.components$term
+#	n.basic <- model.components$n.basic
+#	x <- model.components$x
+#	X.mod <- model.components$X.mod
+#	cnames <- model.components$cnames
+#	X <- model.components$X	
+#	formula.rhs <- formula(mod)[c(1,3)]  
+#	Terms <- delete.response(terms(mod))
+#	mf <- model.frame(Terms, predict.data, xlev = factor.levels)
+#	mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+#	mod.matrix <- fixup.model.matrix(mod.lm, mod.matrix, model.matrix(mod, data=X), X.mod, mod.aug, 
+#			factor.cols, cnames, term, typical, given.values)	
+#	effect <- mod.matrix %*% mod$coefficients
+#	result <- list(term=term, formula=formula(mod), response=response.name(mod),
+#			variables=x, fit=effect, 
+#			x=predict.data[,1:n.basic, drop=FALSE], model.matrix=mod.matrix, 
+#			data=X, discrepancy=0)
+#	if (se){
+#		df.res <- mod$dims[["N"]] - mod$dims[["p"]]
+#		z <- qt(1 - (1 - confidence.level)/2, df=df.res)
+#		V <- vcov(mod)
+#		vcov <- mod.matrix %*% V %*% t(mod.matrix)
+#		rownames(vcov) <- colnames(vcov) <- NULL
+#		var <- diag(vcov)
+#		result$vcov <- vcov
+#		result$se <- sqrt(var)        
+#		result$lower <- effect - z*result$se
+#		result$upper <- effect + z*result$se
+#		result$confidence.level <- confidence.level
+#	}
+#	if (is.null(transformation$link) && is.null(transformation$inverse)){
+#		transformation$link <- I
+#		transformation$inverse <- I
+#	}
+#	result$transformation <- transformation
+#	class(result)<-'eff'
+#	result
+#}
 
 effect.multinom <- function(term, mod, 
 	confidence.level=.95, xlevels=list(), default.levels=10, 
@@ -469,6 +604,7 @@ allEffects.default <- function(mod, ...){
 }
 
 allEffects.gls <- function(mod, ...){
+	if (!require(nlme)) stop("the nlme package is not installed")
 	high.order.terms <- function(mod){
 		mod <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
 		names <- term.names(mod)

@@ -1,4 +1,4 @@
-# modified 9 June 2011 by J. Fox
+# modified 2012-04-05 by J. Fox
 # modified 28 July 2011 by S. Weisberg
 
 import(grid, lattice)

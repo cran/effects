@@ -1,6 +1,6 @@
 # utilities and common functions for effects package
 # John Fox and Jangman Hong
-#  last modified 9 June 2011 by J. Fox
+#  last modified 2012-03-14 by J. Fox
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
@@ -122,16 +122,39 @@ subscripts <- function(index, dims){
 	rev(subs(dims, index))
 }
 
-matrix.to.df <- function(matrix){
+#matrix.to.df <- function(matrix){
+#	on.exit(options(warn = opt[[1]]))
+#	opt <- options(warn = -1)
+#	ncol <- ncol(matrix)
+#	colnames <- colnames(matrix)
+#	result <- list()
+#	for (j in 1:ncol){
+#		numbers <- as.numeric(matrix[,j])
+#		result[[colnames[j]]] <-
+#			if(all(is.na(numbers))) matrix[,j] else numbers
+#	}
+#	as.data.frame(result)
+#}
+
+matrix.to.df <- function(matrix, colclasses){
 	on.exit(options(warn = opt[[1]]))
 	opt <- options(warn = -1)
 	ncol <- ncol(matrix)
 	colnames <- colnames(matrix)
-	result <- list()
+	colclasses[sapply(colclasses, function(x) "integer" %in% x)] <- "numeric"
+	result <- vector(mode="list", length=ncol)
+	names(result) <- colnames
 	for (j in 1:ncol){
-		numbers <- as.numeric(matrix[,j])
-		result[[colnames[j]]] <-
-			if(all(is.na(numbers))) matrix[,j] else numbers
+		result[[j]] <- matrix[, j]
+		class <- colclasses[[colnames[j]]]
+		result[[colnames[j]]] <- if ("numeric" %in% class) {
+					decChar <- getOption('OutDec')
+					if (decChar == '.') as.numeric(result[[colnames[j]]])
+					else as.numeric(gsub(decChar, '.', matrix[,j]))
+				}
+				else if ("ordered" %in% class) ordered(result[[colnames[j]]])
+				else if ("factor" %in% class) factor(result[[colnames[j]]]) 
+				else result[[colnames[j]]]
 	}
 	as.data.frame(result)
 }
@@ -229,7 +252,7 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 	}
 	colnames(predict.data) <- c(sapply(x, function(x) x$name),
 		sapply(x.excluded, function(x) x$name))
-	predict.data <- matrix.to.df(predict.data)
+	predict.data <-  matrix.to.df(predict.data, colclasses=lapply(X, class))
 	list(predict.data=predict.data, factor.levels=factor.levels, 
 		factor.cols=factor.cols, mod.aug=mod.aug, term=term, n.basic=n.basic,
 		x=x, X.mod=X.mod, cnames=cnames, X=X)   
@@ -352,5 +375,3 @@ vcov.eff <- function(object, ...) object$vcov
 	class(y) <- class(x)
 	y
 }
-
-
