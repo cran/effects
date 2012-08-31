@@ -1,6 +1,8 @@
 # utilities and common functions for effects package
-# John Fox and Jangman Hong
-#  last modified 2012-03-14 by J. Fox
+# John Fox, Jangman Hong, and Sanford Weisberg
+#  last modified 2012-06-23 by J. Fox
+
+if (getRversion() >= "2.15.1") globalVariables("wt")
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
@@ -191,9 +193,9 @@ analyze.model <- function(term, mod, xlevels, default.levels){
 	if (inherits(mod, "multinom")) all.vars <- all.vars - 1
 	if (inherits(mod, "polr")) all.vars <- all.vars - 1
 	
-	excluded.vars <- setdiff(all.vars, basic.vars)
+	excluded.vars <- setdiff(all.vars, basic.vars) 
 	if (length(terms) == 1) {
-		all.vars <- basic.vars <- all.vars(formula(mod))[2]
+		all.vars <- basic.vars <- tail(all.vars(formula(mod)), 1)
 		excluded.vars <- numeric()
 	}
 	else {
@@ -375,3 +377,128 @@ vcov.eff <- function(object, ...) object$vcov
 	class(y) <- class(x)
 	y
 }
+
+### the following functions are for use by Effect() methods
+
+Analyze.model <- function(focal.predictors, mod, xlevels, default.levels, formula.rhs){
+	if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude") 
+		class(mod$na.action) <- "omit"
+	all.predictors <- all.vars(formula.rhs)
+	check.vars <- !(focal.predictors %in% all.predictors)
+	excluded.predictors <- setdiff(all.predictors, focal.predictors)
+	number.bad <- sum(check.vars)
+	if (any(check.vars)) {
+		message <- if (number.bad == 1) paste("the following predictor is not in the model:", 
+							all.predictors[check.vars])
+				else paste("the following predictors are not in the model:", 
+							paste(all.predictors[check.vars], collapse=", "))
+		stop(message)
+	}
+	X.mod <- model.matrix(mod)
+	cnames <- colnames(X.mod)
+	factor.cols <- rep(FALSE, length(cnames))
+	names(factor.cols) <- cnames
+	X <- model.frame(mod)
+	for (name in all.predictors){
+		if (is.factor(X[[name]])) factor.cols[grep(paste("^", name, sep=""), cnames)] <- TRUE
+	}
+	factor.cols[grep(":", cnames)] <- FALSE   
+	X <- na.omit(expand.model.frame(mod, all.predictors))
+	x <- list()
+	factor.levels <- list()
+	for (name in focal.predictors){
+		levels <- mod$xlevels[[name]]
+		fac <- !is.null(levels)
+		if (!fac) {
+			levels <- if (is.null(xlevels[[name]]))
+						seq(min(X[, name]), max(X[,name]), length=default.levels)
+					else xlevels[[name]]
+		}
+		else factor.levels[[name]] <- levels
+		x[[name]] <- list(name=name, is.factor=fac, levels=levels)
+	}
+	x.excluded <- list()
+	for (name in excluded.predictors){
+		levels <- mod$xlevels[[name]]
+		fac <- !is.null(levels)
+		level <- if (fac) levels[1] else mean(X[, name])
+		if (fac) factor.levels[[name]] <- levels
+		x.excluded[[name]] <- list(name=name, is.factor=fac,
+				level=level)
+	}
+	dims <- sapply(x, function(x) length(x$levels))
+	len <- prod(dims)
+	n.focal <- length(focal.predictors)
+	n.excluded <- length(excluded.predictors)
+	n.vars <- n.focal + n.excluded
+	predict.data <-matrix('', len, n.vars)
+	excluded <- sapply(x.excluded, function(x) x$level)
+	for (i in 1:len){
+		subs <- subscripts(i, dims)
+		for (j in 1:n.focal){
+			predict.data[i,j] <- x[[j]]$levels[subs[j]]
+		}
+		if (n.excluded > 0)
+			predict.data[i, (n.focal + 1):n.vars] <- excluded
+	}
+	colnames(predict.data) <- c(sapply(x, function(x) x$name),
+			sapply(x.excluded, function(x) x$name))
+	predict.data <-  matrix.to.df(predict.data, colclasses=lapply(X, class))
+	list(predict.data=predict.data, factor.levels=factor.levels, 
+			factor.cols=factor.cols, focal.predictors=focal.predictors, n.focal=n.focal,
+			excluded.predictors=excluded.predictors, n.excluded=n.excluded,
+			x=x, X.mod=X.mod, cnames=cnames, X=X)   
+}
+
+Fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod,
+		factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values){
+	vars <- as.character(attr(terms(mod), "variables"))[-(1:2)]
+	attr(mod.matrix, "assign") <- attr(mod.matrix.all, "assign")
+	if (length(excluded.predictors) > 0){
+		sel <- apply(sapply(excluded.predictors, matchVarName, expressions=vars), 1, any)
+		strangers <- Strangers(mod, focal.predictors, excluded.predictors)
+		stranger.cols <-  
+				apply(outer(strangers, attr(mod.matrix,'assign'), '=='), 2, any)
+	}
+	else stranger.cols <- rep(FALSE, ncol(mod.matrix))
+	if (has.intercept(mod)) stranger.cols[1] <- TRUE
+	if (any(stranger.cols)) {
+		facs <- factor.cols & stranger.cols
+		covs <- (!factor.cols) & stranger.cols
+		if (any(facs)) mod.matrix[,facs] <- 
+					matrix(apply(as.matrix(X.mod[,facs]), 2, mean), 
+							nrow=nrow(mod.matrix), ncol=sum(facs), byrow=TRUE)
+		if (any(covs)) mod.matrix[,covs] <- 
+					matrix(apply(as.matrix(X.mod[,covs]), 2, typical), 
+							nrow=nrow(mod.matrix), ncol=sum(covs), byrow=TRUE)
+		if (!is.null(given.values)){
+			stranger.names <- cnames[stranger.cols]
+			given <- stranger.names %in% names(given.values)
+			if (any(given)) mod.matrix[,stranger.names[given]] <- 
+						matrix(given.values[stranger.names[given]], nrow=nrow(mod.matrix), 
+								ncol=length(stranger.names[given]), byrow=TRUE)
+		} 
+	}
+	for (name in cnames){
+		components <- unlist(strsplit(name, ':'))
+		components <- components[components %in% cnames]
+		if (length(components) > 1) 
+			mod.matrix[,name] <- apply(mod.matrix[,components], 1, prod)
+	}
+	mod.matrix
+}
+
+matchVarName <- function(name, expressions){
+	a <- !grepl(paste("[.]+", name, sep=""), expressions)
+	b <- !grepl(paste(name, "[.]+", sep=""), expressions)
+	c <- grepl(paste("\\b", name, "\\b", sep=""), expressions)
+	a & b & c
+}
+
+Strangers <- function(mod, focal.predictors, excluded.predictors){
+	names <- term.names(mod)
+	if (has.intercept(mod)) names <- names[-1]
+	sel <- apply(sapply(excluded.predictors, matchVarName, expressions=names), 1, any)
+	(1:length(sel))[sel]
+}
+
