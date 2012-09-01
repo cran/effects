@@ -1,5 +1,7 @@
 \name{effect}
 \alias{effect}
+\alias{Effect}
+\alias{Effect.lm}
 \alias{effect.lm}
 \alias{effect.gls}
 \alias{effect.multinom}
@@ -25,6 +27,11 @@
   or fit with \code{lme} from the \code{nlme} package.  In mixed effects models the
   analysis is for the fixed effects only, not for random effects. 
   
+  \code{Effect} also constructs an an \code{"eff"} object, but rather than focusing on a term in the model,
+  it focuses on a subset of the predictors. \code{Effect} is consequently more flexible and robust than 
+  \code{effect}, and will work with some models for which \code{effect} fails, such as models with
+  nested terms (see the examples).
+  
   \code{allEffects} identifies all of the high-order terms in a model and returns
   a list of \code{"eff"} or \code{"effpoly"} objects (i.e., an object of type \code{"efflist"}).
 }
@@ -35,7 +42,7 @@ effect(term, mod, ...)
 \method{effect}{lm}(term, mod, xlevels=list(), default.levels=10, given.values, 
 	se=TRUE, confidence.level=.95, 
     transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-    typical=mean, ...)
+    typical=mean, offset=mean, ...)
     
 \method{effect}{gls}(term, mod, xlevels=list(), default.levels=10, given.values,
 	se=TRUE, confidence.level=.95, transformation=NULL, typical=mean, ...)
@@ -49,6 +56,13 @@ effect(term, mod, ...)
 \method{effect}{mer}(term, mod, ...)
 
 \method{effect}{lme}(term, mod, ...)
+
+Effect(focal.predictors, mod, ...)
+
+\method{Effect}{lm}(focal.predictors, mod, xlevels=list(), default.levels=10, given.values, 
+		se=TRUE, confidence.level=0.95, 
+		transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
+		typical=mean, offset=mean, ...)
     
 allEffects(mod, ...)
 
@@ -70,6 +84,7 @@ allEffects(mod, ...)
     term in the model. The term must be given exactly as it appears in the printed
     model, although either colons (\code{:}) or asterisks (\code{*}) may be used
     for interactions.}
+  \item{focal.predictors}{a character vector of one or more predictors in the model.}
   \item{mod}{an object of class \code{"lm"}, \code{"gls"}, \code{"glm"}, 
     \code{"multinom"}, \code{"polr"} \code{"mer"} or \code{"lme"}. }
   \item{xlevels}{an optional list of values at which to set covariates,
@@ -100,6 +115,14 @@ allEffects(mod, ...)
     made to approximate it from the inverse-link.}
   \item{typical}{a function to be applied to the columns of the model matrix
     over which the effect is "averaged"; the default is \code{mean}.}
+  \item{offset}{a function to be applied to the offset values (if there is an
+    offset) in a linear or generalized linear model, or a mixed-effects
+    model fit by \code{lmer} or \code{glmer}; or a numeric value, to which
+    the offset will be set. The default is the \code{mean} function, and thus
+    the offset will be set to its mean. \emph{Note:} Only offsets defined
+    by the \code{offset} argument to \code{lm}, \code{glm}, \code{lmer}, or \code{glmer} will be handled
+    correctly; use of the \code{offset} function in the model formula is
+    not supported.}
   \item{latent}{if \code{TRUE}, effects in a proportional-odds logit model
   	are computed on the scale of the latent response; if \code{FALSE} 
   	(the default) effects are computed as individual-level probabilities
@@ -114,6 +137,8 @@ allEffects(mod, ...)
   Normally, the functions to be used directly are \code{allEffects}, to return
   a list of high-order effects, and the generic \code{plot} function to plot the effects.
   (see \code{\link{plot.efflist}}, \code{\link{plot.eff}}, and \code{\link{plot.effpoly}}).
+  Alternatively, \code{Effect} can be used to vary a subset of predictors over their ranges,
+  while other predictors are held to typical values.
   Plots are drawn using the \code{\link{xyplot}} (or in some cases, 
   the \code{\link{densityplot}}) function in the 
   \code{lattice} package. Effects may also be printed (implicitly or explicitly via
@@ -128,13 +153,10 @@ allEffects(mod, ...)
   compute the effect corresponding to the absent term \code{A:B:C}, which absorbs the constant, the
   \code{A}, \code{B}, and \code{C} main effects, and the three two-way interactions. In either of these
   cases, a warning is printed.
-  
-  In calculating effects, the strategy for `safe' prediction described
-  in Hastie (1992: Sec. 7.3.3) is employed.
 }
 
 \value{
-  For \code{lm}, \code{glm}, \code{mer} and \code{lme}, \code{effect} returns 
+  For \code{lm}, \code{glm}, \code{mer} and \code{lme}, \code{effect} and \code{Effect} return 
   an \code{"eff"} object, and for \code{multinom}
   and \code{polr}, an \code{"effpoly"} object, with the following components:
   \item{term}{the term to which the effect pertains.}
@@ -155,6 +177,7 @@ allEffects(mod, ...)
   \item{model.matrix}{the model matrix from which the effect was calculated.}
   \item{data}{a data frame with the data on which the fitted model was based.}
   \item{discrepancy}{the percentage discrepancy for the `safe' predictions of the original fit; should be very close to 0.}
+  \item{offset}{value to which the offset is fixed; \code{0} if there is no offset.}
   \item{model}{(for \code{"effpoly"} objects) \code{"multinom"} or \code{"polr"}, as appropriate.}
   \item{vcov}{(for \code{"eff"} objects) a covariance matrix for the effect, on the scale of the linear predictor.}
   \item{se}{(for \code{"eff"} objects) a vector of standard errors for the effect, on the scale of the linear predictor.}
@@ -181,10 +204,11 @@ allEffects(mod, ...)
   Factors cannot have colons in level names (e.g., \code{"level:A"}); the \code{effect} function will confuse the
   colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
   
-  Binomial generalized linear models cannot have a matrix of successes and failures on the left-hand side of the model formula;
-  instead specify the \emph{proportion} of successes (i.e., successes/(successes + failures)) as the response, and give the number of
-  binomial trials (i.e., successes + failures) in the weights argument to \code{\link[stats]{glm}}.
-  
+  Offsets in linear and generalized linear models are supported, as are offsets in mixed models fit by 
+  \code{lmer} or \code{glmer}, but must be supplied through the \code{offset}
+  argument to \code{lm}, \code{glm}, \code{lmer} or \code{glmer}; 
+  offsets supplied via calls to the \code{offset} function on the right-hand side
+  of the model formula are not supported.
   }
 
 \references{
@@ -235,6 +259,12 @@ eff.cowles <- allEffects(mod.cowles, xlevels=list(neuroticism=0:24,
     extraversion=seq(0, 24, 6)), given.values=c(sexmale=0.5))
 eff.cowles
 
+	# the following are equivalent:
+
+eff.ne <- effect("neuroticism*extraversion", mod.cowles)
+Eff.ne <- Effect(c("neuroticism", "extraversion"), mod.cowles)
+all.equal(eff.ne$fit, Eff.ne$fit)
+
 plot(eff.cowles, 'sex', ylab="Prob(Volunteer)")
 
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
@@ -245,36 +275,43 @@ plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
     
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
+    
+# a nested model:
 
+mod <- lm(log(prestige) ~ income:type + education, data=Prestige)
+
+# does not work: effect("income:type", mod, transformation=list(link=log, inverse=exp)) 
+
+plot(Effect(c("income", "type"), mod, transformation=list(link=log, inverse=exp), 
+	ylab="prestige")) # works
+    
+\donttest{ 
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
 plot(effect("Europe*political.knowledge", mod.beps, 
-	xlevels=list(Europe=1:11, political.knowledge=0:3)))
-	
+	xlevels=list(Europe=1:11, political.knowledge=0:3)))  
 plot(effect("Europe*political.knowledge", mod.beps, 
 		xlevels=list(Europe=1:11, political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
-	
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
-
 plot(effect("country*poly(age, 3)", mod.wvs), style="stacked")
-	
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
+}
 
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
-plot(eff.pres, ask=FALSE)
+plot(eff.pres)
 
 \dontrun{
 	library(nlme) # for gls()
 	mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel, 
 	    correlation=corARMA(p=2, q=0), method="ML")
-	plot(allEffects(mod.hart), ask=FALSE)
+	plot(allEffects(mod.hart))
 
 	library(lme4)
 	data(cake, package="lme4")

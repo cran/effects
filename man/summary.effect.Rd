@@ -46,7 +46,7 @@ and \code{efflist} objects.
         !is.null(x$confidence.level)), ylim, rotx = 0, alternating = TRUE, 
     roty = 0, grid = FALSE, layout, key.args = NULL, row = 1, 
     col = 1, nrow = 1, ncol = 1, more = FALSE, ...)
-\method{plot}{efflist}(x, selection, rows, cols, ask=TRUE, graphics=TRUE, ...)
+\method{plot}{efflist}(x, selection, rows, cols, ask=FALSE, graphics=TRUE, ...)
 \method{[}{efflist}(x, ...)
 }
 
@@ -149,8 +149,8 @@ and \code{efflist} objects.
     are plotted.}
   \item{rows, cols}{Number of rows and columns in the ``meta-array'' of plots produced for an \code{efflist} object;
   	if either argument is missing, then the meta-layout will be computed by the \code{plot} method.}
-  \item{ask}{if \code{selection} is not supplied and \code{ask} is \code{TRUE} (the default),
-    a menu of high-order terms is presented; if \code{ask} is \code{FALSE}, effects for all
+  \item{ask}{if \code{selection} is not supplied and \code{ask} is \code{TRUE},
+    a menu of high-order terms is presented; if \code{ask} is \code{FALSE} (the default), effects for all
     high-order terms are plotted in an array.}
   \item{graphics}{if \code{TRUE} (the default), then the menu of terms to plot is presented
     in a dialog box rather than as a text menu.}
@@ -236,8 +236,8 @@ plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
-plot(eff.pres, ask=FALSE)
-plot(eff.pres[1:2], ask=FALSE)
+plot(eff.pres)
+plot(eff.pres[1:2])
 
 }
 

@@ -1,6 +1,6 @@
 # plot, summary, and print methods for effects package
 # John Fox and Jangman Hong
-#  last modified 2012-02-15 by J. Fox
+#  last modified 2012-06-22 by J. Fox
 #  29 June 2011 added grid, rotx and roty arguments to the two plot methods
 #   by S. Weisberg
 
@@ -8,6 +8,7 @@
 summary.eff <- function(object, type=c("response", "link"), ...){
 	result <- list()
 	result$header <- paste("\n", gsub(":", "*", object$term), 'effect\n')
+	result$offset <- object$offset
 	type <- match.arg(type)
 	if (type == "response") {
 		object$fit <- object$transformation$inverse(object$fit)
@@ -17,29 +18,30 @@ summary.eff <- function(object, type=c("response", "link"), ...){
 		}
 	}
 	result$effect <- array(object$fit,     
-		dim=sapply(object$variables, function(x) length(x$levels)),
-		dimnames=lapply(object$variables, function(x) x$levels))
+			dim=sapply(object$variables, function(x) length(x$levels)),
+			dimnames=lapply(object$variables, function(x) x$levels))
 	if (!is.null(object$se)){
 		result$lower.header <- paste('\n Lower', round(100*object$confidence.level, 2), 
-			'Percent Confidence Limits\n')
+				'Percent Confidence Limits\n')
 		result$lower <- array(object$lower,   
-			dim=sapply(object$variables, function(x) length(x$levels)),
-			dimnames=lapply(object$variables, function(x) x$levels))
+				dim=sapply(object$variables, function(x) length(x$levels)),
+				dimnames=lapply(object$variables, function(x) x$levels))
 		result$upper.header <- paste('\n Upper', round(100*object$confidence.level, 2),
-			'Percent Confidence Limits\n')
+				'Percent Confidence Limits\n')
 		result$upper <- array(object$upper,   
-			dim=sapply(object$variables, function(x) length(x$levels)),
-			dimnames=lapply(object$variables, function(x) x$levels))
+				dim=sapply(object$variables, function(x) length(x$levels)),
+				dimnames=lapply(object$variables, function(x) x$levels))
 	}
 	if (object$discrepancy > 1e-3) result$warning <- paste("\nWarning: There is an average discrepancy of", 
-			round(object$discrepancy, 3),
-			"percent \n     in the 'safe' predictions for effect", object$term, '\n')
+				round(object$discrepancy, 3),
+				"percent \n     in the 'safe' predictions for effect", object$term, '\n')
 	class(result) <- "summary.eff"
 	result
 }
 
 print.summary.eff <- function(x, ...){
 	cat(x$header)
+	if (x$offset != 0) cat("\noffset = ", x$offset, "\n\n")
 	print(x$effect, ...)
 	if (!is.null(x$lower)){
 		cat(x$lower.header)
@@ -57,15 +59,16 @@ print.summary.eff <- function(x, ...){
 
 print.eff <- function(x, type=c("response", "link"), ...){
 	cat(paste("\n", gsub(":", "*", x$term), 'effect\n'))
+	if (x$offset != 0) cat("\noffset = ", x$offset, "\n\n")
 	type <- match.arg(type)
 	if (type == "response") x$fit <- x$transformation$inverse(x$fit)
 	table <- array(x$fit,     
-		dim=sapply(x$variables, function(x) length(x$levels)),
-		dimnames=lapply(x$variables, function(x) x$levels))
+			dim=sapply(x$variables, function(x) length(x$levels)),
+			dimnames=lapply(x$variables, function(x) x$levels))
 	print(table, ...)
 	if (x$discrepancy > 1e-3) cat(paste("\nWarning: There is an average discrepancy of", 
-				round(x$discrepancy, 3),
-				"percent \n     in the 'safe' predictions for effect", x$term, '\n'))
+						round(x$discrepancy, 3),
+						"percent \n     in the 'safe' predictions for effect", x$term, '\n'))
 	invisible(x)
 }
 
@@ -412,7 +415,7 @@ print.plot.eff <- function(x, ...){
 	invisible(x)
 }
 
-plot.efflist <- function(x, selection, rows, cols, ask=TRUE, graphics=TRUE, ...){
+plot.efflist <- function(x, selection, rows, cols, ask=FALSE, graphics=TRUE, ...){
 	if (!missing(selection)){
 		if (is.character(selection)) selection <- gsub(" ", "", selection)
 		return(plot(x[[selection]], ...))
