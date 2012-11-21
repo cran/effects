@@ -33,19 +33,20 @@ and \code{efflist} objects.
 \method{plot}{eff}(x, x.var = which.max(levels), z.var = which.min(levels), 
     multiline = is.null(x$se), rug = TRUE, xlab, ylab, main = paste(effect, 
         "effect plot"), colors = palette(), symbols = 1:10, lines = 1:10, 
-    cex = 1.5, ylim, factor.names = TRUE, type = c("response", 
+    cex = 1.5, ylim, xlim = NULL, factor.names = TRUE, type = c("response", 
         "link"), ticks = list(at = NULL, n = 5), alternating = TRUE, 
     rotx = 0, roty = 0, grid = FALSE, layout, rescale.axis = TRUE, 
-    key.args = NULL, row = 1, col = 1, nrow = 1, ncol = 1, more = FALSE, 
-    ...)
+    transform.x = NULL, ticks.x = NULL, key.args = NULL, row = 1, 
+    col = 1, nrow = 1, ncol = 1, more = FALSE, ...) 
 \method{plot}{effpoly}(x, type = c("probability", "logit"), x.var = which.max(levels), 
     rug = TRUE, xlab, ylab = paste(x$response, " (", type, ")", 
         sep = ""), main = paste(effect, "effect plot"), colors, 
     symbols = 1:10, lines = 1:10, cex = 1.5, factor.names = TRUE, 
     style = c("lines", "stacked"), confint = (style == "lines" && 
-        !is.null(x$confidence.level)), ylim, rotx = 0, alternating = TRUE, 
-    roty = 0, grid = FALSE, layout, key.args = NULL, row = 1, 
-    col = 1, nrow = 1, ncol = 1, more = FALSE, ...)
+        !is.null(x$confidence.level)), transform.x = NULL, ticks.x = NULL, 
+    xlim = NULL, ylim, rotx = 0, alternating = TRUE, roty = 0, 
+    grid = FALSE, layout, key.args = NULL, row = 1, col = 1, 
+    nrow = 1, ncol = 1, more = FALSE, ...)
 \method{plot}{efflist}(x, selection, rows, cols, ask=FALSE, graphics=TRUE, ...)
 \method{[}{efflist}(x, ...)
 }
@@ -111,6 +112,11 @@ and \code{efflist} objects.
   \item{cex}{character expansion for plotted symbols; default is \code{1.5}.}
   \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
     if \code{NULL}, the default, then the vertical axes are scaled from the data.}
+  \item{xlim}{a named list of 2-element vectors, with the names corresponding to numeric
+    predictors; if a numeric predictor is in the list, then when it appears on the horizontal
+    axis, the axis limits will be taken from the corresponding vector; if a predictor is
+    not in the list, or if the argument is \code{NULL} (the default), then the horizontal
+    axis limits are computed from the data.}
   \item{factor.names}{a logical value, default \code{TRUE}, that controls the inclusion of
     factor names in conditioning-variable labels.}
   \item{style}{(for multinomial or proportional-odds logit models) \code{"lines"} (the default
@@ -122,6 +128,17 @@ and \code{efflist} objects.
     \code{5}) gives the
     approximate number of tick marks desired; if \code{at} is non-\code{NULL}, then the
     value of \code{n} is ignored.}
+  \item{ticks.x}{a named list of two-item lists controlling the placement of tick marks
+    on the horizontal axis. Each list element is named for a numeric predictor in the model,
+    and each sublist has elements \code{code} or \code{n} are for the \code{ticks} argument.
+    If a predictor doesn't appear in the list, or if \code{ticks.x} is \code{NULL} (the default),
+    then the tick marks are computed by the function.}
+  \item{transform.x}{transformations to be applied to the horizontal axis, in the form of a named list,
+    each of whose elements is itself a list of two functions, with sublist element names \code{trans} and \code{inverse}.
+    The names of the list elements are numeric predictors in the model whose axes are to be transformed; the
+    \code{trans} function is applied to the values of the predictor, and \code{inverse} is used for computing
+    proper axis tick labels. If a numeric predictor is missing from \code{transform.x} then its axis is not
+    transformed; if the argument is \code{NULL} (the default), then no predictor axes are transformed.}
   \item{alternating}{if \code{TRUE} (the default), the tick labels alternate by panels in
     multi-panel displays from left to right and top to bottom; if \code{FALSE}, tick labels
     appear at the bottom and on the left.}
@@ -238,6 +255,9 @@ mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
 eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres)
 plot(eff.pres[1:2])
+plot(eff.pres[1], 
+    transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
+    ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)))
 
 }
 

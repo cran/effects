@@ -1,3 +1,19 @@
+Version 2.2-2
+
+o Use asymptotic normal to get confidence limits for mer and lme objects
+
+o Correct effects.lme to work with weights
+
+o Added Effect.mer(), Effect.lme(), Effect.gls(), Effect.multinom(), and Effect.polr() methods.
+
+o Safe predictions simplified in effect.multinom() and effect.polr().
+
+o plot() methods for eff and effpoly objects permit predictor transformations.
+
+o Added as.data.frame.eff(), as.data.frame.effpoly(), and as.data.frame.efflatent (suggestion of Steve Taylor).
+
+o Small bug fixes.
+
 Version 2.2-1
 
 o Some examples wrapped in \donttest{} to decrease package check time.

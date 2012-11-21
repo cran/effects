@@ -2,6 +2,11 @@
 \alias{effect}
 \alias{Effect}
 \alias{Effect.lm}
+\alias{Effect.mer}
+\alias{Effect.lme}
+\alias{Effect.gls}
+\alias{Effect.multinom}
+\alias{Effect.polr}
 \alias{effect.lm}
 \alias{effect.gls}
 \alias{effect.multinom}
@@ -60,9 +65,25 @@ effect(term, mod, ...)
 Effect(focal.predictors, mod, ...)
 
 \method{Effect}{lm}(focal.predictors, mod, xlevels=list(), default.levels=10, given.values, 
-		se=TRUE, confidence.level=0.95, 
-		transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-		typical=mean, offset=mean, ...)
+    se=TRUE, confidence.level=0.95, 
+    transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
+    typical=mean, offset=mean, ...)
+        
+\method{Effect}{gls}(focal.predictors, mod, xlevels = list(), default.levels = 10, 
+    given.values, se = TRUE, confidence.level = 0.95, transformation = NULL, 
+    typical = mean, ...)
+    
+\method{Effect}{multinom}(focal.predictors, mod, 
+    confidence.level=.95, xlevels=list(), default.levels=10, 
+    given.values, se=TRUE, typical=mean, ...)
+                            
+\method{Effect}{polr}(focal.predictors, mod, 
+    confidence.level=.95, xlevels=list(), default.levels=10, 
+    given.values, se=TRUE, typical=mean, latent=FALSE, ...)
+    
+\method{Effect}{mer}(focal.predictors, mod, ...)
+
+\method{Effect}{lme}(focal.predictors, mod, ...)
     
 allEffects(mod, ...)
 
@@ -70,7 +91,8 @@ allEffects(mod, ...)
 
 \method{allEffects}{lme}(mod, ...)
 
-\method{as.data.frame}{eff}(x, row.names=NULL, optional=TRUE, ...)
+\method{as.data.frame}{eff}(x, row.names=NULL, optional=TRUE, 
+    transform=x$transformation$inverse, ...)
 
 \method{as.data.frame}{effpoly}(x, row.names=NULL, optional=TRUE, ...)
 
@@ -101,7 +123,8 @@ allEffects(mod, ...)
   	for a factor, the values of all contrasts should be given and these
   	should be consistent with each other.}
   \item{se}{if \code{TRUE}, the default, calculate standard errors and
-    confidence limits for the effects.}
+    confidence limits for the effects.  For mer and lme objects, the
+    normal distribution is used to get confidence limits.}
   \item{confidence.level}{level at which to compute confidence limits
     based on the standard-normal distribution; the default is \code{0.95}.}
   \item{transformation}{a two-element list with elements \code{link} and
@@ -127,7 +150,9 @@ allEffects(mod, ...)
   	are computed on the scale of the latent response; if \code{FALSE} 
   	(the default) effects are computed as individual-level probabilities
   	and logits.}
-  \item{x}{an object of class \code{"eff"} or \code{"effpoly"}.}
+  \item{x}{an object of class \code{"eff"}, \code{"effpoly"}, or \code{"efflatent"}.}
+  \item{transform}{a transformation to be applied to the effects and confidence limits,
+    by default taken from the inverse link function saved in the \code{"eff"} object.}
   \item{row.names, optional}{not used.}
   \item{object}{an object of class \code{"eff"} for which the covariance matrix of the effects is desired.}
   \item{...}{arguments to be passed down.}
@@ -153,6 +178,11 @@ allEffects(mod, ...)
   compute the effect corresponding to the absent term \code{A:B:C}, which absorbs the constant, the
   \code{A}, \code{B}, and \code{C} main effects, and the three two-way interactions. In either of these
   cases, a warning is printed.
+  
+  The \code{as.data.frame} methods convert effect objects to data frames to facilitate the construction
+  of custom displays. In the case of \code{"eff"} objects, the \code{se} element in the data frame is always
+  on the scale of the linear predictor, and the transformation used for the fit and confidence limits is saved in
+  a \code{"transformation"} attribute.
 }
 
 \value{
@@ -176,7 +206,8 @@ allEffects(mod, ...)
     rows of which give all combinations of values of these predictors.}
   \item{model.matrix}{the model matrix from which the effect was calculated.}
   \item{data}{a data frame with the data on which the fitted model was based.}
-  \item{discrepancy}{the percentage discrepancy for the `safe' predictions of the original fit; should be very close to 0.}
+  \item{discrepancy}{the percentage discrepancy for the `safe' predictions of the original fit; should be very close to 0.
+    Note: except for \code{gls} models, this is now necessarily 0.}
   \item{offset}{value to which the offset is fixed; \code{0} if there is no offset.}
   \item{model}{(for \code{"effpoly"} objects) \code{"multinom"} or \code{"polr"}, as appropriate.}
   \item{vcov}{(for \code{"eff"} objects) a covariance matrix for the effect, on the scale of the linear predictor.}
@@ -276,6 +307,8 @@ plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
     
+as.data.frame(eff.cowles[[2]])
+    
 # a nested model:
 
 mod <- lm(log(prestige) ~ income:type + education, data=Prestige)
@@ -295,10 +328,17 @@ plot(effect("Europe*political.knowledge", mod.beps,
 		xlevels=list(Europe=1:11, political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
+    
+plot(Effect(c("Europe","political.knowledge"), mod.beps,  # equivalent
+    	xlevels=list(Europe=1:11, political.knowledge=0:3),
+		given.values=c(gendermale=0.5)),
+	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
+    
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
 plot(effect("country*poly(age, 3)", mod.wvs), style="stacked")
+plot(Effect(c("country", "age"), mod.wvs), style="stacked") # equivalent
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 }
 
@@ -306,6 +346,9 @@ mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres)
+plot(eff.pres[1], 
+    transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
+    ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)))
 
 \dontrun{
 	library(nlme) # for gls()
@@ -318,6 +361,7 @@ plot(eff.pres)
 	fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
                    REML = FALSE)
 	plot(effect("recipe:temperature", fm1), grid=TRUE)
+    plot(Effect(c("recipe", "temperature"), fm1)) # equivalent
 
 	detach(package:lme4) # if previously attached
 	library(nlme)
@@ -326,6 +370,7 @@ plot(eff.pres)
 	fm2 <- lme(angle ~ recipe * temperature, data=cake,
                random = ~ 1 | rep, method="ML")
 	plot(effect("recipe:temperature", fm2), grid=TRUE)
+    plot(Effect(c("recipe", "temperature"), fm2)) # equivalent
 }
 }
 

@@ -1,6 +1,6 @@
 # Effect generic and methods
 # John Fox and Sanford Weisberg
-# last modified 2012-06-22 by J. Fox
+# last modified 2012-09-06 by J. Fox
 
 Effect <- function(focal.predictors, mod, ...){
 	UseMethod("Effect", mod)
@@ -75,4 +75,259 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
 	result$transformation <- transformation
 	class(result) <- "eff"
 	result
+}
+
+Effect.mer <- function(focal.predictors, mod, ...) {
+    if (!require(lme4)) stop("the lme4 package is not installed")
+    result <- Effect(focal.predictors, mer.to.glm(mod), ...)
+    result$formula <- as.formula(formula(mod))
+    result
+}
+
+Effect.lme <- function(focal.predictors, mod, ...) {
+    if (!require(nlme)) stop("the nlme package is not installed")
+    result <- Effect(focal.predictors, lme.to.glm(mod), ...)
+    result$formula <- as.formula(formula(mod))
+    result
+}
+
+Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels = 10, given.values, 
+                        se = TRUE, confidence.level = 0.95, 
+                        transformation = NULL, 
+                        typical = mean, ...){
+    if (missing(given.values)) 
+        given.values <- NULL
+    else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+        stop("given.values (", names(given.values[!which]), ") not in the model")
+    formula.rhs <- formula(mod)[[3]]
+    mod.lm <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
+    model.components <- Analyze.model(focal.predictors, mod.lm, xlevels, default.levels, formula.rhs)
+    excluded.predictors <- model.components$excluded.predictors
+    predict.data <- model.components$predict.data
+    factor.levels <- model.components$factor.levels
+    factor.cols <- model.components$factor.cols
+    n.focal <- model.components$n.focal
+    x <- model.components$x
+    X.mod <- model.components$X.mod
+    cnames <- model.components$cnames
+    X <- model.components$X
+    formula.rhs <- formula(mod)[c(1, 3)]
+    nrow.X <- nrow(X)
+    mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
+                      xlev=factor.levels)
+    mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
+    mod.matrix <- mod.matrix.all[-(1:nrow.X),]
+    mod.matrix <- Fixup.model.matrix(mod.lm, mod.matrix, model.matrix(mod.lm), 
+                                     X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+    fit.1 <- na.omit(predict(mod))
+    mod.2 <- lm.fit(mod.matrix.all[1:nrow.X,], fit.1)
+    class(mod.2) <- "lm"
+    assign(".y", na.omit(model.response.gls(mod)), envir=.GlobalEnv)
+    assign(".X", na.omit(mod.matrix.all[1:nrow.X,]), envir=.GlobalEnv)
+    mod.3 <- update(mod, .y ~ .X - 1)
+    remove(".X", ".y", envir=.GlobalEnv)
+    discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
+    if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
+                                          "percent \n     in the 'safe' predictions used to generate effect", paste(focal.predictors, collapse="*")))
+    effect <- mod.matrix %*% mod$coefficients
+    result <- list(term = paste(focal.predictors, collapse="*"), 
+                   formula = formula(mod), response = response.name(mod), 
+                   variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
+                   discrepancy = discrepancy, offset=0)
+    if (se){
+        df.res <- mod$dims[["N"]] - mod$dims[["p"]]
+        z <- qt(1 - (1 - confidence.level)/2, df=df.res)
+        mod.2$terms <- terms(mod)
+        V <- vcov(mod.3)
+        vcov <- mod.matrix %*% V %*% t(mod.matrix)
+        rownames(vcov) <- colnames(vcov) <- NULL
+        var <- diag(vcov)
+        result$vcov <- vcov
+        result$se <- sqrt(var)        
+        result$lower <- effect - z*result$se
+        result$upper <- effect + z*result$se
+        result$confidence.level <- confidence.level
+    }
+    if (is.null(transformation$link) && is.null(transformation$inverse)){
+        transformation$link <- I
+        transformation$inverse <- I
+    }
+    result$transformation <- transformation
+    class(result) <- "eff"
+    result
+}
+
+Effect.multinom <- function(focal.predictors, mod, 
+                            confidence.level=.95, xlevels=list(), default.levels=10, 
+                            given.values, se=TRUE, typical=mean, ...){    
+    if (length(mod$lev) < 3) stop("effects for multinomial logit model only available for response levels > 2")
+    if (missing(given.values)) given.values <- NULL
+    else if (!all(which <- colnames(given.values) %in% names(coef(mod)))) 
+        stop("given.values (", colnames(given.values[!which]),") not in the model")
+    formula.rhs <- formula(mod)[c(1, 3)]
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    excluded.predictors <- model.components$excluded.predictors
+    predict.data <- model.components$predict.data
+    factor.levels <- model.components$factor.levels
+    factor.cols <- model.components$factor.cols
+    n.focal <- model.components$n.focal
+    x <- model.components$x
+    X.mod <- model.components$X.mod
+    cnames <- model.components$cnames
+    X <- model.components$X
+    formula.rhs <- formula(mod)[c(1, 3)]
+    Terms <- delete.response(terms(mod))
+    mf <- model.frame(Terms, predict.data, xlev = factor.levels)
+    mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+    X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+                             X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+    resp.names <- make.names(mod$lev, unique=TRUE)
+    resp.names <- c(resp.names[-1], resp.names[1]) # make the last level the reference level
+    B <- t(coef(mod))
+    V <- vcov(mod)
+    m <- ncol(B) + 1
+    p <- nrow(B)
+    r <- p*(m - 1)	
+    n <- nrow(X0)
+    P <- Logit <- matrix(0, n, m)
+    colnames(P) <-  paste("prob.", resp.names, sep="")
+    colnames(Logit) <-  paste("logit.", resp.names, sep="")
+    if (se){
+        z <- qnorm(1 - (1 - confidence.level)/2)
+        Lower.P <- Upper.P <- Lower.logit <- Upper.logit <- SE.P <- SE.logit <- matrix(0, n, m)
+        colnames(Lower.logit) <-  paste("L.logit.", resp.names, sep="")
+        colnames(Upper.logit) <-  paste("U.logit.", resp.names, sep="")
+        colnames(Lower.P) <-  paste("L.prob.", resp.names, sep="")
+        colnames(Upper.P) <-  paste("U.prob.", resp.names, sep="")
+        colnames(SE.P) <-  paste("se.prob.", resp.names, sep="")
+        colnames(SE.logit) <-  paste("se.logit.", resp.names, sep="")
+    }
+    for (i in 1:n){
+        res <- eff.mul(X0[i,], B, se, m, p, r, V) # compute effects
+        P[i,] <- prob <- res$p # fitted probabilities
+        Logit[i,] <- logit <- res$logits # fitted logits
+        if (se){
+            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs		
+            SE.logit[i,] <- se.logit <- res$std.error.logits # std. errors of logits
+            Lower.P[i,] <- logit2p(logit - z*se.logit)
+            Upper.P[i,] <- logit2p(logit + z*se.logit)
+            Lower.logit[i,] <- logit - z*se.logit
+            Upper.logit[i,] <- logit + z*se.logit
+        }
+    }
+    resp.levs <- c(m, 1:(m-1)) # restore the order of the levels
+    P <- P[, resp.levs]
+    Logit <- Logit[, resp.levs]
+    if (se){
+        Lower.P <- Lower.P[, resp.levs]
+        Upper.P <- Upper.P[, resp.levs]
+        Lower.logit <- Lower.logit[, resp.levs]
+        Upper.logit <- Upper.logit[, resp.levs]
+        SE.P <- SE.P[, resp.levs]
+        SE.logit <- SE.logit[, resp.levs]
+    }
+    result <- list(term=paste(focal.predictors, collapse="*"), formula=formula(mod), response=response.name(mod),
+                   y.levels=mod$lev, variables=x, x=predict.data[, focal.predictors],
+                   model.matrix=X0, data=X, discrepancy=0, model="multinom",
+                   prob=P, logit=Logit)
+    if (se) result <- c(result, list(se.prob=SE.P, se.logit=SE.logit,
+                                     lower.logit=Lower.logit, upper.logit=Upper.logit, 
+                                     lower.prob=Lower.P, upper.prob=Upper.P,
+                                     confidence.level=confidence.level))
+    class(result) <-'effpoly'
+    result
+}
+
+Effect.polr <- function(focal.predictors, mod, 
+                        confidence.level=.95, xlevels=list(), default.levels=10, 
+                        given.values, se=TRUE, typical=mean, latent=FALSE, ...){
+    if (mod$method != "logistic") stop('method argument to polr must be "logistic"')    
+    if (missing(given.values)) given.values <- NULL
+    else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+        stop("given.values (", names(given.values[!which]),") not in the model")
+    formula.rhs <- formula(mod)[c(1, 3)]
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    excluded.predictors <- model.components$excluded.predictors
+    predict.data <- model.components$predict.data
+    factor.levels <- model.components$factor.levels
+    factor.cols <- model.components$factor.cols
+    n.focal <- model.components$n.focal
+    x <- model.components$x
+    X.mod <- model.components$X.mod
+    cnames <- model.components$cnames
+    X <- model.components$X
+    Terms <- delete.response(terms(mod))
+    mf <- model.frame(Terms, predict.data, xlev = factor.levels)
+    mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+    X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+                             X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+    resp.names <- make.names(mod$lev, unique=TRUE)
+    X0 <- X0[,-1, drop=FALSE]
+    b <- coef(mod)
+    p <- length(b)  # corresponds to p - 1 in the text
+    alpha <- - mod$zeta  # intercepts are negatives of thresholds
+    z <- qnorm(1 - (1 - confidence.level)/2)
+    result <- list(term=paste(focal.predictors, collapse="*"), formula=formula(mod), response=response.name(mod),
+                   y.levels=mod$lev, variables=x, 
+                   x=predict.data[, focal.predictors, drop=FALSE],
+                   model.matrix=X0, data=X, discrepancy=0, model="polr")
+    if (latent){
+        res <- eff.latent(X0, b, vcov(mod)[1:p, 1:p], se)
+        result$fit <- res$fit
+        if (se){
+            result$se <- res$se
+            result$lower <- result$fit - z*result$se
+            result$upper <- result$fit + z*result$se
+            result$confidence.level <- confidence.level
+        }
+        transformation <- list()
+        transformation$link <- I
+        transformation$inverse <- I
+        result$transformation <- transformation
+        result$thresholds <- -alpha
+        class(result) <- c("efflatent", "eff")
+        return(result)
+    }
+    m <- length(alpha) + 1
+    r <- m + p - 1
+    indices <- c((p+1):r, 1:p)
+    V <- vcov(mod)[indices, indices]
+    for (j in 1:(m-1)){  # fix up the signs of the covariances
+        V[j,] <- -V[j,]  #  for the intercepts
+        V[,j] <- -V[,j]}	
+    n <- nrow(X0)
+    P <- Logit <- matrix(0, n, m)
+    colnames(P) <-  paste("prob.", resp.names, sep="")
+    colnames(Logit) <-  paste("logit.", resp.names, sep="")
+    if (se){
+        Lower.logit <- Upper.logit <- Lower.P <- Upper.P <- SE.P <- SE.Logit <- matrix(0, n, m)
+        colnames(Lower.logit) <-  paste("L.logit.", resp.names, sep="")
+        colnames(Upper.logit) <-  paste("U.logit.", resp.names, sep="")
+        colnames(Lower.P) <-  paste("L.prob.", resp.names, sep="")
+        colnames(Upper.P) <-  paste("U.prob.", resp.names, sep="")
+        colnames(SE.P) <-  paste("se.prob.", resp.names, sep="")
+        colnames(SE.Logit) <-  paste("se.logit.", resp.names, sep="")
+    }
+    for (i in 1:n){
+        res <- eff.polr(X0[i,], b, alpha, V, m, r, se) # compute effects
+        P[i,] <- prob <- res$p # fitted probabilities
+        Logit[i,] <- logit <- res$logits # fitted logits
+        if (se){
+            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs		
+            SE.Logit[i,] <- se.logit <- res$std.error.logits # std. errors of logits
+            Lower.P[i,] <- logit2p(logit - z*se.logit)
+            Upper.P[i,] <- logit2p(logit + z*se.logit)
+            Lower.logit[i,] <- logit - z*se.logit
+            Upper.logit[i,] <- logit + z*se.logit
+        }
+    }
+    result$prob <- P
+    result$logit <- Logit
+    if (se) result <- c(result,
+                        list(se.prob=SE.P, se.logit=SE.Logit,
+                             lower.logit=Lower.logit, upper.logit=Upper.logit, 
+                             lower.prob=Lower.P, upper.prob=Upper.P,
+                             confidence.level=confidence.level))
+    class(result) <-'effpoly'
+    result
 }
