@@ -1,11 +1,11 @@
-217aa30657981073adae73a138948377 *DESCRIPTION
-4a4af07e42a9bee78d9c73c6e83363cc *NAMESPACE
-79ee1d4a5fb94e708ed43a9574f6d9d2 *NEWS
-6d07012714c54eedef0b36bdcc8b412e *R/Effect.R
-1e7e6c304cb8a07bba60dd90a6ac3f38 *R/effects.R
+8d9e86ffc854065f6baf5773e6d9cce9 *DESCRIPTION
+c5dafda657fd2eacf8de7e455a399062 *NAMESPACE
+6b56d188b3365e02b9c4d367989b79f2 *NEWS
+dcb45113e2d60ee65afaa36d97f0a5f1 *R/Effect.R
+c0e3fe2c4f7ae3278f71a2d1da650d93 *R/effects.R
 f40c347c6f473b310bba6a96de31db12 *R/effectsmer.R
-1a41fb654905cc45d367696929bbdf4b *R/plot-summary-print-methods.R
-3087dfa14f9b99b9fbfdb06c737cf1d6 *R/utilities.R
+96bae6d3a528a7aa76f569528c57ec39 *R/plot-summary-print-methods.R
+1afca09086376c02c8aa8f2a5d5e28a5 *R/utilities.R
 7a5cb433347443c5faa00155458272be *data/Arrests.rda
 1be79050796609a1cb71b2e8051c3624 *data/BEPS.rda
 a50380d359a65c752f30e1fa441d9900 *data/Cowles.rda
@@ -26,5 +26,5 @@ df3b179a879e7905bf9696ee05751707 *man/BEPS.Rd
 18f83ed88afe8b1ecae2dbc3dc986b66 *man/Wells.Rd
 54530a1709951eec94464f688647d735 *man/effect.Rd
 03336c030e40258fc3316c4cb0c707d1 *man/effects-deprecated.Rd
-57916854610b0cf37f32eeb8af9c392c *man/effects-package.Rd
+a39b1ed53c972b0101a3ff7e850fefe3 *man/effects-package.Rd
 2ea5be34fc54d621a02e782cc81656ab *man/summary.effect.Rd

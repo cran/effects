@@ -2,7 +2,7 @@
 # John Fox, Jangman Hong, and Sanford Weisberg
 #  last modified 2012-11-19 by J. Fox
 
-if (getRversion() >= "2.15.1") globalVariables("wt")
+# if (getRversion() >= "2.15.1") globalVariables("wt")
 
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
