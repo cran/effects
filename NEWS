@@ -1,3 +1,9 @@
+Version 2.2-3
+
+ o Fixed bugs in axis scaling and xlim specification (reported by Achim Zeileis).
+
+ o Small changes for compatability with R 2.16.0.
+
 Version 2.2-2
 
 o Use asymptotic normal to get confidence limits for mer and lme objects

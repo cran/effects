@@ -1,4 +1,4 @@
-# last modified 2012-09-06 by J. Fox
+# last modified 2012-11-30 by J. Fox
 
 import(grid, lattice)
 export(effect, allEffects, all.effects, Effect)

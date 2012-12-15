@@ -1,6 +1,6 @@
 Package: effects
-Version: 2.2-2
-Date: 2012/11/19
+Version: 2.2-3
+Date: 2012/12/10
 Title: Effect Displays for Linear, Generalized Linear,
         Multinomial-Logit, Proportional-Odds Logit Models and
         Mixed-Effects Models
@@ -26,7 +26,7 @@ Author: John Fox [aut, cre], Sanford Weisberg [aut], Jangman Hong
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
 Repository/R-Forge/Project: effects
-Repository/R-Forge/Revision: 96
-Repository/R-Forge/DateTimeStamp: 2012-11-20 00:29:29
-Date/Publication: 2012-11-21 19:45:42
-Packaged: 2012-11-20 03:15:49 UTC; rforge
+Repository/R-Forge/Revision: 101
+Repository/R-Forge/DateTimeStamp: 2012-12-10 17:38:06
+Date/Publication: 2012-12-15 07:17:32
+Packaged: 2012-12-12 23:15:47 UTC; rforge

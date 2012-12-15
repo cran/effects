@@ -1,6 +1,6 @@
 # Effect generic and methods
 # John Fox and Sanford Weisberg
-# last modified 2012-09-06 by J. Fox
+# last modified 2012-12-08 by J. Fox
 
 Effect <- function(focal.predictors, mod, ...){
 	UseMethod("Effect", mod)
@@ -122,10 +122,11 @@ Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels 
     fit.1 <- na.omit(predict(mod))
     mod.2 <- lm.fit(mod.matrix.all[1:nrow.X,], fit.1)
     class(mod.2) <- "lm"
-    assign(".y", na.omit(model.response.gls(mod)), envir=.GlobalEnv)
-    assign(".X", na.omit(mod.matrix.all[1:nrow.X,]), envir=.GlobalEnv)
-    mod.3 <- update(mod, .y ~ .X - 1)
-    remove(".X", ".y", envir=.GlobalEnv)
+#     assign(".y", na.omit(model.response.gls(mod)), envir=.GlobalEnv)
+#     assign(".X", na.omit(mod.matrix.all[1:nrow.X,]), envir=.GlobalEnv)
+    .Data <- list(.y=na.omit(model.response.gls(mod)), .X=na.omit(mod.matrix.all[1:nrow.X,]))
+    mod.3 <- update(mod, .y ~ .X - 1, data=.Data)
+#    remove(".X", ".y", envir=.GlobalEnv)
     discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
     if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
                                           "percent \n     in the 'safe' predictions used to generate effect", paste(focal.predictors, collapse="*")))
