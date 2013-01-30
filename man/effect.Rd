@@ -177,7 +177,7 @@ allEffects(mod, ...)
   For example, for the model \code{Y ~ A*B + A*C + B*C}, one could
   compute the effect corresponding to the absent term \code{A:B:C}, which absorbs the constant, the
   \code{A}, \code{B}, and \code{C} main effects, and the three two-way interactions. In either of these
-  cases, a warning is printed.
+  cases, a warning is printed. 
   
   The \code{as.data.frame} methods convert effect objects to data frames to facilitate the construction
   of custom displays. In the case of \code{"eff"} objects, the \code{se} element in the data frame is always
@@ -234,6 +234,14 @@ allEffects(mod, ...)
   
   Factors cannot have colons in level names (e.g., \code{"level:A"}); the \code{effect} function will confuse the
   colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
+  
+  The functions in the \pkg{effects} package do not handle logical predictors; convert logical predictors to factors.
+  
+  Empty cells in crossed-factors are now permitted for lm, glm and multinom models.  
+  
+  With multinom models with two or more crossed factors with an empty, the 'plot' command with \code{style="stacked"} 
+  apparently does not work because of a bug in the barchart function in lattice.  However, the
+  \code{stype="lines"}, the default, does work.  
   
   Offsets in linear and generalized linear models are supported, as are offsets in mixed models fit by 
   \code{lmer} or \code{glmer}, but must be supplied through the \code{offset}
@@ -349,6 +357,50 @@ plot(eff.pres)
 plot(eff.pres[1], 
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)))
+    
+\dontrun{
+# linear model with log-response and log-predictor
+# to illustrate transforming axes and setting tick labels
+mod.pres1 <- lm(log(prestige) ~ log(income) + poly(education, 3) + poly(women, 2),
+    data=Prestige)
+# effect of the log-predictor
+eff.log <- Effect(c("income"), mod.pres1, default.levels=50)
+# effect of the log-predictor transformed to the arithmetic scale
+eff.trans <- Effect(c("income"), mod.pres1, default.levels=50,
+       transformation=list(link=log, inverse=exp))
+#variations:
+# y-axis:  scale is log, tick labels are log
+# x-axis:  scale is arithmetic, tick labels are arithmetic
+plot(eff.log)
+
+# y-axis:  scale is log, tick labels are log
+# x-axis:  scale is log, tick labels are arithmetic
+plot(eff.log, transform.x=list(income=c(trans=log, inverse=exp)),
+       ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)),
+       xlab="income, log-scale")
+
+# y-axis:  scale is log, tick labels are airthmetic
+# x-axis:  scale is arithmetic, tick labels are arithmetic
+plot(eff.trans, ylab="prestige")
+
+# y-axis:  scale is arithmetic, tick labels are airthmetic
+# x-axis:  scale is arithmetic, tick labels are arithmetic
+plot(eff.trans, rescale.axis=FALSE, ylab="prestige")
+
+# y-axis:  scale is log, tick labels are arithmetic
+# x-axis:  scale is log, tick labels are arithmetic
+plot(eff.trans, transform.x=list(income=c(trans=log, inverse=exp)),
+       ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)),
+       xlab="income, log-scale", ylab="prestige, log-scale",
+       main="Both effect and X in log-scale")
+
+# y-axis:  scale is arithmetic, tick labels are airthmetic
+# x-axis:  scale is log, tick labels are arithmetic
+plot(eff.trans, transform.x=list(income=c(trans=log, inverse=exp)),
+       ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)),
+       rescale.axis=FALSE,
+       xlab="income, log-scale", ylab="prestige")
+}
 
 \dontrun{
 	library(nlme) # for gls()

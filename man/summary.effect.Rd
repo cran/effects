@@ -33,15 +33,17 @@ and \code{efflist} objects.
 \method{plot}{eff}(x, x.var = which.max(levels), z.var = which.min(levels), 
     multiline = is.null(x$se), rug = TRUE, xlab, ylab, main = paste(effect, 
         "effect plot"), colors = palette(), symbols = 1:10, lines = 1:10, 
-    cex = 1.5, ylim, xlim = NULL, factor.names = TRUE, type = c("response", 
-        "link"), ticks = list(at = NULL, n = 5), alternating = TRUE, 
+    cex = 1.5, ylim, xlim = NULL, factor.names = TRUE, 
+    ci.style, 
+    type = c("response", "link"), ticks = list(at = NULL, n = 5), alternating = TRUE, 
     rotx = 0, roty = 0, grid = FALSE, layout, rescale.axis = TRUE, 
     transform.x = NULL, ticks.x = NULL, key.args = NULL, row = 1, 
     col = 1, nrow = 1, ncol = 1, more = FALSE, ...) 
 \method{plot}{effpoly}(x, type = c("probability", "logit"), x.var = which.max(levels), 
     rug = TRUE, xlab, ylab = paste(x$response, " (", type, ")", 
         sep = ""), main = paste(effect, "effect plot"), colors, 
-    symbols = 1:10, lines = 1:10, cex = 1.5, factor.names = TRUE, 
+    symbols = 1:10, lines = 1:10, cex = 1.5, factor.names = TRUE,
+    ci.style, 
     style = c("lines", "stacked"), confint = (style == "lines" && 
         !is.null(x$confidence.level)), transform.x = NULL, ticks.x = NULL, 
     xlim = NULL, ylim, rotx = 0, alternating = TRUE, roty = 0, 
@@ -119,6 +121,12 @@ and \code{efflist} objects.
     axis limits are computed from the data.}
   \item{factor.names}{a logical value, default \code{TRUE}, that controls the inclusion of
     factor names in conditioning-variable labels.}
+  \item{ci.style}{confidence bounds can be indicated using error bars or using lines.
+    For single line plots the default is \code{"bars"} for factors and \code{"lines"}
+    for variates.  For multiline plots, the default is \code{"none"} for no 
+    confidence bounds, but style \code{"bars"} can also be used.  For a variate
+    the option \code{"bars"} displays the error bars at
+    each of the \code{levels} points for which the horizontal variable was evaluated.}
   \item{style}{(for multinomial or proportional-odds logit models) \code{"lines"} (the default
     for a line plot, or \code{"stacked"} for a stacked-bar or stacked-area plot. In the latter
     case only fitted probabilities may be plotted and confidence envelopes cannot be shown.}
