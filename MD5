@@ -1,10 +1,10 @@
-8d9e86ffc854065f6baf5773e6d9cce9 *DESCRIPTION
+5e50ef55c425ea5607b7ba379dbd7e3c *DESCRIPTION
 c5dafda657fd2eacf8de7e455a399062 *NAMESPACE
-6b56d188b3365e02b9c4d367989b79f2 *NEWS
-dcb45113e2d60ee65afaa36d97f0a5f1 *R/Effect.R
-c0e3fe2c4f7ae3278f71a2d1da650d93 *R/effects.R
+d8d2c8b5d40925c808618ddab770c3c4 *NEWS
+3779f516ecdd41dffe68194b6060624d *R/Effect.R
+14a08c2fc43b9a14eb49de99846e11c5 *R/effects.R
 f40c347c6f473b310bba6a96de31db12 *R/effectsmer.R
-96bae6d3a528a7aa76f569528c57ec39 *R/plot-summary-print-methods.R
+faef0bb70f68d67103cd528b0fdd4567 *R/plot-summary-print-methods.R
 1afca09086376c02c8aa8f2a5d5e28a5 *R/utilities.R
 7a5cb433347443c5faa00155458272be *data/Arrests.rda
 1be79050796609a1cb71b2e8051c3624 *data/BEPS.rda
@@ -24,7 +24,7 @@ df3b179a879e7905bf9696ee05751707 *man/BEPS.Rd
 6ae2696e1ab508c70b7d244bd9b3ebf8 *man/Titanic.Rd
 1db6f08e1b42d137e1ca3f76918cc70a *man/WVS.Rd
 18f83ed88afe8b1ecae2dbc3dc986b66 *man/Wells.Rd
-54530a1709951eec94464f688647d735 *man/effect.Rd
+20fb380abc434807ba4c7a3965ebf740 *man/effect.Rd
 03336c030e40258fc3316c4cb0c707d1 *man/effects-deprecated.Rd
-a39b1ed53c972b0101a3ff7e850fefe3 *man/effects-package.Rd
-2ea5be34fc54d621a02e782cc81656ab *man/summary.effect.Rd
+809698efd2c9b7882ff56f12329a1689 *man/effects-package.Rd
+6e153ece1da4192532f16758d2739af7 *man/summary.effect.Rd

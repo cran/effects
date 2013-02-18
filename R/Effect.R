@@ -1,6 +1,8 @@
 # Effect generic and methods
 # John Fox and Sanford Weisberg
 # last modified 2012-12-08 by J. Fox
+# 12-21-2012 Allow for empty cells in factor interactions, S. Weisberg
+
 
 Effect <- function(focal.predictors, mod, ...){
 	UseMethod("Effect", mod)
@@ -40,11 +42,33 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
 		wts <- rep(1, length(residuals(mod)))
 	mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
 			X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
-	effect <- off + mod.matrix %*% mod$coefficients
+# look for aliased coefficients and remove those columns from mod.matrix
+  mod.matrix <- mod.matrix[, !is.na(mod$coefficients)]
+	effect <- off + mod.matrix %*% mod$coefficients[!is.na(mod$coefficients)]
+# end
 	result <- list(term = paste(focal.predictors, collapse="*"), 
 			formula = formula(mod), response = response.name(mod), 
 			variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
 			discrepancy = 0, offset=off)
+# find empty cells, if any, and correct
+  whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
+  zeroes <- NULL
+   if(sum(whichFact) > 1){
+       nameFact <- names(whichFact)[whichFact]
+       counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+                   model.frame(mod))
+       zeroes <- which(counts == 0)  
+       }
+  if(length(zeroes) > 0){
+       levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+       good <- rep(TRUE, dim(levs)[1])
+       for(z in zeroes){
+           good <- good &  
+                    apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
+       } 
+       result$fit[!good] <- NA
+  } 
+# end of change
 	if (se) {
 		if (any(family(mod)$family == c("binomial", "poisson"))) {
 			dispersion <- 1
@@ -62,11 +86,18 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
 		vcov <- mod.matrix %*% V %*% t(mod.matrix)
 		rownames(vcov) <- colnames(vcov) <- NULL
 		var <- diag(vcov)
-		result$vcov <- vcov
+		result$vcov <- vcov		
 		result$se <- sqrt(var)
 		result$lower <- effect - z * result$se
 		result$upper <- effect + z * result$se
 		result$confidence.level <- confidence.level
+# zero cells
+		if(length(zeroes) > 0){
+		   result$se[!good] <- NA
+		   result$lower[!good] <- NA
+		   result$upper[!good] <- NA
+    }
+# end zero cells
 	}
 	if (is.null(transformation$link) && is.null(transformation$inverse)) {
 		transformation$link <- I
@@ -235,6 +266,32 @@ Effect.multinom <- function(focal.predictors, mod,
                                      lower.logit=Lower.logit, upper.logit=Upper.logit, 
                                      lower.prob=Lower.P, upper.prob=Upper.P,
                                      confidence.level=confidence.level))
+# find empty cells, if any, and correct
+  whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
+  zeroes <- NULL
+   if(sum(whichFact) > 1){
+       nameFact <- names(whichFact)[whichFact]
+       counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+                   model.frame(mod))
+       zeroes <- which(counts == 0)  
+       }
+  if(length(zeroes) > 0){
+       levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+       good <- rep(TRUE, dim(levs)[1])
+       for(z in zeroes){
+           good <- good &  
+                    apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
+       }
+       result$prob[!good, ] <- NA
+       result$logit[!good, ] <- NA 
+       if (se){
+           result$se.prob[!good, ] <- NA
+           result$se.logit[!good, ] <- NA
+           result$lower.prob[!good, ] <- NA
+           result$upper.prob[!good, ] <- NA
+           }
+  } 
+# end of change
     class(result) <-'effpoly'
     result
 }
