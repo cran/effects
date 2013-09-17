@@ -2,13 +2,16 @@
 # John Fox and Sanford Weisberg
 # last modified 2012-12-08 by J. Fox
 # 12-21-2012 Allow for empty cells in factor interactions, S. Weisberg
+# 2012-03-05: Added .merMod method for development version of lme4, J. Fox
+# 2012-04-06: Added support for lme4.0, J. Fox
+# 2013-07-15:  Changed default xlevels and default.levels
 
 
 Effect <- function(focal.predictors, mod, ...){
 	UseMethod("Effect", mod)
 }
 
-Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels = 10, given.values, 
+Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
 		se = TRUE, confidence.level = 0.95, 
 		transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
 		typical = mean, offset = mean, ...){
@@ -24,7 +27,7 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
 			else stop("offset must be a function or a number")
 	formula.rhs <- formula(mod)[[3]]
 	model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
-	excluded.predictors <- model.components$excluded.predictors
+  excluded.predictors <- model.components$excluded.predictors
 	predict.data <- model.components$predict.data
 	factor.levels <- model.components$factor.levels
 	factor.cols <- model.components$factor.cols
@@ -109,20 +112,25 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
 }
 
 Effect.mer <- function(focal.predictors, mod, ...) {
-    if (!require(lme4)) stop("the lme4 package is not installed")
+#     if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 
+#         stop("the lme4 or lme4.0 package is not installed")
     result <- Effect(focal.predictors, mer.to.glm(mod), ...)
     result$formula <- as.formula(formula(mod))
     result
 }
 
+Effect.merMod <- function(focal.predictors, mod, ...){
+    Effect.mer(focal.predictors, mod, ...)
+}
+
 Effect.lme <- function(focal.predictors, mod, ...) {
-    if (!require(nlme)) stop("the nlme package is not installed")
+#    if (!require(nlme)) stop("the nlme package is not installed")
     result <- Effect(focal.predictors, lme.to.glm(mod), ...)
     result$formula <- as.formula(formula(mod))
     result
 }
 
-Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels = 10, given.values, 
+Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
                         se = TRUE, confidence.level = 0.95, 
                         transformation = NULL, 
                         typical = mean, ...){
@@ -190,7 +198,7 @@ Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels 
 }
 
 Effect.multinom <- function(focal.predictors, mod, 
-                            confidence.level=.95, xlevels=list(), default.levels=10, 
+                            confidence.level=.95, xlevels=list(), default.levels=NULL,
                             given.values, se=TRUE, typical=mean, ...){    
     if (length(mod$lev) < 3) stop("effects for multinomial logit model only available for response levels > 2")
     if (missing(given.values)) given.values <- NULL
@@ -297,7 +305,7 @@ Effect.multinom <- function(focal.predictors, mod,
 }
 
 Effect.polr <- function(focal.predictors, mod, 
-                        confidence.level=.95, xlevels=list(), default.levels=10, 
+                        confidence.level=.95, xlevels=list(), default.levels=NULL,
                         given.values, se=TRUE, typical=mean, latent=FALSE, ...){
     if (mod$method != "logistic") stop('method argument to polr must be "logistic"')    
     if (missing(given.values)) given.values <- NULL

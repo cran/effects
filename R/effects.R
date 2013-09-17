@@ -3,6 +3,8 @@
 #  last modified 2012-12-08 by J. Fox
 #  10/31/2012 modifed effect.lm to use z distn for ses with mer and nlme objects
 # 12-21-2012 Allow for empty cells in factor interactions, S. Weisberg
+# 7-15-2013:  S. Weisberg:  deleted 'default.levels' argument.  Changed and
+#    generalized xlevels argument to include the function of default.levels.
 
 effect <- function(term, mod, ...){
 	UseMethod("effect", mod)
@@ -81,7 +83,7 @@ effect <- function(term, mod, ...){
 #	result
 #}
 
-effect.lm <- function (term, mod, xlevels = list(), default.levels = 10, given.values, 
+effect.lm <- function (term, mod, xlevels = list(), default.levels = NULL, given.values, 
                        se = TRUE, confidence.level = 0.95, 
                        transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
                        typical = mean, offset = mean, ...){
@@ -217,11 +219,11 @@ summary.eff <- function(object, type=c("response", "link"), ...){
 }
 
 
-effect.gls <- function (term, mod, xlevels=list(), default.levels=10, given.values,
+effect.gls <- function (term, mod, xlevels=list(), default.levels=NULL, given.values,
 		se=TRUE, confidence.level=.95, 
 		transformation=NULL, 
 		typical=mean, ...){	
-	if (!require(nlme)) stop("the nlme package is not installed")
+#	if (!require(nlme)) stop("the nlme package is not installed")
 	if (missing(given.values)) given.values <- NULL
 	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
 		stop("given.values (", names(given.values[!which]),") not in the model")
@@ -478,7 +480,7 @@ effect.gls <- function (term, mod, xlevels=list(), default.levels=10, given.valu
 # }
 
 effect.multinom <- function(term, mod, 
-                            confidence.level=.95, xlevels=list(), default.levels=10, 
+                            confidence.level=.95, xlevels=list(), default.levels=NULL, 
                             given.values, se=TRUE, typical=mean, ...){    
     if (length(mod$lev) < 3) stop("effects for multinomial logit model only available for response levels > 2")
     if (missing(given.values)) given.values <- NULL
@@ -648,7 +650,7 @@ effect.multinom <- function(term, mod,
 # 	X.mod <- model.components$X.mod
 # 	cnames <- model.components$cnames
 # #	X <- na.omit(model.components$X)
-# 	formula.rhs <- formula(mod)[c(1,3)]
+# 	formula.rhs <- formula(mod)[c(1,3)] 
 # 	newdata <- predict.data
 # 	newdata[[as.character(formula(mod)[2])]] <- rep(mod$lev[1], nrow(newdata))
 # 	extras <- setdiff(all.vars(formula(mod)), names(model.frame(mod)))
@@ -750,7 +752,7 @@ effect.multinom <- function(term, mod,
 # }
 
 effect.polr <- function(term, mod, 
-                        confidence.level=.95, xlevels=list(), default.levels=10, 
+                        confidence.level=.95, xlevels=list(), default.levels=NULL, 
                         given.values, se=TRUE, typical=mean, latent=FALSE, ...){
     if (mod$method != "logistic") stop('method argument to polr must be "logistic"')    
     if (missing(given.values)) given.values <- NULL
@@ -864,7 +866,7 @@ allEffects.default <- function(mod, ...){
 }
 
 allEffects.gls <- function(mod, ...){
-	if (!require(nlme)) stop("the nlme package is not installed")
+#	if (!require(nlme)) stop("the nlme package is not installed")
 	high.order.terms <- function(mod){
 		mod <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
 		names <- term.names(mod)
