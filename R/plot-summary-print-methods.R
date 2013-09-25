@@ -9,6 +9,10 @@
 #  2013-01-19: Renamed 'factor.ci.style' to 'ci.style'.  Added a 'none' option
 #   extended to variate terms if multiline=TRUE, ci.style="bars"
 #  2013-01-30: scale arrow "heads" for error bars relative to cex
+#  2013-05-31: fixed symbol colors in legends in plot.eff(). J. Fox
+#  2013-08-14: fixed bug in restoring warn option. J. Fox
+#  2013-08-27: fixed symbols argument for multiline plot in plot.eff(), reported by Ulrike Gromping. J. Fox
+#  2013-08-31: fixed handling of ticks.x argument. John
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
@@ -104,7 +108,7 @@ summary.efflist <- function(object, ...){
 
 make.ticks <- function(range, link, inverse, at, n) {
     warn <- options(warn=-1)
-    on.exit(warn)
+    on.exit(options(warn))
     link <- if (is.null(link)) 
         function(x) nlm(function(y) (inverse(y) - x)^2, 
             mean(range))$estimate
@@ -160,7 +164,7 @@ plot.eff <- function(x, x.var=which.max(levels),
         x$fit[!is.na(x$fit)] <- trans.inverse(x$fit)[!is.na(x$fit)]
         trans.link <- trans.inverse <- I
     }
-    require(lattice)
+    # require(lattice)
     split <- c(col, row, ncol, nrow)
     ylab # force evaluation
     x.data <- x$data
@@ -174,16 +178,16 @@ plot.eff <- function(x, x.var=which.max(levels),
     has.se <- !is.null(x$se)
     n.predictors <- ncol(x) - 1 - 3*has.se
     if (n.predictors == 1){
-### factor no other predictors
-       if (is.factor(x[,1])){
+        ### factor no other predictors
+        if (is.factor(x[,1])){
             ci.style <- if(is.null(ci.style)) "bars" else ci.style
             range <- if(has.se & ci.style!="none")
-                 range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
+                range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
             ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
-                             range[2] + .025*(range[2] - range[1]))
+                range[2] + .025*(range[2] - range[1]))
             tickmarks <- if (type == "response") make.ticks(ylim, 
-                         link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
-                         else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
+                link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
+            else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
             levs <- levels(x[,1])  
             plot <- xyplot(eval(parse(
                 text=paste("fit ~ as.numeric(", names(x)[1], ")"))), 
@@ -224,16 +228,16 @@ plot.eff <- function(x, x.var=which.max(levels),
             result$more <- more
             class(result) <- c("plot.eff", class(result))
         }  
-### variate, no other predictors      
+        ### variate, no other predictors      
         else {
             ci.style <- if(is.null(ci.style)) "lines" else ci.style
             range <- if(has.se & ci.style!="none")
-                 range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
-                    ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
-                             range[2] + .025*(range[2] - range[1]))
+                range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
+            ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
+                range[2] + .025*(range[2] - range[1]))
             tickmarks <- if (type == "response") make.ticks(ylim, 
-                         link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
-                         else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
+                link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
+            else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
             nm <- names(x)[1]
             x.vals <- x.data[, nm]   
             if (nm %in% names(ticks.x)){
@@ -250,7 +254,8 @@ plot.eff <- function(x, x.var=which.max(levels),
             else range.adj(x[nm]) # range(x.vals)
             tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                 trans <- transform.x[[nm]]$trans
-                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+#                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
             }
             else {
                 trans <- I
@@ -264,13 +269,13 @@ plot.eff <- function(x, x.var=which.max(levels),
                     good <- !is.na(y)
                     axis.length <- diff(range(x))
                     llines(x[good], y[good], lwd=2, col=colors[1], ...)
-                    if (rug) lrug(x.vals)
+                    if (rug) lrug(trans(x.vals))
                     if (has.se){  
                         if (ci.style == "bars"){
                             larrows(x0=x[good], y0=lower[good], 
-                                    x1=x[good], y1=upper[good], 
-                                    angle=90, code=3, col=eval(colors[2]), 
-                                    length=.125*cex/1.5)
+                                x1=x[good], y1=upper[good], 
+                                angle=90, code=3, col=eval(colors[2]), 
+                                length=.125*cex/1.5)
                         }
                         else{ if(ci.style == "lines") {
                             llines(x[good], lower[good], lty=2, col=colors[2])
@@ -286,7 +291,7 @@ plot.eff <- function(x, x.var=which.max(levels),
                     }
                 },
                 ylim=ylim,
-                xlim=trans(xlm),
+                xlim=suppressWarnings(trans(xlm)),
                 ylab=ylab,
                 xlab=if (missing(xlab)) names(x)[1] else xlab,
                 x.vals=x.vals, rug=rug,
@@ -302,44 +307,44 @@ plot.eff <- function(x, x.var=which.max(levels),
         }
         return(result)
     }
-###  more than one variate
+    ###  more than one variate
     predictors <- names(x)[1:n.predictors]
     levels <- sapply(apply(x[,predictors], 2, unique), length)
     if (is.character(x.var)) {
         which.x <- which(x.var == predictors)
-        if (length(which.x) == 0) stop(paste("x.var = '", x.var, "' is not in the model.", sep=""))
+        if (length(which.x) == 0) stop(paste("x.var = '", x.var, "' is not in the effect.", sep=""))
         x.var <- which.x
     }
     if (is.character(z.var)) {
         which.z <- which(z.var == predictors)
-        if (length(which.z) == 0) stop(paste("z.var = '", z.var, "' is not in the model.", sep=""))
+        if (length(which.z) == 0) stop(paste("z.var = '", z.var, "' is not in the effect.", sep=""))
         z.var <- which.z
     }    
     if (x.var == z.var) z.var <- z.var + 1
-### multiline
+    ### multiline
     if (multiline){ 
         ci.style <- if(is.null(ci.style)) "none" else ci.style
         if(ci.style == "lines") { 
             cat("Confidence interval style 'lines' changed to 'bars'\n")
             ci.style <- "bars"}
         range <- if (has.se && ci.style !="none")
-                  range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
+            range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
         ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
-                    range[2] + .025*(range[2] - range[1]))
+            range[2] + .025*(range[2] - range[1]))
         tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, 
-             inverse=trans.inverse, at=ticks$at, n=ticks$n)
-             else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
+            inverse=trans.inverse, at=ticks$at, n=ticks$n)
+        else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
         zvals <- unique(x[, z.var])
         if (length(zvals) > min(c(length(colors), length(lines), length(symbols))))
             stop(paste('Not enough colors, lines, or symbols to plot', length(zvals), 'lines'))
         
-### multiline factor
+        ### multiline factor
         if (is.factor(x[,x.var])){
             levs <- levels(x[,x.var])
-            key<-list(title=predictors[z.var], cex.title=1, border=TRUE,
+            key <- list(title=predictors[z.var], cex.title=1, border=TRUE,
                 text=list(as.character(zvals)), 
                 lines=list(col=colors[1:length(zvals)], lty=lines[1:length(zvals)], lwd=2), 
-                points=list(pch=1:length(zvals)))
+                points=list(col=colors[1:length(zvals)], pch=symbols[1:length(zvals)]))
             key <- c(key, key.args)
             plot <- xyplot(eval(parse( 
                 text=paste("fit ~ as.numeric(", predictors[x.var], ")",
@@ -352,15 +357,15 @@ plot.eff <- function(x, x.var=which.max(levels),
                         sub <- z[subscripts] == zvals[i]
                         good <- !is.na(y[sub])
                         os <- if(show.se)
-                              (i - (length(zvals) + 1)/2) * (2/(length(zvals)-1)) * 
-                                    .01 * (length(zvals) - 1) else 0
+                            (i - (length(zvals) + 1)/2) * (2/(length(zvals)-1)) * 
+                            .01 * (length(zvals) - 1) else 0
                         llines(x[sub][good]+os, y[sub][good], lwd=2, type='b', col=colors[i], 
                             pch=symbols[i], lty=lines[i], cex=cex, ...)
                         if (show.se){
                             larrows(x0=x[sub][good]+os, y0=lower[subscripts][sub][good], 
-                                    x1=x[sub][good]+os, y1=upper[subscripts][sub][good], 
-                                    angle=90, code=3, col=eval(colors[i]), 
-                                    length=.125*cex/1.5)
+                                x1=x[sub][good]+os, y1=upper[subscripts][sub][good], 
+                                angle=90, code=3, col=eval(colors[i]), 
+                                length=.125*cex/1.5)
                         }
                     } 
                     if (has.thresholds){
@@ -390,7 +395,7 @@ plot.eff <- function(x, x.var=which.max(levels),
             result$more <- more
             class(result) <- c("plot.eff", class(result))
         } 
-### multiline variate   
+        ### multiline variate   
         else{
             nm <- names(x)[x.var]
             x.vals <- x.data[, nm]   
@@ -408,7 +413,8 @@ plot.eff <- function(x, x.var=which.max(levels),
             else range.adj(x[nm]) # range(x.vals)
             tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                 trans <- transform.x[[nm]]$trans
-                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                # make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
             }
             else {
                 trans <- I
@@ -423,24 +429,24 @@ plot.eff <- function(x, x.var=which.max(levels),
                     if (n.predictors > 2) paste(" |", 
                         paste(predictors[-c(x.var, z.var)])), collapse="*"))),
                 strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
-# old           panel=function(x, y, subscripts, x.vals, rug, z, ...){
+                # old           panel=function(x, y, subscripts, x.vals, rug, z, ...){
                 panel=function(x, y, subscripts, x.vals, rug, z, lower, upper, show.se, ...){
                     if (grid) panel.grid()
-                    if (rug) lrug(x.vals)
-#new
+                    if (rug) lrug(trans(x.vals))
+                    #new
                     axis.length <- diff(range(x))
-#end 
+                    #end 
                     for (i in 1:length(zvals)){
                         sub <- z[subscripts] == zvals[i]
                         good <- !is.na(y[sub])
                         llines(x[sub][good], y[sub][good], lwd=2, type='l', col=colors[i], lty=lines[i], cex=cex, ...)
                         if(show.se){
-                           os <- (i - (length(zvals) + 1)/2) * (2/(length(zvals)-1)) * 
-                                    .01 * axis.length
-                           larrows(x0=x[sub][good]+os, y0=lower[subscripts][sub][good], 
-                                    x1=x[sub][good]+os, y1=upper[subscripts][sub][good], 
-                                    angle=90, code=3, col=eval(colors[i]), 
-                                    length=.125*cex/1.5)
+                            os <- (i - (length(zvals) + 1)/2) * (2/(length(zvals)-1)) * 
+                                .01 * axis.length
+                            larrows(x0=x[sub][good]+os, y0=lower[subscripts][sub][good], 
+                                x1=x[sub][good]+os, y1=upper[subscripts][sub][good], 
+                                angle=90, code=3, col=eval(colors[i]), 
+                                length=.125*cex/1.5)
                         }
                     }
                     if (has.thresholds){
@@ -452,7 +458,7 @@ plot.eff <- function(x, x.var=which.max(levels),
                     }
                 },
                 ylim=ylim,
-                xlim=trans(xlm), 
+                xlim=suppressWarnings(trans(xlm)), 
                 ylab=ylab,
                 xlab=if (missing(xlab)) predictors[x.var] else xlab,
                 x.vals=x.vals, rug=rug,
@@ -460,10 +466,10 @@ plot.eff <- function(x, x.var=which.max(levels),
                 zvals=zvals,
                 main=main,
                 key=key, 
-#
+                #
                 lower=x$lower, upper=x$upper, 
                 show.se=has.se && ci.style =="bars",
-#
+                #
                 data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
                     rot=roty, x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx), 
                     alternating=alternating),  ...)
@@ -475,16 +481,16 @@ plot.eff <- function(x, x.var=which.max(levels),
         }
         return(result)
     } 
-# multiplot factor
-        ci.style <- if(is.null(ci.style)){
-          if(is.factor(x[, x.var])) "bars" else "lines"} else ci.style
-        range <- if (has.se && ci.style !="none")
-                  range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
-        ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
-                    range[2] + .025*(range[2] - range[1]))
-        tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, 
-             inverse=trans.inverse, at=ticks$at, n=ticks$n)
-             else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)  
+    # multiplot factor
+    ci.style <- if(is.null(ci.style)){
+        if(is.factor(x[, x.var])) "bars" else "lines"} else ci.style
+    range <- if (has.se && ci.style !="none")
+        range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
+    ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
+        range[2] + .025*(range[2] - range[1]))
+    tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, 
+        inverse=trans.inverse, at=ticks$at, n=ticks$n)
+    else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)  
     if (is.factor(x[,x.var])){
         levs <- levels(x[,x.var])
         plot <- xyplot(eval(parse( 
@@ -526,7 +532,7 @@ plot.eff <- function(x, x.var=which.max(levels),
         result$more <- more
         class(result) <- c("plot.eff", class(result))
     } 
-### multiplot variate   
+    ### multiplot variate   
     else{
         nm <- names(x)[x.var]
         x.vals <- x.data[, nm]   
@@ -544,7 +550,8 @@ plot.eff <- function(x, x.var=which.max(levels),
         else range.adj(x[nm]) # range(x.vals)
         tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
             trans <- transform.x[[nm]]$trans
-            make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+          #  make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+            make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
         }
         else {
             trans <- I
@@ -558,19 +565,19 @@ plot.eff <- function(x, x.var=which.max(levels),
                 if (grid) panel.grid()
                 good <- !is.na(y)
                 llines(x[good], y[good], lwd=2, col=colors[1], ...)
-                if (rug) lrug(x.vals)
+                if (rug) lrug(trans(x.vals))
                 if (has.se){  
                     if (ci.style == "bars"){
-                            larrows(x0=x[good], y0=lower[subscripts][good], 
-                                    x1=x[good], y1=upper[subscripts][good], 
-                                    angle=90, code=3, col=eval(colors[2]), 
-                                    length=.125*cex/1.5)
-                        }
-                        else{ if(ci.style == "lines") {
-                            llines(x[good], lower[subscripts][good], lty=2, col=colors[2])
-                            llines(x[good], upper[subscripts][good], lty=2, col=colors[2])
-                        }}
+                        larrows(x0=x[good], y0=lower[subscripts][good], 
+                            x1=x[good], y1=upper[subscripts][good], 
+                            angle=90, code=3, col=eval(colors[2]), 
+                            length=.125*cex/1.5)
                     }
+                    else{ if(ci.style == "lines") {
+                        llines(x[good], lower[subscripts][good], lty=2, col=colors[2])
+                        llines(x[good], upper[subscripts][good], lty=2, col=colors[2])
+                    }}
+                }
                 if (has.thresholds){
                     panel.abline(h=thresholds, lty=3)
                     panel.text(rep(current.panel.limits()$xlim[1], length(thresholds)), 
@@ -580,7 +587,7 @@ plot.eff <- function(x, x.var=which.max(levels),
                 }
             },
             ylim=ylim,
-            xlim=trans(xlm),
+            xlim=suppressWarnings(trans(xlm)),
             ylab=ylab,
             xlab=if (missing(xlab)) predictors[x.var] else xlab,
             x.vals=x.vals, rug=rug,
@@ -727,7 +734,7 @@ plot.effpoly <- function(x,
     ylim, rotx=0, alternating=TRUE, roty=0, grid=FALSE,
     layout, key.args=NULL,
     row=1, col=1, nrow=1, ncol=1, more=FALSE, ...){     
-    require(lattice)
+    # require(lattice)
     ci.style <- if(missing(ci.style)) NULL else 
        match.arg(ci.style, c("bars", "lines", "none"))
     type <- match.arg(type)
@@ -766,7 +773,7 @@ plot.effpoly <- function(x,
     else sapply(apply(x.frame[,predictors], 2, unique), length)
     if (is.character(x.var)) {
         which.x <- which(x.var == predictors)
-        if (length(which.x) == 0) stop(paste("x.var = '", x.var, "' is not in the model.", sep=""))
+        if (length(which.x) == 0) stop(paste("x.var = '", x.var, "' is not in the effect.", sep=""))
         x.var <- which.x
     }
     x.vals <- x.frame[, names(x.frame)[x.var]]    
@@ -869,7 +876,8 @@ plot.effpoly <- function(x,
                 else range.adj(data[nm]) # range(x.vals)
                 tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                     trans <- transform.x[[nm]]$trans
-                    make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+               #     make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                    make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
                 }
                 else {
                     trans <- I
@@ -888,7 +896,7 @@ plot.effpoly <- function(x,
                     strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
                     panel=function(x, y, subscripts, rug, z, x.vals, ...){
                         if (grid) panel.grid()
-                        if (rug) lrug(x.vals)
+                        if (rug) lrug(trans(x.vals))
                         for (i in 1:n.y.lev){
                             sub <- z[subscripts] == y.lev[i]
                             good <- !is.na(y[sub])
@@ -896,7 +904,7 @@ plot.effpoly <- function(x,
                         }
                     },
                     ylab=ylab,
-                    xlim=trans(xlm),
+                    xlim=suppressWarnings(trans(xlm)),
                     ylim= if (missing(ylim))
                         if (type == "probability") range(prob) else range(logit)
                     else ylim,
@@ -959,7 +967,8 @@ plot.effpoly <- function(x,
                 else range.adj(data[nm]) # range(x.vals)
                 tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                     trans <- transform.x[[nm]]$trans
-                    make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                #    make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                    make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
                 }
                 else {
                     trans <- I
@@ -983,12 +992,12 @@ plot.effpoly <- function(x,
                         for (i in 2:n){
                             fill(x, Y[,i-1], Y[,i], col=col[i])
                         }
-                        if (rug) lrug(x.vals)
+                        if (rug) lrug(trans(x.vals))
                     },
                     rug=rug,
                     x.vals=x$data[[predictors[x.var]]],
                     data=x$x,
-                    xlim=trans(xlm),
+                    xlim=suppressWarnings(trans(xlm)),
                     ylim=if (missing(ylim)) 0:1 else ylim,
                     ylab=ylab,
                     xlab=if (missing(xlab)) predictors[x.var] else xlab,
@@ -1078,7 +1087,8 @@ plot.effpoly <- function(x,
             else range.adj(data[nm]) # range(x.vals)
             tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                 trans <- transform.x[[nm]]$trans
-                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+            #    make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=ticks.x$at, n=ticks.x$n)
+                make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
             }
             else {
                 trans <- I
@@ -1100,7 +1110,7 @@ plot.effpoly <- function(x,
                 strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
                 panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
                     if (grid) panel.grid()
-                    if (rug) lrug(x.vals)
+                    if (rug) lrug(trans(x.vals))
                     good <- !is.na(y)
                     llines(x[good], y[good], lwd=2, col=colors[1], ...)
                     if (ci.style == "bars"){
@@ -1114,7 +1124,7 @@ plot.effpoly <- function(x,
                     } }
                 },
                 ylab=ylab,
-                xlim=trans(xlm),
+                xlim=suppressWarnings(trans(xlm)),
                 ylim= if (missing(ylim)) c(min(lower), max(upper)) else ylim,
                 xlab=if (missing(xlab)) predictors[x.var] else xlab,
                 main=main,

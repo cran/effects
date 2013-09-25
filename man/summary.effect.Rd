@@ -138,7 +138,7 @@ and \code{efflist} objects.
     value of \code{n} is ignored.}
   \item{ticks.x}{a named list of two-item lists controlling the placement of tick marks
     on the horizontal axis. Each list element is named for a numeric predictor in the model,
-    and each sublist has elements \code{code} or \code{n} are for the \code{ticks} argument.
+    and each sublist has elements \code{at} or \code{n} are for the \code{ticks} argument.
     If a predictor doesn't appear in the list, or if \code{ticks.x} is \code{NULL} (the default),
     then the tick marks are computed by the function.}
   \item{transform.x}{transformations to be applied to the horizontal axis, in the form of a named list,
@@ -238,6 +238,7 @@ plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
 
+if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
@@ -248,7 +249,9 @@ plot(effect("Europe*political.knowledge", mod.beps,
 		xlevels=list(Europe=1:11, political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
+}
 	
+if (require(MASS)){
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
@@ -257,6 +260,7 @@ plot(effect("country*poly(age, 3)", mod.wvs), style="stacked",
 	colors=c("gray75", "gray50", "gray25"))
 	
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
+}
 
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
     data=Prestige)
@@ -265,7 +269,7 @@ plot(eff.pres)
 plot(eff.pres[1:2])
 plot(eff.pres[1], 
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
-    ticks.x=list(at=c(1000, 2000, 5000, 10000, 20000)))
+    ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))
 
 }
 

@@ -1,3 +1,25 @@
+Version 2.2-5
+
+ o Added support for polytomous latent class analysis based on the poLCA package.
+ 
+ o Modified mixed-model methods to all use in user-functions.
+
+ o Changed the default method for determining number of levels for a continuous predictor; see help page for 'effect' and discussion of the 'xlevels' argument for details.  Argument 'default.levels', while still included for compatibility, is depricated.
+                                                                                                
+ o Added .merMod methods for development version of lme4.
+
+ o Added support for lme4.0.
+
+ o Fixed bug preventing restoration of warn option (reported by Kenneth Knoblauch).
+
+ o Fixed handling of ticks.x argument to plot.eff() and plot.effpoly(), now works as advertized.
+
+ o Adjusted package dependencies, imports for CRAN checks.
+
+ o Changed name of Titanic dataset to TitanicSurvival to avoid name clash (request of Michael Friendly).
+
+ o Minor fixes.
+
 Version 2.2-4
 
  o Add argument 'ci.style' to plot.eff() and plot.eff() to allow confidence intervals to be displayed as lines or using error bars.  Confidence bars are permitted on multiline plots (after suggestion by Steve Taylor).

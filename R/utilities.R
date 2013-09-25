@@ -1,9 +1,11 @@
 # utilities and common functions for effects package
 # John Fox, Jangman Hong, and Sanford Weisberg
-#  last modified 2012-11-19 by J. Fox
+#  last modified 2013-08-14 by J. Fox
 
 # if (getRversion() >= "2.15.1") globalVariables("wt")
-
+# 7-25-2013 S. Weisberg modified analyze.model and Analyze.model to ignore
+#     default.levels, and use xlevels to set default.  Use grid.pretty by default
+# 11-09-2013: fixed error message in Analyze.model(), bug reported by Joris Meys. J. Fox
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -139,8 +141,8 @@ subscripts <- function(index, dims){
 #}
 
 matrix.to.df <- function(matrix, colclasses){
-	on.exit(options(warn = opt[[1]]))
 	opt <- options(warn = -1)
+	on.exit(options(opt))
 	ncol <- ncol(matrix)
 	colnames <- colnames(matrix)
 	colclasses[sapply(colclasses, function(x) "integer" %in% x)] <- "numeric"
@@ -171,7 +173,38 @@ strangers <- function(term, mod,...){
 			union(union(ancestors, descendants), self)))
 }
 
-analyze.model <- function(term, mod, xlevels, default.levels){
+# Added by S. Weisberg, 7/15/2013 to get reasonable default levels
+# Uses grid.pretty in base package
+setXlevels <- function(m, xlevels=list(), default.levels=NULL) {
+  firstorderterms <- all.vars(formula(m)[[3]])
+#  firstorderterms <- attr(attr(m$model, "terms"),
+#             "term.labels")[attr(attr(m$model, "terms"), "order") == 1L]
+  if(class(xlevels) == "numeric"){
+    newxlevels <- list()
+    for(term in firstorderterms) newxlevels[[term]] <- xlevels
+    xlevels <- newxlevels}
+  for (term in firstorderterms) {
+    if(is.null(xlevels[[term]])){
+       x <- m$model[[term]]
+       xlevels[[term]] <-
+          if(class(x)[1] == "factor") levels(x) else {
+            if(is.numeric(default.levels)){
+               xr <- range(m$model[[term]])
+               seq(xr[1], xr[2], length=default.levels)
+            }  else
+            grid.pretty(range(x))
+       }} else {
+       if(length(xlevels[[term]])==1L){
+          x <- m$model[[term]]
+          xlevels[[term]] <-
+             if(class(x)[1] == "factor") levels(x) else {
+               xr <- range(m$model[[term]]) 
+               seq(xr[1], xr[2], length=xlevels[[term]])}}}
+  }
+  xlevels
+  }
+
+analyze.model <- function(term, mod, xlevels, default.levels=NULL){
     if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude") 
         class(mod$na.action) <- "omit"
     term <- gsub(" ", "", gsub("\\*", ":", term))
@@ -217,13 +250,19 @@ analyze.model <- function(term, mod, xlevels, default.levels){
     X <- na.omit(expand.model.frame(mod, all.vars))
     x<-list()
     factor.levels <- list()
+    if(length(xlevels)==0 & length(default.levels) == 1L) xlevels <- default.levels
+    if(is.numeric(xlevels) & length(xlevels) == 1L){
+       levs <- xlevels
+       for(name in basic.vars) xlevels[[name]] <- levs}
     for (name in basic.vars){
         levels <- mod$xlevels[[name]]
         fac <- !is.null(levels)
-        if (!fac) {
-            levels <- if (is.null(xlevels[[name]]))
-                seq(min(X[, name]), max(X[,name]), length=default.levels)
-            else xlevels[[name]]
+        if (!fac) {    
+            levels <- if (is.null(xlevels[[name]])){
+                  grid.pretty(range(X[, name]))} else {
+               if(length(xlevels[[name]]) == 1L) { 
+                  seq(min(X[, name]), max(X[,name]), length=xlevels[[name]])} else
+                  xlevels[[name]]}
         }
         else factor.levels[[name]] <- levels
         x[[name]] <- list(name=name, is.factor=fac, levels=levels)
@@ -386,18 +425,19 @@ vcov.eff <- function(object, ...) object$vcov
 
 ### the following functions are for use by Effect() methods
 
-Analyze.model <- function(focal.predictors, mod, xlevels, default.levels, formula.rhs){
+Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, formula.rhs){
     if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude") 
         class(mod$na.action) <- "omit"
     all.predictors <- all.vars(formula.rhs)
     check.vars <- !(focal.predictors %in% all.predictors)
     excluded.predictors <- setdiff(all.predictors, focal.predictors)
+####xlevels <- setXlevels(mod, xlevels, default.levels)
     number.bad <- sum(check.vars)
     if (any(check.vars)) {
         message <- if (number.bad == 1) paste("the following predictor is not in the model:", 
-                                              all.predictors[check.vars])
+                                              focal.predictors[check.vars])
         else paste("the following predictors are not in the model:", 
-                   paste(all.predictors[check.vars], collapse=", "))
+                   paste(focal.predictors[check.vars], collapse=", "))
         stop(message)
     }
     X.mod <- model.matrix(mod)
@@ -412,13 +452,20 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels, formul
     X <- na.omit(expand.model.frame(mod, all.predictors))
     x <- list()
     factor.levels <- list()
+    if(length(xlevels)==0 & length(default.levels) == 1L) xlevels <- default.levels
+    if(is.numeric(xlevels) & length(xlevels) == 1L){
+       levs <- xlevels
+       for(name in focal.predictors) xlevels[[name]] <- levs}
     for (name in focal.predictors){
         levels <- mod$xlevels[[name]]
+        if(is.null(levels)) levels <- mod$xlevels[[paste("factor(",name,")",sep="")]]
         fac <- !is.null(levels)
-        if (!fac) {
-            levels <- if (is.null(xlevels[[name]]))
-                seq(min(X[, name]), max(X[,name]), length=default.levels)
-            else xlevels[[name]]
+        if (!fac) {    
+            levels <- if (is.null(xlevels[[name]])){
+                  grid.pretty(range(X[, name]))} else {
+               if(length(xlevels[[name]]) == 1L) { 
+                  seq(min(X[, name]), max(X[,name]), length=xlevels[[name]])} else
+                  xlevels[[name]]}
         }
         else factor.levels[[name]] <- levels
         x[[name]] <- list(name=name, is.factor=fac, levels=levels)
