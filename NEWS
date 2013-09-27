@@ -1,3 +1,13 @@
+Version 2.2-6
+
+ o bug fixes in effects.mer and effects.lme.
+
+ o added terms.gls() to make effect.gls() and Effect.gls() work again.
+
+ o plot.eff() gains an lwd= option to control the width of fitted lines.
+ 
+ o Added ci.style='bands' and alpha= to plot.eff() for non-multiline plots to give filled confidence bands.
+
 Version 2.2-5
 
  o Added support for polytomous latent class analysis based on the poLCA package.

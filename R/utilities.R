@@ -406,10 +406,13 @@ lrug <- function(x) {
 ##	model.matrix(lm(as.formula(object$call$model), data=eval(object$call$data)))
 #}
 #
+
 ## model.response not generic
 model.response.gls <- function(model){
 	model.response(model.frame(as.formula(model$call$model), data=eval(model$call$data)))
 }
+
+terms.gls <- function(x, ...) terms(formula(x))
 
 ## vcov method for eff objects
 
