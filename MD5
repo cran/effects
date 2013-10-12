@@ -1,12 +1,13 @@
-ebc7a9debcfc87a79534f841868bc723 *DESCRIPTION
+fa7cfaae2cb01f177c88a49a0468b3d8 *DESCRIPTION
 e775a6a9f9ebd8f110e09a18c5f09511 *NAMESPACE
-11a3826ebc70679515d734f6da9af5c1 *NEWS
+ef4492b9e14d53a98d483767dd98568b *NEWS
 33eb44666995127bdad5c85de18fee55 *R/Effect.R
 1b408c78afdc6c6eef98e336664935f7 *R/effects.R
-0afe10c67f78bb9b71fc5acd957e07c7 *R/effectsmer.R
+b1f6ae06b340893c35b3158d6be25534 *R/effectsmer.R
 a0dc643f63632ba1fb0b5efb96a3737a *R/effectspoLCA.R
-2c1e92864a38d7c697ac3a21dda4233f *R/plot-summary-print-methods.R
-4bd7247a85f4d8b61508f5ffa7af01a7 *R/utilities.R
+ccb28f5ba9949275058db251fecf66d4 *R/plot-methods.R
+a65f0e35a4e004e64156bc1d6bf71892 *R/plot-summary-print-methods.R
+d24d7f2ec95f78359035248a86404c4c *R/utilities.R
 4d9bf86613bd53ea5c001b3b89c46aad *data/Arrests.rda
 b422f41e9adca31bb6693439963a2ee1 *data/BEPS.rda
 5c1684fbad928c97552754929375f098 *data/Cowles.rda
@@ -27,5 +28,5 @@ a2697326c6634deeba023eb2db80ffea *man/Titanic.Rd
 18f83ed88afe8b1ecae2dbc3dc986b66 *man/Wells.Rd
 1f3980125c2e1e0747a3e136b26cbc94 *man/effect.Rd
 03336c030e40258fc3316c4cb0c707d1 *man/effects-deprecated.Rd
-514e9a8326f41b208391a9d7ca6bede0 *man/effects-package.Rd
-23c6e4c1eaf294d12b3773889c4497a1 *man/summary.effect.Rd
+2166fd7f93dc126e26bb2280617d7bf0 *man/effects-package.Rd
+b6da602b51cb7adc82f2da05f6b140de *man/summary.effect.Rd

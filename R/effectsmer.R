@@ -5,6 +5,8 @@
 # 2013-04-06: added support for lme4.0, J. Fox
 # 2013-07-30: added 'data' argument to lme.to.glm and mer.to.glm to allow
 #   calling effect from within a subroutine.
+# 2013-09-25:  removed the 'data' argument as it make the functions fail with
+#   logs, splines and polynomials
 
 
 # the function lm.wfit fit gets the hessian wrong for mer's.  Get the variance
@@ -49,14 +51,15 @@ fixmod <- function (term)
 # from the object into the local environment and makes it visible when 'effect'
 # is called from within another function.
 
-lme.to.glm <- function(mod, data=mod$data) {
+#lme.to.glm <- function(mod, data=mod$data) {
+lme.to.glm <- function(mod) {
     cl <- mod$call
     cl$formula <- cl$fixed
     m <- match(c("formula", "data", "subset", 
                  "na.action",  "contrasts"), names(cl), 0L)
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
-    cl[["data"]] <- data
+#    cl[["data"]] <- data
     mod2 <- eval(cl)
     pw <- attr(mod$modelStruct$varStruct, "weights")
     if(!is.null(pw)) mod2$prior.weights <- pw
@@ -76,7 +79,8 @@ lme.to.glm <- function(mod, data=mod$data) {
 # mer.to.glm evaluates a 'glm' model that is as similar to a given 'mer'
 # model as follows.  It is of class c("fakeglm", "glm", "lm")
 # several items are added to the created objects. Do not export
-mer.to.glm <- function(mod, data=model.frame(mod)) {
+#mer.to.glm <- function(mod, data=model.frame(mod)) {
+mer.to.glm <- function(mod) {
     cl <- mod@call
     if(cl[[1]] =="nlmer") stop("effects package does not support 'nlmer' objects")
     m <- match(c("formula", "family", "data", "weights", "subset", 
@@ -85,7 +89,7 @@ mer.to.glm <- function(mod, data=model.frame(mod)) {
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
     cl$formula <- fixmod(as.formula(cl$formula))
-    cl[["data"]] <- data
+#    cl[["data"]] <- data
     mod2 <- eval(cl)
     mod2$coefficients <- fixef(mod) #mod@fixef
     mod2$vcov <- as.matrix(vcov(mod))

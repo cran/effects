@@ -33,8 +33,8 @@ and \code{efflist} objects.
 \method{plot}{eff}(x, x.var = which.max(levels), z.var = which.min(levels), 
     multiline = is.null(x$se), rug = TRUE, xlab, ylab, main = paste(effect, 
         "effect plot"), colors = palette(), symbols = 1:10, lines = 1:10, 
-    cex = 1.5, ylim, xlim = NULL, factor.names = TRUE, 
-    ci.style, 
+    cex = 1.5, lwd=2, ylim, xlim = NULL, factor.names = TRUE, 
+    ci.style,  alpha=0.3,
     type = c("response", "link"), ticks = list(at = NULL, n = 5), alternating = TRUE, 
     rotx = 0, roty = 0, grid = FALSE, layout, rescale.axis = TRUE, 
     transform.x = NULL, ticks.x = NULL, key.args = NULL, row = 1, 
@@ -112,6 +112,7 @@ and \code{efflist} objects.
     or for polytomous logit models where the effects are plotted without confidence bands;
     in these cases a legend is drawn at the top of the display.}
   \item{cex}{character expansion for plotted symbols; default is \code{1.5}.}
+  \item{lwd}{line width for fitted lined}
   \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
     if \code{NULL}, the default, then the vertical axes are scaled from the data.}
   \item{xlim}{a named list of 2-element vectors, with the names corresponding to numeric
@@ -121,12 +122,15 @@ and \code{efflist} objects.
     axis limits are computed from the data.}
   \item{factor.names}{a logical value, default \code{TRUE}, that controls the inclusion of
     factor names in conditioning-variable labels.}
-  \item{ci.style}{confidence bounds can be indicated using error bars or using lines.
+  \item{ci.style}{confidence bounds can be indicated using error bars, using lines or confidence bands,
+    depending on the plot type.
     For single line plots the default is \code{"bars"} for factors and \code{"lines"}
-    for variates.  For multiline plots, the default is \code{"none"} for no 
+    for variates, but style \code{"bands"} can also be used.  
+    For multiline plots, the default is \code{"none"} for no 
     confidence bounds, but style \code{"bars"} can also be used.  For a variate
     the option \code{"bars"} displays the error bars at
     each of the \code{levels} points for which the horizontal variable was evaluated.}
+  \item{alpha}{For \code{ci.style="bands"}, the alpha transparency of the fill color.}
   \item{style}{(for multinomial or proportional-odds logit models) \code{"lines"} (the default
     for a line plot, or \code{"stacked"} for a stacked-bar or stacked-area plot. In the latter
     case only fitted probabilities may be plotted and confidence envelopes cannot be shown.}
@@ -232,11 +236,16 @@ plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90)
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
 
+# new options: lwd, ci.style='bands', alpha
+plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
+     ticks=list(at=c(.1,.25,.5,.75,.9)), lwd=4, ci.style='bands', alpha=0.2)
+
 plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE, 
     ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)))
     
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
+
 
 if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
