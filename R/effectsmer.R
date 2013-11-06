@@ -51,7 +51,6 @@ fixmod <- function (term)
 # from the object into the local environment and makes it visible when 'effect'
 # is called from within another function.
 
-#lme.to.glm <- function(mod, data=mod$data) {
 lme.to.glm <- function(mod) {
     cl <- mod$call
     cl$formula <- cl$fixed
@@ -59,7 +58,6 @@ lme.to.glm <- function(mod) {
                  "na.action",  "contrasts"), names(cl), 0L)
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
-#    cl[["data"]] <- data
     mod2 <- eval(cl)
     pw <- attr(mod$modelStruct$varStruct, "weights")
     if(!is.null(pw)) mod2$prior.weights <- pw
@@ -79,7 +77,7 @@ lme.to.glm <- function(mod) {
 # mer.to.glm evaluates a 'glm' model that is as similar to a given 'mer'
 # model as follows.  It is of class c("fakeglm", "glm", "lm")
 # several items are added to the created objects. Do not export
-#mer.to.glm <- function(mod, data=model.frame(mod)) {
+
 mer.to.glm <- function(mod) {
     cl <- mod@call
     if(cl[[1]] =="nlmer") stop("effects package does not support 'nlmer' objects")
@@ -89,7 +87,6 @@ mer.to.glm <- function(mod) {
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
     cl$formula <- fixmod(as.formula(cl$formula))
-#    cl[["data"]] <- data
     mod2 <- eval(cl)
     mod2$coefficients <- fixef(mod) #mod@fixef
     mod2$vcov <- as.matrix(vcov(mod))
@@ -103,22 +100,19 @@ mer.to.glm <- function(mod) {
     class(mod2) <- c("fakeglm", class(mod2))
     mod2
     }
-                                              ?
+                                              
 #method for 'fakeglm' objects. Do not export   
 vcov.fakeglm <- function(object, ...) object$vcov
 
 #The next four functions should be exported
+
 effect.mer <- function(term, mod, ...) {
-# 	if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 
-#         stop("the lme4 or lme4.0 package is not installed")
     result <- effect(term, mer.to.glm(mod), ...)
     result$formula <- as.formula(formula(mod))
     result
     }
     
 allEffects.mer <- function(mod, ...){
-#     if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 
-#         stop("the lme4 or lme4.0 package is not installed")
     allEffects(mer.to.glm(mod), ...)
 }
 
@@ -131,12 +125,10 @@ allEffects.merMod <- function(mod, ...){
 }
  
 allEffects.lme <- function(mod, ...){
-#	if (!require(nlme)) stop("the nlme package is not installed")
   	allEffects(lme.to.glm(mod), ...)
 }
   
 effect.lme <- function(term, mod, ...) {
-#	if (!require(nlme)) stop("the nlme package is not installed")
     mod1 <- lme.to.glm(mod)
     result <- effect(term, mod1)
     result$formula <- as.formula(formula(mod))

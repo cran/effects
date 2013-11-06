@@ -5,115 +5,120 @@
 # 2012-03-05: Added .merMod method for development version of lme4, J. Fox
 # 2012-04-06: Added support for lme4.0, J. Fox
 # 2013-07-15:  Changed default xlevels and default.levels
+# 2013-10-15: Added Effect.default(). J. Fox
+# 2013-10-22: fixed bug in Effect.lm() when na.action=na.exclude. J. Fox
+# 2013-10-29: code to handle "valid" NAs in factors. J. Fox
+# 2013-11-06: fixed bug in Effect.multinom() in construction of effect object
+#             when there is only one focal predictor; caused as.data.frame.effpoly() to fail
 
 
 Effect <- function(focal.predictors, mod, ...){
-	UseMethod("Effect", mod)
+    UseMethod("Effect", mod)
 }
 
 Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
-		se = TRUE, confidence.level = 0.95, 
-		transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
-		typical = mean, offset = mean, ...){
-	if (missing(given.values)) 
-		given.values <- NULL
-	else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
-		stop("given.values (", names(given.values[!which]), ") not in the model")
-	off <- if (is.numeric(offset) && length(offset) == 1) offset
-			else if (is.function(offset)) {
-				mod.off <- model.offset(model.frame(mod))
-				if (is.null(mod.off)) 0 else offset(mod.off)
-			}
-			else stop("offset must be a function or a number")
-	formula.rhs <- formula(mod)[[3]]
-	model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
-  excluded.predictors <- model.components$excluded.predictors
-	predict.data <- model.components$predict.data
-	factor.levels <- model.components$factor.levels
-	factor.cols <- model.components$factor.cols
-	n.focal <- model.components$n.focal
-	x <- model.components$x
-	X.mod <- model.components$X.mod
-	cnames <- model.components$cnames
-	X <- model.components$X
-	formula.rhs <- formula(mod)[c(1, 3)]
-	Terms <- delete.response(terms(mod))
-	mf <- model.frame(Terms, predict.data, xlev = factor.levels)
-	mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
-	wts <- mod$weights
-	if (is.null(wts)) 
-		wts <- rep(1, length(residuals(mod)))
-	mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
-			X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
-# look for aliased coefficients and remove those columns from mod.matrix
-  mod.matrix <- mod.matrix[, !is.na(mod$coefficients)]
-	effect <- off + mod.matrix %*% mod$coefficients[!is.na(mod$coefficients)]
-# end
-	result <- list(term = paste(focal.predictors, collapse="*"), 
-			formula = formula(mod), response = response.name(mod), 
-			variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
-			discrepancy = 0, offset=off)
-# find empty cells, if any, and correct
-  whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
-  zeroes <- NULL
-   if(sum(whichFact) > 1){
-       nameFact <- names(whichFact)[whichFact]
-       counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
-                   model.frame(mod))
-       zeroes <- which(counts == 0)  
-       }
-  if(length(zeroes) > 0){
-       levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
-       good <- rep(TRUE, dim(levs)[1])
-       for(z in zeroes){
-           good <- good &  
-                    apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
-       } 
-       result$fit[!good] <- NA
-  } 
-# end of change
-	if (se) {
-		if (any(family(mod)$family == c("binomial", "poisson"))) {
-			dispersion <- 1
-			z <- qnorm(1 - (1 - confidence.level)/2)
-		}
-		else {
-			dispersion <- sum(wts * mod$residuals^2)/mod$df.residual
-			z <- qt(1 - (1 - confidence.level)/2, df = mod$df.residual)
-		}
-		V2 <- dispersion * summary.lm(mod)$cov
-		V1 <- vcov(mod)
-		V <- if (inherits(mod, "fakeglm")) 
-					V1
-				else V2
-		vcov <- mod.matrix %*% V %*% t(mod.matrix)
-		rownames(vcov) <- colnames(vcov) <- NULL
-		var <- diag(vcov)
-		result$vcov <- vcov		
-		result$se <- sqrt(var)
-		result$lower <- effect - z * result$se
-		result$upper <- effect + z * result$se
-		result$confidence.level <- confidence.level
-# zero cells
-		if(length(zeroes) > 0){
-		   result$se[!good] <- NA
-		   result$lower[!good] <- NA
-		   result$upper[!good] <- NA
+    se = TRUE, confidence.level = 0.95, 
+    transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
+    typical = mean, offset = mean, ...){
+    if (missing(given.values)) 
+        given.values <- NULL
+    else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+        stop("given.values (", names(given.values[!which]), ") not in the model")
+    off <- if (is.numeric(offset) && length(offset) == 1) offset
+    else if (is.function(offset)) {
+        mod.off <- model.offset(model.frame(mod))
+        if (is.null(mod.off)) 0 else offset(mod.off)
     }
-# end zero cells
-	}
-	if (is.null(transformation$link) && is.null(transformation$inverse)) {
-		transformation$link <- I
-		transformation$inverse <- I
-	}
-	result$transformation <- transformation
-	class(result) <- "eff"
-	result
+    else stop("offset must be a function or a number")
+    formula.rhs <- formula(mod)[[3]]
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    excluded.predictors <- model.components$excluded.predictors
+    predict.data <- model.components$predict.data
+    factor.levels <- model.components$factor.levels
+    factor.cols <- model.components$factor.cols
+    n.focal <- model.components$n.focal
+    x <- model.components$x
+    X.mod <- model.components$X.mod
+    cnames <- model.components$cnames
+    X <- model.components$X
+    formula.rhs <- formula(mod)[c(1, 3)]
+    Terms <- delete.response(terms(mod))
+    mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
+    mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+    wts <- weights(mod) # mod$weights
+    if (is.null(wts)) 
+        wts <- rep(1, length(residuals(mod)))
+    mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+    # look for aliased coefficients and remove those columns from mod.matrix
+    mod.matrix <- mod.matrix[, !is.na(mod$coefficients)]
+    effect <- off + mod.matrix %*% mod$coefficients[!is.na(mod$coefficients)]
+    # end
+    result <- list(term = paste(focal.predictors, collapse="*"), 
+        formula = formula(mod), response = response.name(mod), 
+        variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
+        discrepancy = 0, offset=off)
+    # find empty cells, if any, and correct
+    whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
+    zeroes <- NULL
+    if(sum(whichFact) > 1){
+        nameFact <- names(whichFact)[whichFact]
+        counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+            model.frame(mod))
+        zeroes <- which(counts == 0)  
+    }
+    if(length(zeroes) > 0){
+        levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+        good <- rep(TRUE, dim(levs)[1])
+        for(z in zeroes){
+            good <- good &  
+                apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
+        } 
+        result$fit[!good] <- NA
+    } 
+    # end of change
+    if (se) {
+        if (any(family(mod)$family == c("binomial", "poisson"))) {
+            dispersion <- 1
+            z <- qnorm(1 - (1 - confidence.level)/2)
+        }
+        else {
+            dispersion <- sum(wts * (residuals(mod))^2, na.rm=TRUE)/mod$df.residual # sum(wts * mod$residuals^2)/mod$df.residual
+            z <- qt(1 - (1 - confidence.level)/2, df = mod$df.residual)
+        }
+        V2 <- dispersion * summary.lm(mod)$cov
+        V1 <- vcov(mod)
+        V <- if (inherits(mod, "fakeglm")) 
+            V1
+        else V2
+        vcov <- mod.matrix %*% V %*% t(mod.matrix)
+        rownames(vcov) <- colnames(vcov) <- NULL
+        var <- diag(vcov)
+        result$vcov <- vcov		
+        result$se <- sqrt(var)
+        result$lower <- effect - z * result$se
+        result$upper <- effect + z * result$se
+        result$confidence.level <- confidence.level
+        # zero cells
+        if(length(zeroes) > 0){
+            result$se[!good] <- NA
+            result$lower[!good] <- NA
+            result$upper[!good] <- NA
+        }
+        # end zero cells
+    }
+    if (is.null(transformation$link) && is.null(transformation$inverse)) {
+        transformation$link <- I
+        transformation$inverse <- I
+    }
+    result$transformation <- transformation
+    class(result) <- "eff"
+    result
 }
 
 Effect.mer <- function(focal.predictors, mod, ...) {
-#     if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 
-#         stop("the lme4 or lme4.0 package is not installed")
+    #     if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 
+    #         stop("the lme4 or lme4.0 package is not installed")
     result <- Effect(focal.predictors, mer.to.glm(mod), ...)
     result$formula <- as.formula(formula(mod))
     result
@@ -124,16 +129,16 @@ Effect.merMod <- function(focal.predictors, mod, ...){
 }
 
 Effect.lme <- function(focal.predictors, mod, ...) {
-#    if (!require(nlme)) stop("the nlme package is not installed")
+    #    if (!require(nlme)) stop("the nlme package is not installed")
     result <- Effect(focal.predictors, lme.to.glm(mod), ...)
     result$formula <- as.formula(formula(mod))
     result
 }
 
 Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
-                        se = TRUE, confidence.level = 0.95, 
-                        transformation = NULL, 
-                        typical = mean, ...){
+    se = TRUE, confidence.level = 0.95, 
+    transformation = NULL, 
+    typical = mean, ...){
     if (missing(given.values)) 
         given.values <- NULL
     else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
@@ -153,27 +158,27 @@ Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels 
     formula.rhs <- formula(mod)[c(1, 3)]
     nrow.X <- nrow(X)
     mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
-                      xlev=factor.levels)
+        xlev=factor.levels)
     mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
     mod.matrix <- mod.matrix.all[-(1:nrow.X),]
     mod.matrix <- Fixup.model.matrix(mod.lm, mod.matrix, model.matrix(mod.lm), 
-                                     X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
     fit.1 <- na.omit(predict(mod))
     mod.2 <- lm.fit(mod.matrix.all[1:nrow.X,], fit.1)
     class(mod.2) <- "lm"
-#     assign(".y", na.omit(model.response.gls(mod)), envir=.GlobalEnv)
-#     assign(".X", na.omit(mod.matrix.all[1:nrow.X,]), envir=.GlobalEnv)
+    #     assign(".y", na.omit(model.response.gls(mod)), envir=.GlobalEnv)
+    #     assign(".X", na.omit(mod.matrix.all[1:nrow.X,]), envir=.GlobalEnv)
     .Data <- list(.y=na.omit(model.response.gls(mod)), .X=na.omit(mod.matrix.all[1:nrow.X,]))
     mod.3 <- update(mod, .y ~ .X - 1, data=.Data)
-#    remove(".X", ".y", envir=.GlobalEnv)
+    #    remove(".X", ".y", envir=.GlobalEnv)
     discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
     if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
-                                          "percent \n     in the 'safe' predictions used to generate effect", paste(focal.predictors, collapse="*")))
+        "percent \n     in the 'safe' predictions used to generate effect", paste(focal.predictors, collapse="*")))
     effect <- mod.matrix %*% mod$coefficients
     result <- list(term = paste(focal.predictors, collapse="*"), 
-                   formula = formula(mod), response = response.name(mod), 
-                   variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
-                   discrepancy = discrepancy, offset=0)
+        formula = formula(mod), response = response.name(mod), 
+        variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
+        discrepancy = discrepancy, offset=0)
     if (se){
         df.res <- mod$dims[["N"]] - mod$dims[["p"]]
         z <- qt(1 - (1 - confidence.level)/2, df=df.res)
@@ -198,8 +203,8 @@ Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels 
 }
 
 Effect.multinom <- function(focal.predictors, mod, 
-                            confidence.level=.95, xlevels=list(), default.levels=NULL,
-                            given.values, se=TRUE, typical=mean, ...){    
+    confidence.level=.95, xlevels=list(), default.levels=NULL,
+    given.values, se=TRUE, typical=mean, ...){    
     if (length(mod$lev) < 3) stop("effects for multinomial logit model only available for response levels > 2")
     if (missing(given.values)) given.values <- NULL
     else if (!all(which <- colnames(given.values) %in% names(coef(mod)))) 
@@ -220,7 +225,7 @@ Effect.multinom <- function(focal.predictors, mod,
     mf <- model.frame(Terms, predict.data, xlev = factor.levels)
     mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
     X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
-                             X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
     resp.names <- make.names(mod$lev, unique=TRUE)
     resp.names <- c(resp.names[-1], resp.names[1]) # make the last level the reference level
     B <- t(coef(mod))
@@ -267,46 +272,45 @@ Effect.multinom <- function(focal.predictors, mod,
         SE.logit <- SE.logit[, resp.levs]
     }
     result <- list(term=paste(focal.predictors, collapse="*"), formula=formula(mod), response=response.name(mod),
-                   y.levels=mod$lev, variables=x, x=predict.data[, focal.predictors],
-                   model.matrix=X0, data=X, discrepancy=0, model="multinom",
-                   prob=P, logit=Logit)
+        y.levels=mod$lev, variables=x, x=predict.data[, focal.predictors, drop=FALSE],
+        model.matrix=X0, data=X, discrepancy=0, model="multinom",
+        prob=P, logit=Logit)
     if (se) result <- c(result, list(se.prob=SE.P, se.logit=SE.logit,
-                                     lower.logit=Lower.logit, upper.logit=Upper.logit, 
-                                     lower.prob=Lower.P, upper.prob=Upper.P,
-                                     confidence.level=confidence.level))
-# find empty cells, if any, and correct
-  whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
-  zeroes <- NULL
-   if(sum(whichFact) > 1){
-       nameFact <- names(whichFact)[whichFact]
-       counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
-                   model.frame(mod))
-       zeroes <- which(counts == 0)  
-       }
-  if(length(zeroes) > 0){
-       levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
-       good <- rep(TRUE, dim(levs)[1])
-       for(z in zeroes){
-           good <- good &  
-                    apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
-       }
-       result$prob[!good, ] <- NA
-       result$logit[!good, ] <- NA 
-       if (se){
-           result$se.prob[!good, ] <- NA
-           result$se.logit[!good, ] <- NA
-           result$lower.prob[!good, ] <- NA
-           result$upper.prob[!good, ] <- NA
-           }
-  } 
-# end of change
+        lower.logit=Lower.logit, upper.logit=Upper.logit, 
+        lower.prob=Lower.P, upper.prob=Upper.P,
+        confidence.level=confidence.level))
+    # find empty cells, if any, and correct
+    whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
+    zeroes <- NULL
+    if(sum(whichFact) > 1){
+        nameFact <- names(whichFact)[whichFact]
+        counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+            model.frame(mod))
+        zeroes <- which(counts == 0)  
+    }
+    if(length(zeroes) > 0){
+        levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+        good <- rep(TRUE, dim(levs)[1])
+        for(z in zeroes){
+            good <- good &  
+                apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
+        }
+        result$prob[!good, ] <- NA
+        result$logit[!good, ] <- NA 
+        if (se){
+            result$se.prob[!good, ] <- NA
+            result$se.logit[!good, ] <- NA
+            result$lower.prob[!good, ] <- NA
+            result$upper.prob[!good, ] <- NA
+        }
+    } 
     class(result) <-'effpoly'
     result
 }
 
 Effect.polr <- function(focal.predictors, mod, 
-                        confidence.level=.95, xlevels=list(), default.levels=NULL,
-                        given.values, se=TRUE, typical=mean, latent=FALSE, ...){
+    confidence.level=.95, xlevels=list(), default.levels=NULL,
+    given.values, se=TRUE, typical=mean, latent=FALSE, ...){
     if (mod$method != "logistic") stop('method argument to polr must be "logistic"')    
     if (missing(given.values)) given.values <- NULL
     else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
@@ -323,10 +327,10 @@ Effect.polr <- function(focal.predictors, mod,
     cnames <- model.components$cnames
     X <- model.components$X
     Terms <- delete.response(terms(mod))
-    mf <- model.frame(Terms, predict.data, xlev = factor.levels)
+    mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
     mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
     X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
-                             X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
     resp.names <- make.names(mod$lev, unique=TRUE)
     X0 <- X0[,-1, drop=FALSE]
     b <- coef(mod)
@@ -334,9 +338,9 @@ Effect.polr <- function(focal.predictors, mod,
     alpha <- - mod$zeta  # intercepts are negatives of thresholds
     z <- qnorm(1 - (1 - confidence.level)/2)
     result <- list(term=paste(focal.predictors, collapse="*"), formula=formula(mod), response=response.name(mod),
-                   y.levels=mod$lev, variables=x, 
-                   x=predict.data[, focal.predictors, drop=FALSE],
-                   model.matrix=X0, data=X, discrepancy=0, model="polr")
+        y.levels=mod$lev, variables=x, 
+        x=predict.data[, focal.predictors, drop=FALSE],
+        model.matrix=X0, data=X, discrepancy=0, model="polr")
     if (latent){
         res <- eff.latent(X0, b, vcov(mod)[1:p, 1:p], se)
         result$fit <- res$fit
@@ -390,10 +394,86 @@ Effect.polr <- function(focal.predictors, mod,
     result$prob <- P
     result$logit <- Logit
     if (se) result <- c(result,
-                        list(se.prob=SE.P, se.logit=SE.Logit,
-                             lower.logit=Lower.logit, upper.logit=Upper.logit, 
-                             lower.prob=Lower.P, upper.prob=Upper.P,
-                             confidence.level=confidence.level))
+        list(se.prob=SE.P, se.logit=SE.Logit,
+            lower.logit=Lower.logit, upper.logit=Upper.logit, 
+            lower.prob=Lower.P, upper.prob=Upper.P,
+            confidence.level=confidence.level))
     class(result) <-'effpoly'
+    result
+}
+
+Effect.default <- function(focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
+    se = TRUE, confidence.level = 0.95, 
+    transformation = list(link = I, inverse = I), 
+    typical = mean, offset = mean, ...){
+    if (missing(given.values)) 
+        given.values <- NULL
+    else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+        stop("given.values (", names(given.values[!which]), ") not in the model")
+    off <- if (is.numeric(offset) && length(offset) == 1) offset
+    else if (is.function(offset)) {
+        mod.off <- model.offset(model.frame(mod))
+        if (is.null(mod.off)) 0 else offset(mod.off)
+    }
+    else stop("offset must be a function or a number")
+    formula.rhs <- formula(mod)[[3]]
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    excluded.predictors <- model.components$excluded.predictors
+    predict.data <- model.components$predict.data
+    factor.levels <- model.components$factor.levels
+    factor.cols <- model.components$factor.cols
+    n.focal <- model.components$n.focal
+    x <- model.components$x
+    X.mod <- model.components$X.mod
+    cnames <- model.components$cnames
+    X <- model.components$X
+    formula.rhs <- formula(mod)[c(1, 3)]
+    Terms <- delete.response(terms(mod))
+    mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
+    mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+    mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+    mod.matrix <- mod.matrix[, !is.na(coef(mod))]
+    effect <- off + mod.matrix %*% mod$coefficients[!is.na(coef(mod))]
+    result <- list(term = paste(focal.predictors, collapse="*"), 
+        formula = formula(mod), response = response.name(mod), 
+        variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
+        discrepancy = 0, offset=off)
+    whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
+    zeroes <- NULL
+    if(sum(whichFact) > 1){
+        nameFact <- names(whichFact)[whichFact]
+        counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+            model.frame(mod))
+        zeroes <- which(counts == 0)  
+    }
+    if(length(zeroes) > 0){
+        levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+        good <- rep(TRUE, dim(levs)[1])
+        for(z in zeroes){
+            good <- good &  
+                apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
+        } 
+        result$fit[!good] <- NA
+    } 
+    if (se) {
+        z <- qnorm(1 - (1 - confidence.level)/2)
+        V <- vcov(mod)
+        vcov <- mod.matrix %*% V %*% t(mod.matrix)
+        rownames(vcov) <- colnames(vcov) <- NULL
+        var <- diag(vcov)
+        result$vcov <- vcov    	
+        result$se <- sqrt(var)
+        result$lower <- effect - z * result$se
+        result$upper <- effect + z * result$se
+        result$confidence.level <- confidence.level
+        if(length(zeroes) > 0){
+            result$se[!good] <- NA
+            result$lower[!good] <- NA
+            result$upper[!good] <- NA
+        }
+    }
+    result$transformation <- transformation
+    class(result) <- "eff"
     result
 }
