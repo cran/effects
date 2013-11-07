@@ -30,25 +30,32 @@ and \code{efflist} objects.
 \method{summary}{effpoly}(object, type=c("probability", "logits"), ...)
 \method{summary}{efflatent}(object, ...)
 \method{summary}{efflist}(object, ...)
-\method{plot}{eff}(x, x.var = which.max(levels), z.var = which.min(levels), 
-    multiline = is.null(x$se), rug = TRUE, xlab, ylab, main = paste(effect, 
-        "effect plot"), colors = palette(), symbols = 1:10, lines = 1:10, 
-    cex = 1.5, lwd=2, ylim, xlim = NULL, factor.names = TRUE, 
-    ci.style,  alpha=0.3,
-    type = c("response", "link"), ticks = list(at = NULL, n = 5), alternating = TRUE, 
-    rotx = 0, roty = 0, grid = FALSE, layout, rescale.axis = TRUE, 
-    transform.x = NULL, ticks.x = NULL, key.args = NULL, row = 1, 
-    col = 1, nrow = 1, ncol = 1, more = FALSE, ...) 
-\method{plot}{effpoly}(x, type = c("probability", "logit"), x.var = which.max(levels), 
-    rug = TRUE, xlab, ylab = paste(x$response, " (", type, ")", 
-        sep = ""), main = paste(effect, "effect plot"), colors, 
-    symbols = 1:10, lines = 1:10, cex = 1.5, factor.names = TRUE,
-    ci.style, 
-    style = c("lines", "stacked"), confint = (style == "lines" && 
-        !is.null(x$confidence.level)), transform.x = NULL, ticks.x = NULL, 
-    xlim = NULL, ylim, rotx = 0, alternating = TRUE, roty = 0, 
-    grid = FALSE, layout, key.args = NULL, row = 1, col = 1, 
-    nrow = 1, ncol = 1, more = FALSE, ...)
+\method{plot}{eff}(x, x.var=which.max(levels),
+		z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
+		ylab, main=paste(effect, "effect plot"),
+		colors=palette(), symbols=1:length(colors), lines=1:length(colors),
+    cex=1.5, lwd=2, ylim, xlim=NULL,
+		factor.names=TRUE, ci.style, band.transparency=0.2, band.colors=colors,
+		type=c("response", "link"), ticks=list(at=NULL, n=5),
+		alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis=TRUE,
+		transform.x=NULL, ticks.x=NULL,
+		key.args=NULL,
+		row=1, col=1, nrow=1, ncol=1, more=FALSE, use.splines=TRUE, ...)
+\method{plot}{effpoly}(x,
+		type=c("probability", "logit"),
+		x.var=which.max(levels),
+		rug=TRUE,
+		xlab,
+		ylab=paste(x$response, " (", type, ")", sep=""),
+		main=paste(effect, "effect plot"),
+		colors, symbols, lines, cex=1.5, lwd=2,
+		factor.names=TRUE, ci.style, band.colors, band.transparency=0.3,
+		style=c("lines", "stacked"),
+		confint=(style == "lines" && !is.null(x$confidence.level)),
+		transform.x=NULL, ticks.x=NULL, xlim=NULL,
+		ylim, rotx=0, alternating=TRUE, roty=0, grid=FALSE,
+		layout, key.args=NULL,
+		row=1, col=1, nrow=1, ncol=1, more=FALSE, use.splines=TRUE, ...)
 \method{plot}{efflist}(x, selection, rows, cols, ask=FALSE, graphics=TRUE, ...)
 \method{[}{efflist}(x, ...)
 }
@@ -93,15 +100,21 @@ and \code{efflist} objects.
   \item{main}{the title for the plot, printed at the top; the default title is constructed from the
     name of the effect.}
   \item{colors}{\code{colors[1]} is used to plot effects, \code{colors[2]} to plot 
-    confidence bands. In a mulitline plot, the successive \code{colors} correspond
+    confidence limits when \code{ci.style} is not equal to \code{"bands"}. In a mulitline plot, the successive \code{colors} correspond
     to the levels of the \code{z.var} covariate or factor. In a stacked plot or a plot
     without confidence bands for a
     multinomial or proportional-odds logit model, the successive \code{colors}
     correspond to the levels of the response factor. In all but stacked plots,
-    \code{colors} defaults to \code{palette()}; for stacked multinomial-logit plots,
+    \code{colors} defaults to \code{palette()}.   If \code{colors} is
+    shorter than the number of levels, then it is recycled, so \code{colors="black"}
+    will use black for all levels.
+
+    For stacked multinomial-logit plots,
     \code{colors} defaults to \code{rainbow_hcl(levels)}, where \code{levels} is
     the number of levels of the response variable; for stacked proportional-odds model
-    plots, \code{colors} defautls to \code{sequential_hcl(levels)}.
+    plots, \code{colors} defautls to \code{sequential_hcl(levels)}.   \code{colors}
+    does not recycle for stacked plots.
+
     \bold{Warning:} This argument
     \emph{cannot} be abbreviated to \code{col}, which is used for a different
     purpose (see below).}
@@ -110,9 +123,10 @@ and \code{efflist} objects.
     in a line plot for a polytomous logit model. 
     These arguments are used only if \code{multiline = TRUE}
     or for polytomous logit models where the effects are plotted without confidence bands;
-    in these cases a legend is drawn at the top of the display.}
+    in these cases a legend is drawn at the top of the display.  If these arguments are
+    too short they are recycled.}
   \item{cex}{character expansion for plotted symbols; default is \code{1.5}.}
-  \item{lwd}{line width for fitted lined}
+  \item{lwd}{line width for fitted lines}
   \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
     if \code{NULL}, the default, then the vertical axes are scaled from the data.}
   \item{xlim}{a named list of 2-element vectors, with the names corresponding to numeric
@@ -124,13 +138,18 @@ and \code{efflist} objects.
     factor names in conditioning-variable labels.}
   \item{ci.style}{confidence bounds can be indicated using error bars, using lines or confidence bands,
     depending on the plot type.
-    For single line plots the default is \code{"bars"} for factors and \code{"lines"}
-    for variates, but style \code{"bands"} can also be used.  
+    For single line plots the default is \code{"bars"} for factors and \code{"bands"}
+    for variates.  Style \code{"lines"} can also be used for either of these.  
     For multiline plots, the default is \code{"none"} for no 
-    confidence bounds, but style \code{"bars"} can also be used.  For a variate
+    confidence bounds, but style \code{"bars"} or \code{"bands"} can also be used.  For a variate
     the option \code{"bars"} displays the error bars at
     each of the \code{levels} points for which the horizontal variable was evaluated.}
-  \item{alpha}{For \code{ci.style="bands"}, the alpha transparency of the fill color.}
+  \item{band.colors}{A vector of colors for the color of the confidence band with \code{ci.style="bands"}.
+    The default is \code{band.colors=colors}.  For plots with one line, the choice, setting
+    \code{band.colors="red"} produces a pleasing result, even if color provides no additional
+    information in this case.  If this argument is too short it is recycled.}
+  \item{band.transparency}{For \code{ci.style="bands"}, the alpha transparency of the fill color. Not all
+    graphic devices support transparency.}
   \item{style}{(for multinomial or proportional-odds logit models) \code{"lines"} (the default
     for a line plot, or \code{"stacked"} for a stacked-bar or stacked-area plot. In the latter
     case only fitted probabilities may be plotted and confidence envelopes cannot be shown.}
@@ -183,6 +202,10 @@ and \code{efflist} objects.
     high-order terms are plotted in an array.}
   \item{graphics}{if \code{TRUE} (the default), then the menu of terms to plot is presented
     in a dialog box rather than as a text menu.}
+  \item{use.splines}{If \code{TRUE}, the default, then any lines drawn when the horizontal
+    axis is not a factor use interpolating splines computed by the \code{\link{spline}} 
+    function.  If FALSE, then linear interpoliation is used.  This argument is ignored if
+    the horizontal axis is a factor.}
   \item{...}{arguments to be passed down.}
 }
 
@@ -225,61 +248,69 @@ and \code{efflist} objects.
 	\code{\link[colorspace]{rainbow_hcl}}, \code{\link[colorspace:rainbow_hcl]{sequential_hcl}}}
 
 \examples{
-mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 
+mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,
     data=Cowles, family=binomial)
-eff.cowles <- allEffects(mod.cowles, xlevels=list(neuroticism=0:24, 
-    extraversion=seq(0, 24, 6)))
+eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)))
 eff.cowles
+as.data.frame(eff.cowles[[2]]) # neuroticism*extraversion interaction
 
 plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90)
 
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
 
-# new options: lwd, ci.style='bands', alpha
+# change color of the confidence bands to 'black' with .15 transparency
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
-     ticks=list(at=c(.1,.25,.5,.75,.9)), lwd=4, ci.style='bands', alpha=0.2)
+    ticks=list(at=c(.1,.25,.5,.75,.9)), band.colors="red", band.transparency=.3)
 
-plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE, 
+plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
     ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)))
-    
-plot(effect('sex:neuroticism:extraversion', mod.cowles,
-    xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
 
+# use probability scale in place of logit scale, all lines are black.
+plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
+    ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)),
+    colors="black", lines=1:8,
+    ci.style="bands", rescale.axis=FALSE, band.colors=palette())
+
+plot(effect('sex:neuroticism:extraversion', mod.cowles,
+    xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE)
+
+plot(effect('sex:neuroticism:extraversion', mod.cowles,
+    xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE,
+    rescale.axis=FALSE, ci.style="bands")
 
 if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
-plot(effect("Europe*political.knowledge", mod.beps, 
-	xlevels=list(Europe=1:11, political.knowledge=0:3)))
-	
-plot(effect("Europe*political.knowledge", mod.beps, 
-		xlevels=list(Europe=1:11, political.knowledge=0:3),
+plot(effect("Europe*political.knowledge", mod.beps,
+	xlevels=list(political.knowledge=0:3)))
+
+plot(effect("Europe*political.knowledge", mod.beps,
+		xlevels=list(political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
 }
-	
+
 if (require(MASS)){
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
 
-plot(effect("country*poly(age, 3)", mod.wvs), style="stacked", 
+plot(effect("country*poly(age, 3)", mod.wvs), style="stacked",
 	colors=c("gray75", "gray50", "gray25"))
-	
+
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 }
 
-mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
+mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
 plot(eff.pres)
 plot(eff.pres[1:2])
-plot(eff.pres[1], 
+plot(eff.pres[1],
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))
-
 }
 
 \keyword{hplot}

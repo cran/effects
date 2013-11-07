@@ -1,9 +1,7 @@
 # 2013-07-31:  extend effects to poLCA objects.  S. Weisberg
+# 2013-10-15: removed effect.poLCA. J. Fox
 
-#The next three functions should be exported to the namespace
-effect.poLCA <- function(term, mod, ...) {
-    effect(term, poLCA.to.fake(mod), ...)
-    }
+#The next two functions should be exported to the namespace
     
 allEffects.poLCA <- function(mod, ...){
   	allEffects(poLCA.to.fake(mod), ...)

@@ -1,6 +1,7 @@
 \name{effect}
 \alias{effect}
 \alias{Effect}
+\alias{Effect.default}
 \alias{Effect.lm}
 \alias{Effect.mer}
 \alias{Effect.merMod}
@@ -9,14 +10,7 @@
 \alias{Effect.multinom}
 \alias{Effect.polr}
 \alias{Effect.poLCA}
-\alias{effect.lm}
-\alias{effect.gls}
-\alias{effect.multinom}
-\alias{effect.polr}
-\alias{effect.mer}
-\alias{effect.merMod}
-\alias{effect.lme}
-\alias{effect.poLCA}
+\alias{Effect.mlm}
 \alias{allEffects}
 \alias{allEffects.mer}
 \alias{allEffects.merMod}
@@ -33,15 +27,23 @@
   in a linear (fit by \code{lm} or \code{gls}) or generalized linear model (fit by \code{glm}), or an \code{"effpoly"} object for a term in a
    multinomial or proportional-odds logit model (fit respectively by \code{multinom} or \code{polr}), 
   absorbing the lower-order terms marginal
-  to the term in question, and averaging over other terms in the model.  The function can
-  also be used with mixed-effects models fit with \code{lmer} from the \code{lme4} package,
-  or fit with \code{lme} from the \code{nlme} package.  In mixed effects models the
-  analysis is for the fixed effects only, not for random effects. 
+  to the term in question, and averaging over other terms in the model.  For multivariate linear models
+  (\code{mlm}), the function constructs a list of \code{"eff"} objects separately for the various
+  response variables.
+  
+  The function can
+  also be used with mixed-effects models fit with \code{lmer} from the \pkg{lme4} package,
+  or fit with \code{lme} from the \pkg{nlme} package, and for polytomous latent-class models
+  fit by the \code{poLCA} function in the \pkg{poLCA} package.  In mixed effects models the
+  analysis is for the fixed effects only, not for random effects. The \code{effect} function
+  works by constructing a call to \code{Effect}.
   
   \code{Effect} also constructs an an \code{"eff"} object, but rather than focusing on a term in the model,
   it focuses on a subset of the predictors. \code{Effect} is consequently more flexible and robust than 
   \code{effect}, and will work with some models for which \code{effect} fails, such as models with
-  nested terms (see the examples).
+  nested terms (see the examples). The \code{effect} function calls \code{Effect}. There is a default
+  method for \code{Effect} that should work with any model object that has a linear predictor and responds
+  to the \code{\link{coef}}, \code{\link{model.frame}}, \code{\link{formula}}, and \code{\link{vcov}} functions.
   
   \code{allEffects} identifies all of the high-order terms in a model and returns
   a list of \code{"eff"} or \code{"effpoly"} objects (i.e., an object of type \code{"efflist"}).
@@ -49,28 +51,6 @@
 
 \usage{
 effect(term, mod, ...)
-
-\method{effect}{lm}(term, mod, xlevels=list(), default.levels=NULL, given.values, 
-	se=TRUE, confidence.level=.95, 
-    transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-    typical=mean, offset=mean, ...)
-    
-\method{effect}{gls}(term, mod, xlevels=list(), default.levels=NULL, given.values,
-	se=TRUE, confidence.level=.95, transformation=NULL, typical=mean, ...)
-    
-\method{effect}{multinom}(term, mod, confidence.level=.95, xlevels=list(), default.levels=NULL, 
-	given.values, se=TRUE, typical=mean, ...)
-		
-\method{effect}{polr}(term, mod, confidence.level=.95, xlevels=list(), default.levels=NULL, 
-	given.values, se=TRUE, typical=mean, latent=FALSE, ...)
-	
-\method{effect}{mer}(term, mod, ...)
-
-\method{effect}{merMod}(term, mod, ...)
-
-\method{effect}{lme}(term, mod, ...)
-
-\method{effect}{poLCA}(term, mod, ...) 
 
 Effect(focal.predictors, mod, ...)
 
@@ -98,6 +78,14 @@ Effect(focal.predictors, mod, ...)
 \method{Effect}{lme}(focal.predictors, mod, ...)
 
 \method{Effect}{poLCA}(focal.predictors, mod, ...)
+
+\method{Effect}{mlm}(focal.predictors, mod, response, ...)
+
+\method{Effect}{default}(focal.predictors, mod, xlevels = list(), 
+    default.levels = NULL, given.values,
+    se = TRUE, confidence.level = 0.95, 
+    transformation = list(link = I, inverse = I), 
+    typical = mean, offset = mean, ...)
     
 allEffects(mod, ...)
 
@@ -180,6 +168,8 @@ allEffects(mod, ...)
   \item{transform}{a transformation to be applied to the effects and confidence limits,
     by default taken from the inverse link function saved in the \code{"eff"} object.}
   \item{row.names, optional}{not used.}
+  \item{response}{for an \code{mlm}, a vector containing the name(s) or indices of one or more response variable(s).  
+    The default is to use all responses in the model.}
   \item{object}{an object of class \code{"eff"} for which the covariance matrix of the effects is desired.}
   \item{...}{arguments to be passed down.}
 }
@@ -214,7 +204,9 @@ allEffects(mod, ...)
 \value{
   For \code{lm}, \code{glm}, \code{mer} and \code{lme}, \code{effect} and \code{Effect} return 
   an \code{"eff"} object, and for \code{multinom}
-  and \code{polr}, an \code{"effpoly"} object, with the following components:
+  and \code{polr}, an \code{"effpoly"} object, with the components listed below.
+  For \code{mlm} with one response specified, an \code{"eff"} object, otherwise a class \code{"efflist"} object, 
+  containing one \code{"eff"} object for each \code{response}.
   \item{term}{the term to which the effect pertains.}
   \item{formula}{the complete model formula.}
   \item{response}{a character string giving the name of the response variable.}
@@ -259,14 +251,14 @@ and of class \code{effpoly} with more than 2 categories.
 }
 
 \section{Warnings and Limitations}{
-  The \code{effect} function handles factors and covariates differently, and becomes confused if one is changed to the other
+  The \code{Effect} function handles factors and covariates differently, and becomes confused if one is changed to the other
   in a model formula. Consequently, formulas that include calls to \code{as.factor}, \code{factor}, or \code{numeric}
-  (as, e.g., in \code{as.factor(income)}) will cause errors. Instead, create the modified variables outside of the model
+  (as, e.g., in \code{y ~ as.factor(income)}) will cause errors. Instead, create the modified variables outside of the model
   formula (e.g., \code{fincome <- as.factor(income)}) and use these in the model formula.
   
   Factors cannot have colons in level names (e.g., \code{"level:A"}); the \code{effect} function will confuse the
   colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
-  In addition, factors cannont be declared on the fly (e.g., using \code{y ~ a + factor(b}.
+  In addition, factors cannont be declared on the fly (e.g., using \code{y ~ a + factor(b)}.
   
   The functions in the \pkg{effects} package do not handle logical predictors; convert logical predictors to factors.
   
@@ -333,10 +325,10 @@ and Jangman Hong.}
     \code{\link{densityplot}}}
 
 \examples{
-mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion, 
+mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,
     data=Cowles, family=binomial)
-eff.cowles <- allEffects(mod.cowles, xlevels=list(neuroticism=0:24, 
-    extraversion=seq(0, 24, 6)), given.values=c(sexmale=0.5))
+eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)),
+    given.values=c(sexmale=0.5))
 eff.cowles
 
 	# the following are equivalent:
@@ -350,41 +342,41 @@ plot(eff.cowles, 'sex', ylab="Prob(Volunteer)")
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
 
-plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE, 
+plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
     ylab="Prob(Volunteer)")
-    
+
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
-    xlevels=list(neuroticism=0:24, extraversion=seq(0, 24, 6))), multiline=TRUE)
-    
+    xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE)
+
 as.data.frame(eff.cowles[[2]])
-    
+
 # a nested model:
 
 mod <- lm(log(prestige) ~ income:type + education, data=Prestige)
 
-# does not work: effect("income:type", mod, transformation=list(link=log, inverse=exp)) 
+# does not work: effect("income:type", mod, transformation=list(link=log, inverse=exp))
 
-plot(Effect(c("income", "type"), mod, transformation=list(link=log, inverse=exp), 
+plot(Effect(c("income", "type"), mod, transformation=list(link=log, inverse=exp),
 	ylab="prestige")) # works
-    
-\donttest{ 
+
+
 if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
-plot(effect("Europe*political.knowledge", mod.beps, 
-	xlevels=list(Europe=1:11, political.knowledge=0:3)))  
-plot(effect("Europe*political.knowledge", mod.beps, 
-		xlevels=list(Europe=1:11, political.knowledge=0:3),
+plot(effect("Europe*political.knowledge", mod.beps,
+	xlevels=list(political.knowledge=0:3)))
+plot(effect("Europe*political.knowledge", mod.beps,
+		xlevels=list(political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
-    
+
 plot(Effect(c("Europe","political.knowledge"), mod.beps,  # equivalent
     	xlevels=list(Europe=1:11, political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
     }
-    
+
 if (require(MASS)){
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
@@ -393,26 +385,24 @@ plot(effect("country*poly(age, 3)", mod.wvs), style="stacked")
 plot(Effect(c("country", "age"), mod.wvs), style="stacked") # equivalent
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 }
-}
 
-mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2), 
+
+mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 eff.pres <- allEffects(mod.pres, xlevels=50)
 plot(eff.pres)
-plot(eff.pres[1], 
+plot(eff.pres[1],
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))
-    
-\dontrun{
+
 # linear model with log-response and log-predictor
 # to illustrate transforming axes and setting tick labels
 mod.pres1 <- lm(log(prestige) ~ log(income) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 # effect of the log-predictor
-eff.log <- Effect(c("income"), mod.pres1, xlevels=50)
+eff.log <- Effect(c("income"), mod.pres1)
 # effect of the log-predictor transformed to the arithmetic scale
-eff.trans <- Effect(c("income"), mod.pres1, xlevels=50,
-       transformation=list(link=log, inverse=exp))
+eff.trans <- Effect(c("income"), mod.pres1, transformation=list(link=log, inverse=exp))
 #variations:
 # y-axis:  scale is log, tick labels are log
 # x-axis:  scale is arithmetic, tick labels are arithmetic
@@ -445,38 +435,55 @@ plot(eff.trans, transform.x=list(income=c(trans=log, inverse=exp)),
        ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
        rescale.axis=FALSE,
        xlab="income, log-scale", ylab="prestige")
-}
 
-\dontrun{
-	library(nlme) # for gls()
-	mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel, 
-	    correlation=corARMA(p=2, q=0), method="ML")
-	plot(allEffects(mod.hart))
+	if (require(nlme)){ # for gls()
+    	mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel,
+    	    correlation=corARMA(p=2, q=0), method="ML")
+    	plot(allEffects(mod.hart))
+        detach(package:nlme)
+    }
 
-	library(lme4)
+	if (require(lme4)){
 	data(cake, package="lme4")
 	fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
                    REML = FALSE)
 	plot(effect("recipe:temperature", fm1), grid=TRUE)
     plot(Effect(c("recipe", "temperature"), fm1)) # equivalent
+	detach(package:lme4)
+    }
 
-	detach(package:lme4) # if previously attached
-	library(nlme)
+	if (require(nlme) && length(find.package("lme4", quiet=TRUE)) > 0){
 	data(cake, package="lme4")
 	cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
 	fm2 <- lme(angle ~ recipe * temperature, data=cake,
                random = ~ 1 | rep, method="ML")
 	plot(effect("recipe:temperature", fm2), grid=TRUE)
   plot(Effect(c("recipe", "temperature"), fm2)) # equivalent
+  detach(package:nlme)
+  }
+
+
+  if (require(poLCA)){
+      data(election)
+      f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
+                 MORALB,CARESB,KNOWB,LEADB,DISHONB,INTELB)~PARTY*AGE
+      nes2a <- poLCA(f2a,election,nclass=3,nrep=5)
+      plot(Effect(c("PARTY", "AGE"), nes2a), style="stacked")
+  }
+
+
+# mlm example
+if (require(heplots)) {
+	data(NLSY, package="heplots")
+	mod <- lm(cbind(read,math) ~ income+educ, data=NLSY)
+	eff.inc <- Effect("income", mod)
+	plot(eff.inc)
+	eff.edu <- Effect("educ", mod)
+	plot(eff.edu, rug=FALSE, grid=TRUE)
+	plot(Effect("educ", mod, response="read"))
+  detach(package:heplots)
 }
-\dontrun{
-  library(poLCA)
-  data(election)
-  f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
-             MORALB,CARESB,KNOWB,LEADB,DISHONB,INTELB)~PARTY*AGE
-  nes2a <- poLCA(f2a,election,nclass=3,nrep=5)
-  plot(Effect(c("PARTY", "AGE"), nes2a), style="stacked")
-} 
+ 
 }
 
 \keyword{hplot}

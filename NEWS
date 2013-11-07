@@ -1,3 +1,21 @@
+Version 2.3-0
+
+ o removed stray character in a the mixed models file
+ 
+ o ci.style="bands" is now the default for variates on the horizontal axis and can also be used with multiline=TRUE
+  
+ o Added ci.style='bands', band.transparency, band.colors, and lwd to plot.effpoly() for line plots to give filled confidence bands and control line width
+
+ o Added Effect.mlm() for multivariate linear models
+ 
+ o Interpolating splines are now used by default when drawing lines in effects plots unless the argument use.splines=FALSE
+ 
+ o effect() now calls Effect(); all effect() methods are removed, but effect() will continue to work as before.
+
+ o Various methods for effect objects now handle factors with a "valid" NA level (fixing bug reported by Joseph Larmarange).
+
+ o Further bug fixes in effects.mer() and effects.lme() (following bug report by Felipe E. Albornoz).
+
 Version 2.2-6
 
  o bug fixes in effects.mer and effects.lme.
