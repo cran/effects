@@ -10,14 +10,14 @@ Effect Displays for Linear, Generalized Linear, Multinomial-Logit, Proportional-
 
 Graphical and tabular effect displays, e.g., of interactions, for linear (including fit via \code{\link[nlme]{gls}}), multivariate-linear, 
 generalized linear, multinomial-logit, proportional-odds logit,
-mixed-effect, polytomous latent-class, and some other models.
+mixed-effect, polytomous latent-class, and some other models; (multidimensional) component+residual plots for linear and generalized linear models.
 
 }
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 2.3-0\cr
-Date: \tab 2013/11/06\cr
+Version: \tab 3.0-0\cr
+Date: \tab 2014/03/20\cr
 Depends: \tab lattice, grid, colorspace\cr
 Suggests: \tab nlme, lme4, MASS, nnet, poLCA\cr
 LazyLoad: \tab yes\cr
@@ -32,7 +32,9 @@ where \code{model} is an appropriate fitted-model object.
 Additional arguments to \code{allEffects} and \code{plot} can be used to customize the resulting
 displays. The function \code{effect} can be employed to produce an effect display for a 
 particular term in the model, or to which terms in the model are marginal. The function \code{Effect}
-may similarly be used to produce an effect display for any combination of predictors.
+may similarly be used to produce an effect display for any combination of predictors. For linear and
+generalized linear models it is also possible to plot partial residuals to obtain (multidimensional)
+component+residual plots.
 See \code{?effect}, \code{?Effect}, and \code{?plot.eff} for details.
 }
 

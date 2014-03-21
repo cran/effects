@@ -3,21 +3,24 @@
 \alias{print.effpoly}
 \alias{print.efflatent}
 \alias{print.efflist}
+\alias{print.mlm.efflist}
 \alias{print.summary.eff}
 \alias{summary.eff}
 \alias{summary.effpoly}
 \alias{summary.efflatent}
 \alias{summary.efflist}
+\alias{summary.mlm.efflist}
 \alias{plot.eff}
 \alias{plot.effpoly}
 \alias{plot.efflist}
+\alias{plot.mlm.efflist}
 \alias{[.efflist}
 
 \title{Summarizing, Printing, and Plotting Effects}
 
 \description{
 \code{summary}, \code{print}, \code{plot}, and \code{[} methods for \code{eff}, \code{effpoly},
-and \code{efflist} objects.
+\code{efflist}, and \code{mlm.efflist} objects.
 }
 
 \usage{
@@ -25,22 +28,26 @@ and \code{efflist} objects.
 \method{print}{effpoly}(x, type=c("probability", "logits"), ...)
 \method{print}{efflatent}(x, ...)
 \method{print}{efflist}(x, ...)
+\method{print}{mlm.efflist}(x, ...)
 \method{print}{summary.eff}(x, ...)
 \method{summary}{eff}(object, type=c("response", "link"), ...)
 \method{summary}{effpoly}(object, type=c("probability", "logits"), ...)
 \method{summary}{efflatent}(object, ...)
 \method{summary}{efflist}(object, ...)
-\method{plot}{eff}(x, x.var=which.max(levels),
-		z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, xlab,
-		ylab, main=paste(effect, "effect plot"),
-		colors=palette(), symbols=1:length(colors), lines=1:length(colors),
+\method{summary}{mlm.efflist}(object, ...)
+\method{plot}{eff}(x, x.var,
+    z.var=which.min(levels), multiline=is.null(x$se), rug=TRUE, 
+    xlab, ylab, main=paste(effect, "effect plot"),
+    colors=palette(), symbols=1:length(colors), lines=1:length(colors),
     cex=1.5, lwd=2, ylim, xlim=NULL,
-		factor.names=TRUE, ci.style, band.transparency=0.2, band.colors=colors,
-		type=c("response", "link"), ticks=list(at=NULL, n=5),
-		alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis=TRUE,
-		transform.x=NULL, ticks.x=NULL,
-		key.args=NULL,
-		row=1, col=1, nrow=1, ncol=1, more=FALSE, use.splines=TRUE, ...)
+    factor.names=TRUE, ci.style, band.transparency=0.15, band.colors=colors,
+    type=c("response", "link"), ticks=list(at=NULL, n=5),  
+    alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis=TRUE, 
+    transform.x=NULL, ticks.x=NULL,
+    key.args=NULL, 
+    row=1, col=1, nrow=1, ncol=1, more=FALSE, 
+    use.splines=TRUE, partial.residuals=c("adjusted", "raw"), show.fitted=FALSE,
+    residuals.color="blue", residuals.pch=1, span=2/3, ...)
 \method{plot}{effpoly}(x,
 		type=c("probability", "logit"),
 		x.var=which.max(levels),
@@ -57,13 +64,14 @@ and \code{efflist} objects.
 		layout, key.args=NULL,
 		row=1, col=1, nrow=1, ncol=1, more=FALSE, use.splines=TRUE, ...)
 \method{plot}{efflist}(x, selection, rows, cols, ask=FALSE, graphics=TRUE, ...)
+\method{plot}{mlm.efflist}(x, ...)
 \method{[}{efflist}(x, ...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"eff"}, \code{"effpoly"}, \code{"efflist"}, 
+  \item{x}{an object of class \code{"eff"}, \code{"effpoly"}, \code{"efflist"}, \code{"mlm.efflist"},
   	or \code{"summary.eff"}, as appropriate.}
-  \item{object}{an object of class \code{"eff"}, \code{"effpoly"}, or \code{"efflist"},
+  \item{object}{an object of class \code{"eff"}, \code{"effpoly"}, \code{"efflist"}, or \code{"mlm.efflist"},
     as appropriate.}
   \item{type}{for linear and generalized linear models, 
   	if \code{"response"} (the default), effects are printed 
@@ -89,9 +97,9 @@ and \code{efflist} objects.
   \item{confint}{plot point-wise confidence bands around fitted effects (for
   	multinomial and proportional-odds logit models); defaults to \code{TRUE},
   	in which case separate panels are used for different response levels.}
-  \item{rug}{if \code{TRUE}, the default, a rug plot is shown giving the marginal 
+  \item{rug}{if \code{TRUE}, the default, a rug plot is shown giving the \emph{marginal}
     distribution of the predictor on the horizontal axis, if this predictor is
-    a covariate.}
+    a covariate. The rug plot is suppressed if partial residuals are plotted.}
   \item{xlab}{the label for the horizontal axis of the effect plot; if missing, the
     function will use the name of the predictor on the horizontal axis.}
   \item{ylab}{the label for the vertical axis of the effect plot; the default is 
@@ -206,6 +214,17 @@ and \code{efflist} objects.
     axis is not a factor use interpolating splines computed by the \code{\link{spline}} 
     function.  If FALSE, then linear interpoliation is used.  This argument is ignored if
     the horizontal axis is a factor.}
+  \item{partial.residuals}{use \code{"adjusted"} partial residuals, computed at the panel-rounded
+    values of the focal predictors not on the horizontal axis of each panel, or \code{"raw"}
+    partial residuals, computed at the actual values of all focal predictors; the default is
+    \code{"adjusted"}, and this argument is effective only when partial residuals are included
+    in the effect object to be plotted --- see \code{\link{Effect}}.}
+  \item{span}{of the \emph{loess} smoother to be applied to partial residuals, if present;
+    the default is \code{2/3}.}
+  \item{show.fitted}{if partial residuals are present in the effect object, also plot the partial
+    fitted values (which will be shown as filled circles).}
+  \item{residuals.color}{color for plotting partial residuals (default \code{"blue"}).}
+  \item{residuals.pch}{plotting symbol for partial residuals (default \code{1}, open circles).}
   \item{...}{arguments to be passed down.}
 }
 
@@ -248,6 +267,8 @@ and \code{efflist} objects.
 	\code{\link[colorspace]{rainbow_hcl}}, \code{\link[colorspace:rainbow_hcl]{sequential_hcl}}}
 
 \examples{
+# also see examples in ?effect
+
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,
     data=Cowles, family=binomial)
 eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)))
@@ -259,6 +280,7 @@ plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90)
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
 
+\dontrun{
 # change color of the confidence bands to 'black' with .15 transparency
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)), band.colors="red", band.transparency=.3)
@@ -278,13 +300,16 @@ plot(effect('sex:neuroticism:extraversion', mod.cowles,
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE,
     rescale.axis=FALSE, ci.style="bands")
+}
 
 if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
+\dontrun{
 plot(effect("Europe*political.knowledge", mod.beps,
 	xlevels=list(political.knowledge=0:3)))
+}
 
 plot(effect("Europe*political.knowledge", mod.beps,
 		xlevels=list(political.knowledge=0:3),
@@ -297,17 +322,21 @@ mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
 
+\dontrun{
 plot(effect("country*poly(age, 3)", mod.wvs), style="stacked",
 	colors=c("gray75", "gray50", "gray25"))
 
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 }
+}
 
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
+\dontrun{
 plot(eff.pres)
 plot(eff.pres[1:2])
+}
 plot(eff.pres[1],
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))

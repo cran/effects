@@ -1,6 +1,5 @@
 # Effect generic and methods
 # John Fox and Sanford Weisberg
-# last modified 2012-12-08 by J. Fox
 # 12-21-2012 Allow for empty cells in factor interactions, S. Weisberg
 # 2012-03-05: Added .merMod method for development version of lme4, J. Fox
 # 2012-04-06: Added support for lme4.0, J. Fox
@@ -10,16 +9,23 @@
 # 2013-10-29: code to handle "valid" NAs in factors. J. Fox
 # 2013-11-06: fixed bug in Effect.multinom() in construction of effect object
 #             when there is only one focal predictor; caused as.data.frame.effpoly() to fail
+# 2014-03-13: modified Effect.lm() to compute partial residuals. J. Fox
 
 
 Effect <- function(focal.predictors, mod, ...){
     UseMethod("Effect", mod)
 }
-
-Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
+Effect.lm <- function (focal.predictors, mod, xlevels = list(), 
+    default.levels = NULL, given.values,
     se = TRUE, confidence.level = 0.95, 
     transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
-    typical = mean, offset = mean, ...){
+    typical = mean, offset = mean, partial.residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
+    x.var=NULL,  ...){
+    data <- if (partial.residuals){
+        all.vars <- all.vars(formula(mod))
+        expand.model.frame(mod, all.vars)[, all.vars]
+    }
+    else NULL
     if (missing(given.values)) 
         given.values <- NULL
     else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
@@ -31,9 +37,11 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
     }
     else stop("offset must be a function or a number")
     formula.rhs <- formula(mod)[[3]]
-    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, 
+        partial.residuals=partial.residuals, quantiles=quantiles, x.var=x.var, data=data)
     excluded.predictors <- model.components$excluded.predictors
     predict.data <- model.components$predict.data
+    predict.data.all.rounded <- predict.data.all <- if (partial.residuals) na.omit(data[, all.vars(formula(mod))]) else NULL
     factor.levels <- model.components$factor.levels
     factor.cols <- model.components$factor.cols
     n.focal <- model.components$n.focal
@@ -41,23 +49,57 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
     X.mod <- model.components$X.mod
     cnames <- model.components$cnames
     X <- model.components$X
+    x.var <- model.components$x.var
     formula.rhs <- formula(mod)[c(1, 3)]
     Terms <- delete.response(terms(mod))
     mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
     mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
-    wts <- weights(mod) # mod$weights
+    factors <- sapply(predict.data, is.factor)
+    if (partial.residuals){
+        for (predictor in focal.predictors[-x.var]){
+            if (!factors[predictor]){
+                values <- unique(predict.data[, predictor])
+                predict.data.all.rounded[, predictor] <- values[apply(outer(predict.data.all[, predictor], values, function(x, y) (x - y)^2), 1, which.min)]
+            }
+        }
+        mf.all <- model.frame(Terms, predict.data.all, xlev = factor.levels, na.action=NULL)
+        mod.matrix.all <- model.matrix(formula.rhs, data = mf.all, contrasts.arg = mod$contrasts)
+        mf.all.rounded <- model.frame(Terms, predict.data.all.rounded, xlev = factor.levels, na.action=NULL)
+        mod.matrix.all.rounded <- model.matrix(formula.rhs, data = mf.all.rounded, contrasts.arg = mod$contrasts)
+    }
+    else mod.matrix.all <- model.matrix(mod)
+    wts <- weights(mod) 
     if (is.null(wts)) 
         wts <- rep(1, length(residuals(mod)))
-    mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
-        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+    res <- Fixup.model.matrix(mod, mod.matrix, mod.matrix.all, 
+        X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, 
+        typical, given.values,
+        partial.residuals=partial.residuals, mod.matrix.all.rounded)
+    mod.matrix <- if (partial.residuals) res$mod.matrix else res
+    mod.matrix.cases <- if (partial.residuals) res$mod.matrix.all else NULL
+    mod.matrix.cases.rounded <- if (partial.residuals) res$mod.matrix.all.rounded else NULL
     # look for aliased coefficients and remove those columns from mod.matrix
     mod.matrix <- mod.matrix[, !is.na(mod$coefficients)]
     effect <- off + mod.matrix %*% mod$coefficients[!is.na(mod$coefficients)]
-    # end
+    if (partial.residuals){
+        mod.matrix.cases <- na.omit(mod.matrix.cases[, !is.na(mod$coefficients)])
+        fitted <- as.vector(off + mod.matrix.cases %*% mod$coefficients[!is.na(mod$coefficients)])
+        mod.matrix.cases.rounded <- na.omit(mod.matrix.cases.rounded[, !is.na(mod$coefficients)])
+        fitted.rounded <- as.vector(off + mod.matrix.cases.rounded %*% mod$coefficients[!is.na(mod$coefficients)])
+        res <- na.omit(residuals(mod, type="working"))
+        partial.residuals.raw <- fitted + res
+        partial.residuals.adjusted <- fitted.rounded + res
+    }
+    else {
+        partial.residuals.raw <- partial.residuals.adjusted <- fitted.rounded <- fitted <- NULL
+    }
     result <- list(term = paste(focal.predictors, collapse="*"), 
         formula = formula(mod), response = response.name(mod), 
-        variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
-        discrepancy = 0, offset=off)
+        variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], x.all=predict.data.all.rounded, #[, 1:n.focal, drop=FALSE],
+        model.matrix = mod.matrix, mod.matrix.all=mod.matrix.cases, data = X, 
+        discrepancy = 0, offset=off, fitted.rounded=fitted.rounded, fitted=fitted,
+        partial.residuals.raw=partial.residuals.raw, partial.residuals.adjusted=partial.residuals.adjusted, 
+        x.var=x.var)
     # find empty cells, if any, and correct
     whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
     zeroes <- NULL
@@ -76,7 +118,6 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
         } 
         result$fit[!good] <- NA
     } 
-    # end of change
     if (se) {
         if (any(family(mod)$family == c("binomial", "poisson"))) {
             dispersion <- 1
@@ -94,18 +135,16 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
         vcov <- mod.matrix %*% V %*% t(mod.matrix)
         rownames(vcov) <- colnames(vcov) <- NULL
         var <- diag(vcov)
-        result$vcov <- vcov		
+        result$vcov <- vcov        
         result$se <- sqrt(var)
         result$lower <- effect - z * result$se
         result$upper <- effect + z * result$se
         result$confidence.level <- confidence.level
-        # zero cells
         if(length(zeroes) > 0){
             result$se[!good] <- NA
             result$lower[!good] <- NA
             result$upper[!good] <- NA
         }
-        # end zero cells
     }
     if (is.null(transformation$link) && is.null(transformation$inverse)) {
         transformation$link <- I
@@ -115,6 +154,107 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels =
     class(result) <- "eff"
     result
 }
+
+
+# Effect.lm <- function (focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
+#     se = TRUE, confidence.level = 0.95, 
+#     transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
+#     typical = mean, offset = mean, ...){
+#     if (missing(given.values)) 
+#         given.values <- NULL
+#     else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+#         stop("given.values (", names(given.values[!which]), ") not in the model")
+#     off <- if (is.numeric(offset) && length(offset) == 1) offset
+#     else if (is.function(offset)) {
+#         mod.off <- model.offset(model.frame(mod))
+#         if (is.null(mod.off)) 0 else offset(mod.off)
+#     }
+#     else stop("offset must be a function or a number")
+#     formula.rhs <- formula(mod)[[3]]
+#     model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+#     excluded.predictors <- model.components$excluded.predictors
+#     predict.data <- model.components$predict.data
+#     factor.levels <- model.components$factor.levels
+#     factor.cols <- model.components$factor.cols
+#     n.focal <- model.components$n.focal
+#     x <- model.components$x
+#     X.mod <- model.components$X.mod
+#     cnames <- model.components$cnames
+#     X <- model.components$X
+#     formula.rhs <- formula(mod)[c(1, 3)]
+#     Terms <- delete.response(terms(mod))
+#     mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
+#     mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
+#     wts <- weights(mod) # mod$weights
+#     if (is.null(wts)) 
+#         wts <- rep(1, length(residuals(mod)))
+#     mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+#         X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
+#     # look for aliased coefficients and remove those columns from mod.matrix
+#     mod.matrix <- mod.matrix[, !is.na(mod$coefficients)]
+#     effect <- off + mod.matrix %*% mod$coefficients[!is.na(mod$coefficients)]
+#     # end
+#     result <- list(term = paste(focal.predictors, collapse="*"), 
+#         formula = formula(mod), response = response.name(mod), 
+#         variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
+#         discrepancy = 0, offset=off)
+#     # find empty cells, if any, and correct
+#     whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
+#     zeroes <- NULL
+#     if(sum(whichFact) > 1){
+#         nameFact <- names(whichFact)[whichFact]
+#         counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+#             model.frame(mod))
+#         zeroes <- which(counts == 0)  
+#     }
+#     if(length(zeroes) > 0){
+#         levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+#         good <- rep(TRUE, dim(levs)[1])
+#         for(z in zeroes){
+#             good <- good &  
+#                 apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
+#         } 
+#         result$fit[!good] <- NA
+#     } 
+#     # end of change
+#     if (se) {
+#         if (any(family(mod)$family == c("binomial", "poisson"))) {
+#             dispersion <- 1
+#             z <- qnorm(1 - (1 - confidence.level)/2)
+#         }
+#         else {
+#             dispersion <- sum(wts * (residuals(mod))^2, na.rm=TRUE)/mod$df.residual # sum(wts * mod$residuals^2)/mod$df.residual
+#             z <- qt(1 - (1 - confidence.level)/2, df = mod$df.residual)
+#         }
+#         V2 <- dispersion * summary.lm(mod)$cov
+#         V1 <- vcov(mod)
+#         V <- if (inherits(mod, "fakeglm")) 
+#             V1
+#         else V2
+#         vcov <- mod.matrix %*% V %*% t(mod.matrix)
+#         rownames(vcov) <- colnames(vcov) <- NULL
+#         var <- diag(vcov)
+#         result$vcov <- vcov		
+#         result$se <- sqrt(var)
+#         result$lower <- effect - z * result$se
+#         result$upper <- effect + z * result$se
+#         result$confidence.level <- confidence.level
+#         # zero cells
+#         if(length(zeroes) > 0){
+#             result$se[!good] <- NA
+#             result$lower[!good] <- NA
+#             result$upper[!good] <- NA
+#         }
+#         # end zero cells
+#     }
+#     if (is.null(transformation$link) && is.null(transformation$inverse)) {
+#         transformation$link <- I
+#         transformation$inverse <- I
+#     }
+#     result$transformation <- transformation
+#     class(result) <- "eff"
+#     result
+# }
 
 Effect.mer <- function(focal.predictors, mod, ...) {
     #     if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 

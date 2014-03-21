@@ -1,3 +1,9 @@
+Version 3.0-0
+
+ o Added partial residuals for multidimensional component+residual plots to Effect.lm().
+
+ o Small bug fixes.
+
 Version 2.3-0
 
  o removed stray character in a the mixed models file

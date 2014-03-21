@@ -54,10 +54,12 @@ effect(term, mod, ...)
 
 Effect(focal.predictors, mod, ...)
 
-\method{Effect}{lm}(focal.predictors, mod, xlevels=list(), default.levels=NULL, given.values, 
-    se=TRUE, confidence.level=0.95, 
-    transformation=list(link=family(mod)$linkfun, inverse=family(mod)$linkinv), 
-    typical=mean, offset=mean, ...)
+\method{Effect}{lm}(focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
+    se = TRUE, confidence.level = 0.95, 
+    transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
+    typical = mean, offset = mean, 
+    partial.residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
+    x.var=NULL,  ...)
         
 \method{Effect}{gls}(focal.predictors, mod, xlevels = list(), default.levels=NULL, 
     given.values, se = TRUE, confidence.level = 0.95, transformation = NULL, 
@@ -125,8 +127,12 @@ allEffects(mod, ...)
     at which to set each numeric predictor.  For example, \code{xlevels=list(x1=c(2, 4, 7),
     x2=5)} would use the values 2, 4 and 7 for the levels of \code{x1}, 5
     equally spaced levels for the levels of \code{x2}, and use the default for
-    any other numeric predictors.
-    }
+    any other numeric predictors. If partial residuals are computed, then the focal
+    predictor that is to appear on the horizontal axis of an effect plot is
+    evaluated at 100 equally spaced values along its full range, and, by default,
+    other numeric predictors are evaluated at the quantiles specified in the
+    \code{quantiles} argument, unless their values are given explicitly in
+    \code{xlevels}.}
   \item{default.levels}{ignored, but included for compatibility with pre-July 2013
     versions of this package.  Use \code{xlevels} instead.}
   \item{given.values}{a numeric vector of named elements, setting particular
@@ -160,6 +166,17 @@ allEffects(mod, ...)
     by the \code{offset} argument to \code{lm}, \code{glm}, \code{lmer}, or \code{glmer} will be handled
     correctly; use of the \code{offset} function in the model formula is
     not supported.}
+  \item{partial.residuals}{if \code{TRUE}, partial residuals will be computed
+    for an effect in a linear or generalized linear model; if \code{FALSE}
+    (the default), partial residuals are suppressed.}
+  \item{quantiles}{quantiles at which to evaluate numeric focal predictors \emph{not} on the
+    horizontal axis, used only when partial residuals are displayed; superceded if the \code{xlevels} argument
+    gives specific values for a predictor.}
+  \item{x.var}{the name or index of the numeric predictor to define the horizontal axis of an effect
+    plot for a linear or generalized linear model; the default is \code{NULL}, in which case the first
+    numeric predictor in the effect will be used \emph{if} partial residuals are to be computed. This argument
+    is intended to be used when \code{partial.residuals} is \code{TRUE}; otherwise, the variable on the horizontal
+    axis can be chosen when the effect object is plotted: see \code{\link{plot.eff}}.}
   \item{latent}{if \code{TRUE}, effects in a proportional-odds logit model
   	are computed on the scale of the latent response; if \code{FALSE} 
   	(the default) effects are computed as individual-level probabilities
@@ -239,6 +256,17 @@ allEffects(mod, ...)
   \item{confidence.level}{for the confidence limits.}
   \item{transformation}{(for \code{"eff"} objects) a two-element list, with element \code{link} giving the
     link function, and element \code{inverse} giving the inverse-link (mean) function.}
+  \item{fitted.rounded}{partial fitted values at the observed values of the predictor \code{x.var} and the values of the
+    other predictors that appear in the effect display; predictors not in the effect are held constant to typical values.
+    This and the following two elements are \code{NULL} if partial residuals aren't computed and pertain only to linear
+    or generalized linear models.}
+  \item{fitted}{partial fitted values for the observed values of all predictors that appear in the effect display; 
+    predictors not in the effect are held constant to typical values.}
+  \item{partial.residuals.raw}{partial residuals for the effect computed at the actual values of all focal predictors.}
+  \item{partial.residuals.adjusted}{partial residuals for the effect computed at the panel-rounded values of focal predictors,
+    except for the predictor corresponding to \code{xvar}, which will appear on the horizontal axis of the plotted effect.}
+  \item{x.var}{the name of the predictor to appear on the horizontal axis of an effect plot made from the
+    returned object; will usually be \code{NULL} if partial residuals aren't computed.}
     
   \code{effectList} returns a list of \code{"eff"} or \code{"effpoly"} objects
   corresponding to the high-order terms of the model.
@@ -260,7 +288,8 @@ and of class \code{effpoly} with more than 2 categories.
   colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
   In addition, factors cannont be declared on the fly (e.g., using \code{y ~ a + factor(b)}.
   
-  The functions in the \pkg{effects} package do not handle logical predictors; convert logical predictors to factors.
+  The functions in the \pkg{effects} package work properly with predictors that are numeric or factors; 
+  consequently, e.g., convert logical predictors to factors, and dates to numeric.
   
   Empty cells in crossed-factors are now permitted for lm, glm and multinom models.  
   
@@ -325,14 +354,18 @@ and Jangman Hong.}
     \code{\link{densityplot}}}
 
 \examples{
+# Note: Some of these examples are marked as "don't run"
+#       to reduce the execution times of the examples.
+
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,
     data=Cowles, family=binomial)
 eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)),
     given.values=c(sexmale=0.5))
 eff.cowles
+as.data.frame(eff.cowles[[2]])
 
-	# the following are equivalent:
-
+\dontrun{
+# the following are equivalent:
 eff.ne <- effect("neuroticism*extraversion", mod.cowles)
 Eff.ne <- Effect(c("neuroticism", "extraversion"), mod.cowles)
 all.equal(eff.ne$fit, Eff.ne$fit)
@@ -347,8 +380,7 @@ plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
 
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE)
-
-as.data.frame(eff.cowles[[2]])
+}
 
 # a nested model:
 
@@ -364,26 +396,38 @@ if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
+\dontrun{
 plot(effect("Europe*political.knowledge", mod.beps,
 	xlevels=list(political.knowledge=0:3)))
-plot(effect("Europe*political.knowledge", mod.beps,
-		xlevels=list(political.knowledge=0:3),
-		given.values=c(gendermale=0.5)),
-	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
+}
 
-plot(Effect(c("Europe","political.knowledge"), mod.beps,  # equivalent
-    	xlevels=list(Europe=1:11, political.knowledge=0:3),
+plot(Effect(c("Europe", "political.knowledge"), mod.beps,  
+        xlevels=list(Europe=1:11, political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
-    }
+    
+\dontrun{ 
+plot(effect("Europe*political.knowledge", mod.beps, # equivalent
+    	xlevels=list(political.knowledge=0:3),
+		given.values=c(gendermale=0.5)),
+	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
+}
+}
 
 if (require(MASS)){
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
+\dontrun{
 plot(effect("country*poly(age, 3)", mod.wvs))
-plot(effect("country*poly(age, 3)", mod.wvs), style="stacked")
-plot(Effect(c("country", "age"), mod.wvs), style="stacked") # equivalent
+}
+
+plot(Effect(c("country", "age"), mod.wvs), style="stacked") 
+
+\dontrun{
+plot(effect("country*poly(age, 3)", mod.wvs), style="stacked") # equivalent
+
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
+}
 }
 
 
@@ -394,7 +438,7 @@ plot(eff.pres)
 plot(eff.pres[1],
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))
-
+\dontrun{
 # linear model with log-response and log-predictor
 # to illustrate transforming axes and setting tick labels
 mod.pres1 <- lm(log(prestige) ~ log(income) + poly(education, 3) + poly(women, 2),
@@ -435,42 +479,47 @@ plot(eff.trans, transform.x=list(income=c(trans=log, inverse=exp)),
        ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
        rescale.axis=FALSE,
        xlab="income, log-scale", ylab="prestige")
+}
 
-	if (require(nlme)){ # for gls()
-    	mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel,
-    	    correlation=corARMA(p=2, q=0), method="ML")
-    	plot(allEffects(mod.hart))
-        detach(package:nlme)
-    }
+if (require(nlme)){ # for gls()
+	mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel,
+	    correlation=corARMA(p=2, q=0), method="ML")
+	plot(allEffects(mod.hart))
+    detach(package:nlme)
+}
 
-	if (require(lme4)){
-	data(cake, package="lme4")
-	fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
-                   REML = FALSE)
-	plot(effect("recipe:temperature", fm1), grid=TRUE)
-    plot(Effect(c("recipe", "temperature"), fm1)) # equivalent
-	detach(package:lme4)
-    }
+if (require(lme4)){
+data(cake, package="lme4")
+fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
+               REML = FALSE)
+plot(Effect(c("recipe", "temperature"), fm1))
+\dontrun{
+plot(effect("recipe:temperature", fm1), grid=TRUE) # equivalent
+}
+detach(package:lme4)
+}
 
-	if (require(nlme) && length(find.package("lme4", quiet=TRUE)) > 0){
-	data(cake, package="lme4")
-	cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
-	fm2 <- lme(angle ~ recipe * temperature, data=cake,
-               random = ~ 1 | rep, method="ML")
-	plot(effect("recipe:temperature", fm2), grid=TRUE)
-  plot(Effect(c("recipe", "temperature"), fm2)) # equivalent
-  detach(package:nlme)
-  }
+\dontrun{
+if (require(nlme) && length(find.package("lme4", quiet=TRUE)) > 0){
+data(cake, package="lme4")
+cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
+fm2 <- lme(angle ~ recipe * temperature, data=cake,
+           random = ~ 1 | rep, method="ML")
+plot(Effect(c("recipe", "temperature"), fm2))
+plot(effect("recipe:temperature", fm2), grid=TRUE)  # equivalent
+}
+detach(package:nlme)
+}
 
-
-  if (require(poLCA)){
-      data(election)
-      f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
-                 MORALB,CARESB,KNOWB,LEADB,DISHONB,INTELB)~PARTY*AGE
-      nes2a <- poLCA(f2a,election,nclass=3,nrep=5)
-      plot(Effect(c("PARTY", "AGE"), nes2a), style="stacked")
-  }
-
+\dontrun{
+if (require(poLCA)){
+  data(election)
+  f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
+             MORALB,CARESB,KNOWB,LEADB,DISHONB,INTELB)~PARTY*AGE
+  nes2a <- poLCA(f2a,election,nclass=3,nrep=5)
+  plot(Effect(c("PARTY", "AGE"), nes2a), style="stacked")
+}
+}
 
 # mlm example
 if (require(heplots)) {
@@ -480,10 +529,44 @@ if (require(heplots)) {
 	plot(eff.inc)
 	eff.edu <- Effect("educ", mod)
 	plot(eff.edu, rug=FALSE, grid=TRUE)
+    \dontrun{
 	plot(Effect("educ", mod, response="read"))
+    }
   detach(package:heplots)
 }
- 
+
+# component + residual plot examples
+
+\dontrun{
+Prestige$type <- factor(Prestige$type, levels=c("bc", "wc", "prof"))
+
+mod.prestige.1 <- lm(prestige ~ income + education, data=Prestige)
+plot(allEffects(mod.prestige.1, partial.residuals=TRUE)) # standard C+R plots
+
+mod.prestige.2 <- lm(prestige ~ type*(income + education), data=Prestige)
+plot(allEffects(mod.prestige.2, partial.residuals=TRUE))
+
+mod.prestige.3 <- lm(prestige ~ type + income*education, data=Prestige)
+plot(Effect(c("income", "education"), mod.prestige.3, partial.residuals=TRUE),
+  span=1)
+}
+
+  #  artificial data
+  
+set.seed(12345)
+x1 <- runif(500, -75, 100)
+x2 <- runif(500, -75, 100)
+y <- 10 + 5*x1 + 5*x2 + x1^2 + x2^2 + x1*x2 + rnorm(500, 0, 1e3)
+Data <- data.frame(y, x1, x2)
+mod.1 <- lm(y ~ poly(x1, x2, degree=2, raw=TRUE), data=Data) 
+                         # raw=TRUE necessary for safe prediction
+mod.2 <- lm(y ~ x1*x2, data=Data)
+mod.3 <- lm(y ~ x1 + x2, data=Data)
+
+plot(Effect(c("x1", "x2"), mod.1, partial.residuals=TRUE)) # correct model
+plot(Effect(c("x1", "x2"), mod.2, partial.residuals=TRUE)) # wrong model
+plot(Effect(c("x1", "x2"), mod.3, partial.residuals=TRUE)) # wrong model
+
 }
 
 \keyword{hplot}
