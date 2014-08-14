@@ -9,6 +9,7 @@
 # 2014-03-13: modified Fixup.model.matrix() and Analyze.model() to handle partial residuals; 
 #     added is.factor.predictor() and is.numeric.predictor(). J. Fox
 # 2014-03-14: error message for non-factor, non-numeric predictor
+# 2014-07-08: if no numeric predictor, partial residuals suppressed with warning rather than an error
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -260,15 +261,17 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
         x[[name]] <- list(name=name, is.factor=fac, levels=levels)
     }
     if (partial.residuals){
-        numeric.predictors <- sapply(focal.predictors, function(predictor) is.numeric.predictor(predictor, mod))
-        if (!any(numeric.predictors)) stop("there are no numeric focal predictors", "\n  partial residuals unavailable")
+      numeric.predictors <- sapply(focal.predictors, function(predictor) is.numeric.predictor(predictor, mod))
+      if (!any(numeric.predictors)) warning("there are no numeric focal predictors", "\n  partial residuals suppressed")
+      else{
         x.var <- which(numeric.predictors)[1]
         x.var.name <- focal.predictors[x.var]
         if (is.null(mod$xlevels[[x.var.name]])){
-            x.var.levels <- x[[x.var]][["levels"]]
-            x.var.range <- range(X[, focal.predictors[x.var]])
-            x[[x.var]][["levels"]] <- seq(from=x.var.range[1], to=x.var.range[2], length=100)
+          x.var.levels <- x[[x.var]][["levels"]]
+          x.var.range <- range(X[, focal.predictors[x.var]])
+          x[[x.var]][["levels"]] <- seq(from=x.var.range[1], to=x.var.range[2], length=100)
         }
+      }
     }
     x.excluded <- list()
     for (name in excluded.predictors){

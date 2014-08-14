@@ -50,28 +50,28 @@
 }
 
 \usage{
-effect(term, mod, ...)
+effect(term, mod, vcov.=vcov, ...)
 
 Effect(focal.predictors, mod, ...)
 
 \method{Effect}{lm}(focal.predictors, mod, xlevels = list(), default.levels = NULL, given.values,
-    se = TRUE, confidence.level = 0.95, 
+    vcov.=vcov, se = TRUE, confidence.level = 0.95, 
     transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
     typical = mean, offset = mean, 
     partial.residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
     x.var=NULL,  ...)
         
 \method{Effect}{gls}(focal.predictors, mod, xlevels = list(), default.levels=NULL, 
-    given.values, se = TRUE, confidence.level = 0.95, transformation = NULL, 
+    given.values, vcov.=vcov, se = TRUE, confidence.level = 0.95, transformation = NULL, 
     typical = mean, ...)
     
 \method{Effect}{multinom}(focal.predictors, mod, 
     confidence.level=.95, xlevels=list(), default.levels=NULL, 
-    given.values, se=TRUE, typical=mean, ...)
+    given.values, vcov.=vcov, se=TRUE, typical=mean, ...)
                             
 \method{Effect}{polr}(focal.predictors, mod, 
     confidence.level=.95, xlevels=list(), default.levels=NULL, 
-    given.values, se=TRUE, typical=mean, latent=FALSE, ...)
+    given.values, vcov.=vcov, se=TRUE, typical=mean, latent=FALSE, ...)
     
 \method{Effect}{mer}(focal.predictors, mod, ...)
 
@@ -85,7 +85,7 @@ Effect(focal.predictors, mod, ...)
 
 \method{Effect}{default}(focal.predictors, mod, xlevels = list(), 
     default.levels = NULL, given.values,
-    se = TRUE, confidence.level = 0.95, 
+    vcov. = vcov, se = TRUE, confidence.level = 0.95, 
     transformation = list(link = I, inverse = I), 
     typical = mean, offset = mean, ...)
     
@@ -142,6 +142,13 @@ allEffects(mod, ...)
   	(below). Care must be taken in specifying these values --- e.g.,
   	for a factor, the values of all contrasts should be given and these
   	should be consistent with each other.}
+  \item{vcov.}{A function or the name of a function that will be used to get the estimated variance
+    covariance matrix of the estimated coefficients.  This will ordinarily be the default,
+    \code{vcov}, which will result in the function call \code{vcov(mod)} to get the variance
+    covariance matrix.  You can use the name of any function with \code{mod} as the value of
+    its first argument that returns an estimated sample covariance matrix, such as the \code{hccm}
+    function in the \pkg{car} package that returns a heteroscedasticity corrected estimate with
+    linear models.}
   \item{se}{if \code{TRUE}, the default, calculate standard errors and
     confidence limits for the effects.  For mer and lme objects, the
     normal distribution is used to get confidence limits.}
@@ -279,23 +286,23 @@ and of class \code{effpoly} with more than 2 categories.
 }
 
 \section{Warnings and Limitations}{
-  The \code{Effect} function handles factors and covariates differently, and becomes confused if one is changed to the other
+  The \code{Effect} function handles factors and covariates differently, and is likely to be confused if one is changed to the other
   in a model formula. Consequently, formulas that include calls to \code{as.factor}, \code{factor}, or \code{numeric}
   (as, e.g., in \code{y ~ as.factor(income)}) will cause errors. Instead, create the modified variables outside of the model
-  formula (e.g., \code{fincome <- as.factor(income)}) and use these in the model formula.
+  formula (e.g., \code{fincome <- as.factor(income)}) and use these in the model formula.  Similarly variables of class \code{date} or \code{"times"}, which are usually differences between \code{"dates"} variables, should be converted to numeric variables outside the model formula.
   
   Factors cannot have colons in level names (e.g., \code{"level:A"}); the \code{effect} function will confuse the
   colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
   In addition, factors cannont be declared on the fly (e.g., using \code{y ~ a + factor(b)}.
   
   The functions in the \pkg{effects} package work properly with predictors that are numeric or factors; 
-  consequently, e.g., convert logical predictors to factors, and dates to numeric.
+  consequently, e.g., convert logical predictors to factors, and dates to numeric.  
   
   Empty cells in crossed-factors are now permitted for lm, glm and multinom models.  
   
   With multinom models with two or more crossed factors with an empty cell, the 'plot' command with \code{style="stacked"} 
   apparently does not work because of a bug in the \code{barchart} function in \code{lattice}.  However, the default
-  \code{stype="lines"} does work.  
+  \code{style="lines"} does work.  
   
   Offsets in linear and generalized linear models are supported, as are offsets in mixed models fit by 
   \code{lmer} or \code{glmer}, but must be supplied through the \code{offset}

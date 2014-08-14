@@ -1,3 +1,13 @@
+Version 3.0-1
+
+ o Added an argument vcov. to Effect and effect (and allEffects) to select a function for computing the variance covariance matrix of the coefficient estimates.  The default is the usual `vcov` fucntion.
+
+ o Added a warning to the documentation for effect for using predictors of class "dates" or "times".
+
+ o Fixed bug in Effect.gls() when var or cor function depends on variables in the data set (reported by Felipe Albornoz).
+
+ o Small fixes/improvements.
+
 Version 3.0-0
 
  o Added partial residuals for multidimensional component+residual plots to Effect.lm().
