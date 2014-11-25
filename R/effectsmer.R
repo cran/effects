@@ -7,6 +7,7 @@
 #   calling effect from within a subroutine.
 # 2013-09-25:  removed the 'data' argument as it make the functions fail with
 #   logs, splines and polynomials
+# 2014-09-24: added option for KR cov matrix to mer.to.glm(). J. Fox
 
 
 # the function lm.wfit fit gets the hessian wrong for mer's.  Get the variance
@@ -78,7 +79,10 @@ lme.to.glm <- function(mod) {
 # model as follows.  It is of class c("fakeglm", "glm", "lm")
 # several items are added to the created objects. Do not export
 
-mer.to.glm <- function(mod) {
+mer.to.glm <- function(mod, KR=TRUE) {
+    family <- family(mod)
+    link <- family$link
+    family <- family$family
     cl <- mod@call
     if(cl[[1]] =="nlmer") stop("effects package does not support 'nlmer' objects")
     m <- match(c("formula", "family", "data", "weights", "subset", 
@@ -88,8 +92,8 @@ mer.to.glm <- function(mod) {
     cl[[1L]] <- as.name("glm")
     cl$formula <- fixmod(as.formula(cl$formula))
     mod2 <- eval(cl)
-    mod2$coefficients <- fixef(mod) #mod@fixef
-    mod2$vcov <- as.matrix(vcov(mod))
+    mod2$coefficients <- lme4::fixef(mod) #mod@fixef
+    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(vcovAdj(mod)) else as.matrix(vcov(mod))
     mod2$linear.predictors <- model.matrix(mod2) %*% mod2$coefficients
     mod2$fitted.values <- mod2$family$linkinv(mod2$linear.predictors)
     mod2$weights <- as.vector(with(mod2,
@@ -106,8 +110,8 @@ vcov.fakeglm <- function(object, ...) object$vcov
 
 #The next four functions should be exported
 
-effect.mer <- function(term, mod, ...) {
-    result <- effect(term, mer.to.glm(mod), ...)
+effect.mer <- function(term, mod, KR=TRUE, ...) {
+    result <- effect(term, mer.to.glm(mod, KR=KR), ...)
     result$formula <- as.formula(formula(mod))
     result
     }
@@ -116,8 +120,8 @@ allEffects.mer <- function(mod, ...){
     allEffects(mer.to.glm(mod), ...)
 }
 
-effect.merMod <- function(term, mod, ...){
-    effect.mer(term, mod, ...)
+effect.merMod <- function(term, mod, KR=TRUE, ...){
+    effect.mer(term, mod, KR=KR, ...)
 }
 
 allEffects.merMod <- function(mod, ...){

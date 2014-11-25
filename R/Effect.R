@@ -12,6 +12,7 @@
 # 2014-03-13: modified Effect.lm() to compute partial residuals. J. Fox
 # 2014-05-06: fixed bug in Effect.gls() when cor or var structure depends on variables in the data set. J. Fox
 # 2014-08-02: added vcov.=vcov argument to allow other methods of estimating var(coef.estimates)
+# 2014-09-25: added KR argument to Effect.mer() and Effect.merMod(). J. Fox
 
 Effect <- function(focal.predictors, mod, ...){
     UseMethod("Effect", mod)
@@ -263,16 +264,16 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(),
 #     result
 # }
 
-Effect.mer <- function(focal.predictors, mod, ...) {
+Effect.mer <- function(focal.predictors, mod, KR=TRUE, ...) {
     #     if ((!require(lme4, quietly=TRUE)) && (!require(lme4.0, quietly=TRUE))) 
     #         stop("the lme4 or lme4.0 package is not installed")
-    result <- Effect(focal.predictors, mer.to.glm(mod), ...)
+    result <- Effect(focal.predictors, mer.to.glm(mod, KR=KR), ...)
     result$formula <- as.formula(formula(mod))
     result
 }
 
-Effect.merMod <- function(focal.predictors, mod, ...){
-    Effect.mer(focal.predictors, mod, ...)
+Effect.merMod <- function(focal.predictors, mod, KR=TRUE, ...){
+    Effect.mer(focal.predictors, mod, KR=KR, ...)
 }
 
 Effect.lme <- function(focal.predictors, mod, ...) {

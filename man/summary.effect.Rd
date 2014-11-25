@@ -47,7 +47,7 @@
     key.args=NULL, 
     row=1, col=1, nrow=1, ncol=1, more=FALSE, 
     use.splines=TRUE, partial.residuals=c("adjusted", "raw"), show.fitted=FALSE,
-    residuals.color="blue", residuals.pch=1, span=2/3, ...)
+    residuals.color="blue", residuals.pch=1, smooth.residuals=TRUE, span=2/3, ...)
 \method{plot}{effpoly}(x,
 		type=c("probability", "logit"),
 		x.var=which.max(levels),
@@ -219,7 +219,9 @@
     partial residuals, computed at the actual values of all focal predictors; the default is
     \code{"adjusted"}, and this argument is effective only when partial residuals are included
     in the effect object to be plotted --- see \code{\link{Effect}}.}
-  \item{span}{of the \emph{loess} smoother to be applied to partial residuals, if present;
+  \item{smooth.residuals}{whether to show a \code{\link{loess}} smooth of the partial residuals, if
+    they are present; the default is \code{TRUE}.}
+  \item{span}{of the \code{\link{xyplot}} smoother to be applied to partial residuals;
     the default is \code{2/3}.}
   \item{show.fitted}{if partial residuals are present in the effect object, also plot the partial
     fitted values (which will be shown as filled circles).}
@@ -263,7 +265,7 @@
 
 
 \seealso{\code{\link{effect}}, \code{\link{allEffects}}, \code{\link{xyplot}},
-	\code{\link{densityplot}}, \code{\link{print.trellis}}
+	\code{\link{densityplot}}, \code{\link{print.trellis}}, \code{\link{loess}},
 	\code{\link[colorspace]{rainbow_hcl}}, \code{\link[colorspace:rainbow_hcl]{sequential_hcl}}}
 
 \examples{

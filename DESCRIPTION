@@ -1,6 +1,6 @@
 Package: effects
-Version: 3.0-1
-Date: 2014/08/02
+Version: 3.0-2
+Date: 2014/10/10
 Title: Effect Displays for Linear, Generalized Linear,
         Multinomial-Logit, Proportional-Odds Logit Models and
         Mixed-Effects Models
@@ -11,8 +11,8 @@ Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaste
     person("Robert", "Andersen", role = "ctb"),
     person("David", "Firth", role = "ctb"),
     person("Steve", "Taylor", role = "ctb"))
-Depends: R (>= 2.10), lattice, grid, colorspace
-Suggests: nlme, lme4, MASS, nnet, poLCA, heplots
+Suggests: nlme, MASS, poLCA, heplots
+Imports: pbkrtest, lme4, nnet, lattice, grid, colorspace
 LazyLoad: yes
 LazyData: yes
 Description: 
@@ -30,8 +30,9 @@ Author: John Fox [aut, cre],
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
 Repository/R-Forge/Project: effects
-Repository/R-Forge/Revision: 173
-Repository/R-Forge/DateTimeStamp: 2014-08-04 13:55:29
-Date/Publication: 2014-08-14 18:06:02
-Packaged: 2014-08-04 14:16:32 UTC; rforge
+Repository/R-Forge/Revision: 180
+Repository/R-Forge/DateTimeStamp: 2014-10-10 15:06:18
+Date/Publication: 2014-11-25 17:02:40
+Packaged: 2014-10-10 16:15:07 UTC; rforge
+Depends: R (>= 2.10)
 NeedsCompilation: no

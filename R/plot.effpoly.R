@@ -3,6 +3,7 @@
 # modified by Michael Friendly: added ci.style="bands" & alpha.band= arg
 # modified by Michael Friendly: added lwd= argument for llines (was lwd=2)
 # 2013-11-06: fixed drop dimension when only one focal predictor. John
+# 2014-10-10: namespace fixes. John
 
 plot.effpoly <- function(x,
     type=c("probability", "logit"),

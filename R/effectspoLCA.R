@@ -37,7 +37,6 @@ poLCA.to.fake <- function(mod) {
          mod1$vcov <- mod$coeff.V
          class(mod1) <- c("fakeglm", class(mod1)) }
      else {
-         require(nnet)
          mod1 <- multinom(formula1, dta, Hess=TRUE, trace=FALSE, maxit=1)
          mod1$call$data <- dta
          mod1$call$formula <- formula1

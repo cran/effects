@@ -10,6 +10,7 @@
 #     added is.factor.predictor() and is.numeric.predictor(). J. Fox
 # 2014-03-14: error message for non-factor, non-numeric predictor
 # 2014-07-08: if no numeric predictor, partial residuals suppressed with warning rather than an error
+# 2014-10-09: namespace fixes. J. Fox
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 

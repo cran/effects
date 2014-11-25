@@ -73,9 +73,9 @@ Effect(focal.predictors, mod, ...)
     confidence.level=.95, xlevels=list(), default.levels=NULL, 
     given.values, vcov.=vcov, se=TRUE, typical=mean, latent=FALSE, ...)
     
-\method{Effect}{mer}(focal.predictors, mod, ...)
+\method{Effect}{mer}(focal.predictors, mod, KR=TRUE, ...)
 
-\method{Effect}{merMod}(focal.predictors, mod, ...)
+\method{Effect}{merMod}(focal.predictors, mod, KR=TRUE, ...)
 
 \method{Effect}{lme}(focal.predictors, mod, ...)
 
@@ -150,10 +150,13 @@ allEffects(mod, ...)
     function in the \pkg{car} package that returns a heteroscedasticity corrected estimate with
     linear models.}
   \item{se}{if \code{TRUE}, the default, calculate standard errors and
-    confidence limits for the effects.  For mer and lme objects, the
+    confidence limits for the effects.  For \code{mer}, \code{merMod}, and \code{lme} objects, the
     normal distribution is used to get confidence limits.}
   \item{confidence.level}{level at which to compute confidence limits
     based on the standard-normal distribution; the default is \code{0.95}.}
+  \item{KR}{if \code{TRUE}, the default, use the Kenward-Roger coefficient covariance
+    matrix to compute effect standard errors for linear mixed models fit with \code{lmer}
+    in the \pkg{lme4} package.}
   \item{transformation}{a two-element list with elements \code{link} and
     \code{inverse}. For a generalized linear model, these are by default
     the link function and inverse-link (mean) function. For a linear model,
