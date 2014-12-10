@@ -8,6 +8,7 @@
 # 2013-09-25:  removed the 'data' argument as it make the functions fail with
 #   logs, splines and polynomials
 # 2014-09-24: added option for KR cov matrix to mer.to.glm(). J. Fox
+# 2014-12-07: don't assume that pbkrtest is installed. J. Fox
 
 
 # the function lm.wfit fit gets the hessian wrong for mer's.  Get the variance
@@ -79,7 +80,7 @@ lme.to.glm <- function(mod) {
 # model as follows.  It is of class c("fakeglm", "glm", "lm")
 # several items are added to the created objects. Do not export
 
-mer.to.glm <- function(mod, KR=TRUE) {
+mer.to.glm <- function(mod, KR=require("pbkrtest", quietly=TRUE)) {
     family <- family(mod)
     link <- family$link
     family <- family$family
@@ -93,7 +94,7 @@ mer.to.glm <- function(mod, KR=TRUE) {
     cl$formula <- fixmod(as.formula(cl$formula))
     mod2 <- eval(cl)
     mod2$coefficients <- lme4::fixef(mod) #mod@fixef
-    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(vcovAdj(mod)) else as.matrix(vcov(mod))
+    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(pbkrtest::vcovAdj(mod)) else as.matrix(vcov(mod))
     mod2$linear.predictors <- model.matrix(mod2) %*% mod2$coefficients
     mod2$fitted.values <- mod2$family$linkinv(mod2$linear.predictors)
     mod2$weights <- as.vector(with(mod2,
@@ -110,7 +111,7 @@ vcov.fakeglm <- function(object, ...) object$vcov
 
 #The next four functions should be exported
 
-effect.mer <- function(term, mod, KR=TRUE, ...) {
+effect.mer <- function(term, mod, KR=require("pbkrtest", quietly=TRUE), ...) {
     result <- effect(term, mer.to.glm(mod, KR=KR), ...)
     result$formula <- as.formula(formula(mod))
     result
@@ -120,7 +121,7 @@ allEffects.mer <- function(mod, ...){
     allEffects(mer.to.glm(mod), ...)
 }
 
-effect.merMod <- function(term, mod, KR=TRUE, ...){
+effect.merMod <- function(term, mod, KR=require("pbkrtest", quietly=TRUE), ...){
     effect.mer(term, mod, KR=KR, ...)
 }
 

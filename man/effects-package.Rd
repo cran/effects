@@ -4,20 +4,18 @@
 \alias{effects}
 \docType{package}
 \title{
-Effect Displays for Linear, Generalized Linear, Multinomial-Logit, Proportional-Odds Logit Models and Mixed-Effects Models
+Effect Displays for Linear, Generalized Linear, and Other Models
 }
 \description{
-
 Graphical and tabular effect displays, e.g., of interactions, for linear (including fit via \code{\link[nlme]{gls}}), multivariate-linear, 
 generalized linear, multinomial-logit, proportional-odds logit,
 mixed-effect, polytomous latent-class, and some other models; (multidimensional) component+residual plots for linear and generalized linear models.
-
 }
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 3.0-2\cr
-Date: \tab 2014/10/10\cr
+Version: \tab 3.0-3\cr
+Date: \tab 2014/12/09\cr
 Depends: \tab lattice, grid, colorspace\cr
 Suggests: \tab nlme, lme4, MASS, nnet, poLCA\cr
 LazyLoad: \tab yes\cr

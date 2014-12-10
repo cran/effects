@@ -1,9 +1,10 @@
-#' Plot method for effpoly objects
+# Plot method for effpoly objects
 
 # modified by Michael Friendly: added ci.style="bands" & alpha.band= arg
 # modified by Michael Friendly: added lwd= argument for llines (was lwd=2)
 # 2013-11-06: fixed drop dimension when only one focal predictor. John
 # 2014-10-10: namespace fixes. John
+# 2014-12-05: made key.args more flexible. John
 
 plot.effpoly <- function(x,
     type=c("probability", "logit"),
@@ -113,7 +114,9 @@ plot.effpoly <- function(x,
                 key <- list(title=x$response, cex.title=1, border=TRUE,
                     text=list(as.character(unique(response))),
                     lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
-                    points=list(pch=symbols[.mods(1:n.y.lev)], col=colors[.modc(1:n.y.lev)]))
+                    points=list(pch=symbols[.mods(1:n.y.lev)], col=colors[.modc(1:n.y.lev)]),
+                    columns = find.legend.columns(n.y.lev))
+                for (k in names(key.args)) key[k] <- key.args[k]
                 result <- xyplot(eval(if (type=="probability") 
                     parse(text=if (n.predictors==1) 
                         paste("prob ~ as.numeric(", predictors[x.var], ")")
@@ -145,7 +148,8 @@ plot.effpoly <- function(x,
                         y=list(rot=roty),  
                         alternating=alternating),
                     main=main,
-                    key=c(key, key.args),
+#                    key=c(key, key.args),
+                    key=key,
                     layout=layout,
                     data=data, ...)
                 result$split <- split
@@ -178,7 +182,9 @@ plot.effpoly <- function(x,
                 }
                 key <- list(title=x$response, cex.title=1, border=TRUE,
                     text=list(as.character(unique(response))), 
-                    lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd))
+                    lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
+                    columns = find.legend.columns(n.y.lev))
+                for (k in names(key.args)) key[k] <- key.args[k]
                 result <- xyplot(eval(if (type=="probability") 
                     parse(text=if (n.predictors==1) paste("prob ~ trans(", predictors[x.var], ")")
                         else paste("prob ~ trans(", predictors[x.var],") |", 
@@ -208,7 +214,8 @@ plot.effpoly <- function(x,
                     scales=list(x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx), y=list(rot=roty),
                         alternating=alternating),
                     main=main,
-                    key=c(key, key.args),
+#                    key=c(key, key.args),
+                    key=key,
                     layout=layout,
                     data=data, ...)
                 result$split <- split
@@ -220,6 +227,7 @@ plot.effpoly <- function(x,
             if (n.y.lev > length(colors))
                 stop(paste('Not enough colors to plot', n.y.lev, 'regions'))
             key <- list(text=list(lab=rev(y.lev)), rectangle=list(col=rev(colors[1:n.y.lev])))
+            for (k in names(key.args)) key[k] <- key.args[k]
             if (is.factor(x$data[[predictors[x.var]]])){ # x-variable a factor
                 result <- barchart(eval(parse(text=if (n.predictors == 1) 
                     paste("prob ~ ", predictors[x.var], sep="")
@@ -237,7 +245,8 @@ plot.effpoly <- function(x,
                     scales=list(x=list(rot=rotx), y=list(rot=roty), 
                         alternating=alternating),
                     main=main,
-                    key=c(key, key.args),
+#                    key=c(key, key.args),
+                    key=key,
                     layout=layout)
                 result$split <- split
                 result$more <- more
@@ -297,7 +306,8 @@ plot.effpoly <- function(x,
                     scales=list(x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx), y=list(rot=roty),
                         alternating=alternating),
                     main=main,
-                    key=c(key, key.args),
+#                    key=c(key, key.args),
+                    key=key,
                     layout=layout, ...)
                 result$split <- split
                 result$more <- more

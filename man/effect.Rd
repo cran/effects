@@ -73,9 +73,11 @@ Effect(focal.predictors, mod, ...)
     confidence.level=.95, xlevels=list(), default.levels=NULL, 
     given.values, vcov.=vcov, se=TRUE, typical=mean, latent=FALSE, ...)
     
-\method{Effect}{mer}(focal.predictors, mod, KR=TRUE, ...)
+\method{Effect}{mer}(focal.predictors, mod, 
+    KR=require("pbkrtest", quietly=TRUE), ...)
 
-\method{Effect}{merMod}(focal.predictors, mod, KR=TRUE, ...)
+\method{Effect}{merMod}(focal.predictors, mod, 
+    KR=require("pbkrtest", quietly=TRUE), ...)
 
 \method{Effect}{lme}(focal.predictors, mod, ...)
 
@@ -154,7 +156,8 @@ allEffects(mod, ...)
     normal distribution is used to get confidence limits.}
   \item{confidence.level}{level at which to compute confidence limits
     based on the standard-normal distribution; the default is \code{0.95}.}
-  \item{KR}{if \code{TRUE}, the default, use the Kenward-Roger coefficient covariance
+  \item{KR}{if \code{TRUE}, the default if the \pkg{pbkrtest} package is installed, 
+    use the Kenward-Roger coefficient covariance
     matrix to compute effect standard errors for linear mixed models fit with \code{lmer}
     in the \pkg{lme4} package.}
   \item{transformation}{a two-element list with elements \code{link} and
@@ -374,7 +377,7 @@ eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)),
 eff.cowles
 as.data.frame(eff.cowles[[2]])
 
-\dontrun{
+\donttest{
 # the following are equivalent:
 eff.ne <- effect("neuroticism*extraversion", mod.cowles)
 Eff.ne <- Effect(c("neuroticism", "extraversion"), mod.cowles)
@@ -406,7 +409,7 @@ if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
-\dontrun{
+\donttest{
 plot(effect("Europe*political.knowledge", mod.beps,
 	xlevels=list(political.knowledge=0:3)))
 }
@@ -416,7 +419,7 @@ plot(Effect(c("Europe", "political.knowledge"), mod.beps,
 		given.values=c(gendermale=0.5)),
 	style="stacked", colors=c("blue", "red", "orange"), rug=FALSE)
     
-\dontrun{ 
+\donttest{ 
 plot(effect("Europe*political.knowledge", mod.beps, # equivalent
     	xlevels=list(political.knowledge=0:3),
 		given.values=c(gendermale=0.5)),
@@ -427,13 +430,13 @@ plot(effect("Europe*political.knowledge", mod.beps, # equivalent
 if (require(MASS)){
 mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
-\dontrun{
+\donttest{
 plot(effect("country*poly(age, 3)", mod.wvs))
 }
 
 plot(Effect(c("country", "age"), mod.wvs), style="stacked") 
 
-\dontrun{
+\donttest{
 plot(effect("country*poly(age, 3)", mod.wvs), style="stacked") # equivalent
 
 plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
@@ -448,7 +451,7 @@ plot(eff.pres)
 plot(eff.pres[1],
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))
-\dontrun{
+\donttest{
 # linear model with log-response and log-predictor
 # to illustrate transforming axes and setting tick labels
 mod.pres1 <- lm(log(prestige) ~ log(income) + poly(education, 3) + poly(women, 2),
@@ -503,13 +506,14 @@ data(cake, package="lme4")
 fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
                REML = FALSE)
 plot(Effect(c("recipe", "temperature"), fm1))
-\dontrun{
+\donttest{
 plot(effect("recipe:temperature", fm1), grid=TRUE) # equivalent
 }
+if (any(grepl("pbkrtest", search()))) detach(package:pbkrtest)
 detach(package:lme4)
 }
 
-\dontrun{
+\donttest{
 if (require(nlme) && length(find.package("lme4", quiet=TRUE)) > 0){
 data(cake, package="lme4")
 cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
@@ -521,7 +525,7 @@ plot(effect("recipe:temperature", fm2), grid=TRUE)  # equivalent
 detach(package:nlme)
 }
 
-\dontrun{
+\donttest{
 if (require(poLCA)){
   data(election)
   f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
@@ -539,7 +543,7 @@ if (require(heplots)) {
 	plot(eff.inc)
 	eff.edu <- Effect("educ", mod)
 	plot(eff.edu, rug=FALSE, grid=TRUE)
-    \dontrun{
+    \donttest{
 	plot(Effect("educ", mod, response="read"))
     }
   detach(package:heplots)
@@ -547,7 +551,7 @@ if (require(heplots)) {
 
 # component + residual plot examples
 
-\dontrun{
+\donttest{
 Prestige$type <- factor(Prestige$type, levels=c("bc", "wc", "prof"))
 
 mod.prestige.1 <- lm(prestige ~ income + education, data=Prestige)

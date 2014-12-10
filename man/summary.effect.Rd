@@ -193,7 +193,8 @@
     the logit scale for a binomial GLM).}
   \item{key.args}{additional arguments to be passed to the \code{key} trellis argument to 
     \code{\link{xyplot}} or \code{\link{densityplot}}, 
-    e.g., to position the key (legend) in the plotting region.}
+    e.g., to position the key (legend) in the plotting region; may also be used to modify
+    the default behavior of the key.}
   \item{row, col, nrow, ncol, more}{These arguments are used to graph an effect as part of an
     array of plots; \code{row}, \code{col}, \code{nrow}, and \code{ncol} are used to compose
     the \code{split} argument and \code{more} the \code{more} argument to \code{\link{print.trellis}}.
@@ -282,19 +283,19 @@ plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90)
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
 
-\dontrun{
+\donttest{
 # change color of the confidence bands to 'black' with .15 transparency
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)), band.colors="red", band.transparency=.3)
 
 plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
-    ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)))
+     ylab="Prob(Volunteer)", key.args = list(x = 0.25, y = 0.90, corner = c(0, 0)))
 
 # use probability scale in place of logit scale, all lines are black.
 plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
-    ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)),
-    colors="black", lines=1:8,
-    ci.style="bands", rescale.axis=FALSE, band.colors=palette())
+     ylab="Prob(Volunteer)", key.args = list(x = 0.25, y = 0.90, corner = c(0, 0)),
+     colors="black", lines=1:8,
+     ci.style="bands", rescale.axis=FALSE, band.colors=palette())
 
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE)
@@ -308,7 +309,7 @@ if (require(nnet)){
 mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
 				economic.cond.household + Blair + Hague + Kennedy +
 				Europe*political.knowledge, data=BEPS)
-\dontrun{
+\donttest{
 plot(effect("Europe*political.knowledge", mod.beps,
 	xlevels=list(political.knowledge=0:3)))
 }
@@ -324,7 +325,7 @@ mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
 	data=WVS)
 plot(effect("country*poly(age, 3)", mod.wvs))
 
-\dontrun{
+\donttest{
 plot(effect("country*poly(age, 3)", mod.wvs), style="stacked",
 	colors=c("gray75", "gray50", "gray25"))
 
@@ -335,7 +336,7 @@ plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
     data=Prestige)
 eff.pres <- allEffects(mod.pres, default.levels=50)
-\dontrun{
+\donttest{
 plot(eff.pres)
 plot(eff.pres[1:2])
 }

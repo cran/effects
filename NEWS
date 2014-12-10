@@ -1,3 +1,11 @@
+Version 3.0-3
+
+ o Made key.args argument to plot.eff() and plot.effpoly() more flexible (suggestion of Ian Kyle).
+
+ o Moved pbkrtest package to Suggests and adjusted code for mixed models accordingly, to accomodate Debian (request of Dirk Eddelbuettel).
+
+ o Fixed \dont-test{} examples.
+
 Version 3.0-2
 
  o plot.eff() honors rescale.axis=FALSE when plotting partial residuals (bug reported by Alexander Wietzke).
