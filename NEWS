@@ -1,3 +1,27 @@
+Version 3.0-4
+
+ o New default of KR=FALSE because KR=TRUE can be very slow.
+
+ o KR argument now works correctly with allEffects().
+
+ o Mixed models with negative binomial did not work and now they do.
+
+ o Added methods for ordinal mixed models using 'clmm2' for the ordinal package.
+
+ o Moved pbkrtest to Suggests (wasn't done properly previously).
+
+ o Tweak to handling key.args (suggestion of Michael Friendly).
+
+ o Use non-robust loess smooth for partial residuals from non-Gaussian GLMs.
+
+ o Rationalized type and rescale.axis arguments to plot.eff(); scale.axis argument is deprecated.
+
+ o Added setStrip() and restoreStrip() to control colors of lattice strips and make beginning and ending conditioning lines clearer.
+ 
+ o Added residuals.smooth.color argument to plot.eff().
+ 
+ o Cleaned up sources to conform to CRAN requirements.
+
 Version 3.0-3
 
  o Made key.args argument to plot.eff() and plot.effpoly() more flexible (suggestion of Ian Kyle).

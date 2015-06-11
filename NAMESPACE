@@ -1,19 +1,21 @@
-# last modified 2014-12-07 by J. Fox
+# last modified 2015-04-08 by J. Fox
 
 importFrom(lattice, barchart, current.panel.limits, densityplot, larrows, llines, lpoints,
-           panel.abline, panel.grid, panel.polygon, panel.text, strip.default, xyplot)
+           panel.abline, panel.grid, panel.polygon, panel.text, strip.default, trellis.par.get,
+           trellis.par.set, xyplot)
 importFrom(colorspace, rainbow_hcl, sequential_hcl)
 importFrom(grid, grid.pretty, grid.segments, unit)
 # importFrom(pbkrtest, vcovAdj, vcovAdj.lmerMod, vcovAdj.mer)
 importFrom(lme4, fixef)
 importFrom(nnet, multinom)
-export(effect, allEffects, all.effects, Effect)
+export(effect, allEffects, all.effects, Effect, setStrip, restoreStrip)
 
 S3method(Effect, default)
 S3method(Effect, lm)
 S3method(Effect, mer)
 S3method(Effect, merMod)
 S3method(Effect, lme)
+S3method(Effect, clm2)
 S3method(Effect, gls)
 S3method(Effect, multinom)
 S3method(Effect, polr)
@@ -43,8 +45,12 @@ S3method(allEffects, gls)
 S3method(allEffects, mer)
 S3method(allEffects, merMod)
 S3method(allEffects, lme)
+S3method(allEffects, clm2)
 S3method(allEffects, poLCA)
 S3method(allEffects, mlm)
+S3method(effect,default)
+S3method(effect,mer)
+S3method(effect, merMod)
+S3method(effect, clm2)
 S3method(vcov, eff)
-S3method(vcov, fakeglm)
 S3method(`[`, efflist)

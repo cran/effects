@@ -9,6 +9,10 @@
 #   logs, splines and polynomials
 # 2014-09-24: added option for KR cov matrix to mer.to.glm(). J. Fox
 # 2014-12-07: don't assume that pbkrtest is installed. J. Fox
+# 2014-12-20: mer.to.glm failed for negative.binomial() because the link has an argument
+#   that was handled incorrectly by the family.glmResp function.  This function is no longer
+#   used by mer.to.glm.  The same error will recur in any link with an argument.
+# 2015-06-10: requireNamespace("pbkrtest") rather than require("pbkrtest)
 
 
 # the function lm.wfit fit gets the hessian wrong for mer's.  Get the variance
@@ -57,7 +61,7 @@ lme.to.glm <- function(mod) {
     cl <- mod$call
     cl$formula <- cl$fixed
     m <- match(c("formula", "data", "subset", 
-                 "na.action",  "contrasts"), names(cl), 0L)
+        "na.action",  "contrasts"), names(cl), 0L)
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
     mod2 <- eval(cl)
@@ -68,75 +72,109 @@ lme.to.glm <- function(mod) {
     mod2$linear.predictors <- model.matrix(mod2) %*% mod2$coefficients
     mod2$fitted.values <- mod2$family$linkinv(mod2$linear.predictors)
     mod2$weights <- as.vector(with(mod2,
-          prior.weights * (family$mu.eta(linear.predictors)^2 /
-                           family$variance(fitted.values))))
+        prior.weights * (family$mu.eta(linear.predictors)^2 /
+                family$variance(fitted.values))))
     mod2$residuals <- with(mod2,
-          prior.weights * (y - fitted.values)/weights )
+        prior.weights * (y - fitted.values)/weights )
     class(mod2) <- c("fakeglm", class(mod2))
     mod2
-    }
+}
 
 # mer.to.glm evaluates a 'glm' model that is as similar to a given 'mer'
 # model as follows.  It is of class c("fakeglm", "glm", "lm")
 # several items are added to the created objects. Do not export
 
-mer.to.glm <- function(mod, KR=require("pbkrtest", quietly=TRUE)) {
-    family <- family(mod)
+mer.to.glm <- function(mod, KR=FALSE) {
+    if (KR && !requireNamespace("pbkrtest", quietly=TRUE)){
+        KR <- FALSE
+        warning("pbkrtest is not available, KR set to FALSE")
+    }
+    else {
+        vcovAdj <- pbkrtest::vcovAdj
+        vcovAdj.lmerMod <- pbkrtest::vcovAdj.lmerMod
+        vcovAdj.mer <- pbkrtest::vcovAdj.mer
+    }
+    # object$family$family doesn't work correctly with the negative binomial family because of the
+    # argument in the family function, so the old line
+    #   family <- family(mod)
+    # returns an error message for these models.  The following kluge fixes this.
+    # If this bug is fixed in lme4, this code may break because it expects resp$family$family
+    # to return "Link Name(arg)" with ONE argument, and so spaces between Name and "(arg)"
+    family1 <- function(object, ...) {UseMethod("family1", object@resp)}
+    family1.lmResp <- function(object, ...) family(object, ...)
+    family1.glmResp <- function(object, ...){
+        famname <- object@resp$family$family
+        open.paren <- regexpr("\\(", famname)
+        if(open.paren==-1) {
+            name <- famname
+            arg <- list()
+        } else {
+            name <- sub(" ", ".", tolower(substr(famname, 1, -1 + open.paren)))
+            arg <- list(as.numeric(gsub("\\)", "", substr(famname, 1 + open.paren, 100))))
+        }
+        if(is.null(object@resp$family$initialize)) do.call(name, arg) else object@resp$family
+    }
+    family <- family1(mod)
+    # end
     link <- family$link
     family <- family$family
     cl <- mod@call
     if(cl[[1]] =="nlmer") stop("effects package does not support 'nlmer' objects")
     m <- match(c("formula", "family", "data", "weights", "subset", 
-                 "na.action", "start", "offset",  
-                 "model", "contrasts"), names(cl), 0L)
+        "na.action", "start", "offset",  
+        "model", "contrasts"), names(cl), 0L)
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
     cl$formula <- fixmod(as.formula(cl$formula))
     mod2 <- eval(cl)
     mod2$coefficients <- lme4::fixef(mod) #mod@fixef
-    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(pbkrtest::vcovAdj(mod)) else as.matrix(vcov(mod))
+    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(vcovAdj(mod)) else as.matrix(vcov(mod))
     mod2$linear.predictors <- model.matrix(mod2) %*% mod2$coefficients
     mod2$fitted.values <- mod2$family$linkinv(mod2$linear.predictors)
     mod2$weights <- as.vector(with(mod2,
-          prior.weights * (family$mu.eta(linear.predictors)^2 /
-                           family$variance(fitted.values))))
+        prior.weights * (family$mu.eta(linear.predictors)^2 /
+                family$variance(fitted.values))))
     mod2$residuals <- with(mod2,
-          prior.weights * (y - fitted.values)/weights )
+        prior.weights * (y - fitted.values)/weights )
     class(mod2) <- c("fakeglm", class(mod2))
     mod2
-    }
-                                              
+}
+
+
+
 #method for 'fakeglm' objects. Do not export   
 vcov.fakeglm <- function(object, ...) object$vcov
 
-#The next four functions should be exported
+#The next six functions should be exported
 
-effect.mer <- function(term, mod, KR=require("pbkrtest", quietly=TRUE), ...) {
-    result <- effect(term, mer.to.glm(mod, KR=KR), ...)
+effect.mer <- function(term, mod, vcov.=vcov, KR=FALSE, ...) {
+    result <- effect(term, mer.to.glm(mod, KR=KR), vcov., ...)
     result$formula <- as.formula(formula(mod))
     result
-    }
-    
-allEffects.mer <- function(mod, ...){
-    allEffects(mer.to.glm(mod), ...)
 }
 
-effect.merMod <- function(term, mod, KR=require("pbkrtest", quietly=TRUE), ...){
-    effect.mer(term, mod, KR=KR, ...)
+effect.merMod <- function(term, mod, vcov.=vcov, KR=FALSE, ...){
+    effect.mer(term, mod, vcov.=vcov, KR=KR, ...)
 }
 
-allEffects.merMod <- function(mod, ...){
-    allEffects.mer(mod, ...)
-}
- 
-allEffects.lme <- function(mod, ...){
-  	allEffects(lme.to.glm(mod), ...)
-}
-  
 effect.lme <- function(term, mod, ...) {
     mod1 <- lme.to.glm(mod)
     result <- effect(term, mod1)
     result$formula <- as.formula(formula(mod))
     result
-    }
-   
+}
+
+allEffects.mer <- function(mod, KR=FALSE,...){
+    allEffects(mer.to.glm(mod,KR=KR), ...)
+}
+
+allEffects.merMod <- function(mod, KR=FALSE,...){
+    allEffects(mer.to.glm(mod,KR=KR), ...)
+}
+
+allEffects.lme <- function(mod, ...){
+    allEffects(lme.to.glm(mod), ...)
+}
+
+
+

@@ -14,6 +14,8 @@
 \alias{plot.effpoly}
 \alias{plot.efflist}
 \alias{plot.mlm.efflist}
+\alias{setStrip}
+\alias{restoreStrip}
 \alias{[.efflist}
 
 \title{Summarizing, Printing, and Plotting Effects}
@@ -41,13 +43,14 @@
     colors=palette(), symbols=1:length(colors), lines=1:length(colors),
     cex=1.5, lwd=2, ylim, xlim=NULL,
     factor.names=TRUE, ci.style, band.transparency=0.15, band.colors=colors,
-    type=c("response", "link"), ticks=list(at=NULL, n=5),  
-    alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis=TRUE, 
+    type=c("rescale", "response", "link"), ticks=list(at=NULL, n=5),  
+    alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis, 
     transform.x=NULL, ticks.x=NULL,
     key.args=NULL, 
     row=1, col=1, nrow=1, ncol=1, more=FALSE, 
     use.splines=TRUE, partial.residuals=c("adjusted", "raw"), show.fitted=FALSE,
-    residuals.color="blue", residuals.pch=1, smooth.residuals=TRUE, span=2/3, ...)
+    residuals.color="blue", residuals.pch=1, 
+    smooth.residuals=TRUE, residuals.smooth.color=residuals.color, span=2/3, ...)
 \method{plot}{effpoly}(x,
 		type=c("probability", "logit"),
 		x.var=which.max(levels),
@@ -65,6 +68,8 @@
 		row=1, col=1, nrow=1, ncol=1, more=FALSE, use.splines=TRUE, ...)
 \method{plot}{efflist}(x, selection, rows, cols, ask=FALSE, graphics=TRUE, ...)
 \method{plot}{mlm.efflist}(x, ...)
+setStrip(bg=3, fg="black", clip=c("off", "on"))
+restoreStrip(saved)
 \method{[}{efflist}(x, ...)
 }
 
@@ -73,13 +78,23 @@
   	or \code{"summary.eff"}, as appropriate.}
   \item{object}{an object of class \code{"eff"}, \code{"effpoly"}, \code{"efflist"}, or \code{"mlm.efflist"},
     as appropriate.}
-  \item{type}{for linear and generalized linear models, 
-  	if \code{"response"} (the default), effects are printed 
-    or the vertical axis is labelled on the scale of the response
-    variable; if \code{"link"}, effects are printed 
-    or the vertical axis labelled on the scale of the linear predictor.
+  \item{type}{for printing or summarizing linear and generalized linear models, 
+  	if \code{"response"} (the default), effects are printed on the scale of the response
+    variable; if \code{"link"}, effects are printed  on the scale of the linear predictor.
+    
+    For plotting linear or genealized linearized models, \code{"rescale"} (the default) plots the vertical
+    axis on the link scale (e.g., the logit scale for a logit model) but labels the axis on the response
+    scale (e.g., the probability scale for a logit model); 
+    \code{"response"} plots and labels the vertical axis on the scale of the response (e.g., the
+    probability scale for a logit model); and
+    \code{"link"} plots and labels the vertical axis
+    on the scale of the link (e.g., the logit scale for a logit model).
+
     For polytomous logit models, this argument takes either \code{"probability"}
     or \code{"logit"}, with the former as the default.}
+  \item{rescale.axis}{this argument is deprecated --- use the \code{type} argument instead. Setting 
+    \code{rescale.axis=TRUE} is equivalent to \code{type="rescale"}; setting \code{rescale.axis=FALSE}
+    is equivalent to \code{type="response"}. If specified, \code{rescale.axis} will override \code{type}.}
   \item{x.var}{the index (number) or quoted name of the covariate or factor to place on the 
     horizontal axis of each panel of the effect plot. The default is the 
     predictor with the largest number of levels or values.}
@@ -134,7 +149,7 @@
     in these cases a legend is drawn at the top of the display.  If these arguments are
     too short they are recycled.}
   \item{cex}{character expansion for plotted symbols; default is \code{1.5}.}
-  \item{lwd}{line width for fitted lines}
+  \item{lwd}{line width for fitted lines.}
   \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
     if \code{NULL}, the default, then the vertical axes are scaled from the data.}
   \item{xlim}{a named list of 2-element vectors, with the names corresponding to numeric
@@ -188,9 +203,6 @@
   	(or, in some cases \code{\link{densityplot}}), which
   	is used to draw the effect display; if not specified, the plot will be formatted so that
   	it appears on a single page.}
-  \item{rescale.axis}{if \code{TRUE} (the default), the tick marks on the vertical axis
-    are labelled on the response scale (e.g., the probability scale for effects computed on
-    the logit scale for a binomial GLM).}
   \item{key.args}{additional arguments to be passed to the \code{key} trellis argument to 
     \code{\link{xyplot}} or \code{\link{densityplot}}, 
     e.g., to position the key (legend) in the plotting region; may also be used to modify
@@ -221,13 +233,27 @@
     \code{"adjusted"}, and this argument is effective only when partial residuals are included
     in the effect object to be plotted --- see \code{\link{Effect}}.}
   \item{smooth.residuals}{whether to show a \code{\link{loess}} smooth of the partial residuals, if
-    they are present; the default is \code{TRUE}.}
+    they are present; the default is \code{TRUE}. For a non-Gaussian \code{glm} model,
+    a non-robust \code{loess} smooth is used; for a \code{lm} model or a Gaussian \code{glm} model,
+    a robust smooth is employed.}
   \item{span}{of the \code{\link{xyplot}} smoother to be applied to partial residuals;
     the default is \code{2/3}.}
   \item{show.fitted}{if partial residuals are present in the effect object, also plot the partial
     fitted values (which will be shown as filled circles).}
   \item{residuals.color}{color for plotting partial residuals (default \code{"blue"}).}
+  \item{residuals.smooth.color}{color for plotting the smooth of the partial residuals; the default is the \code{residuals.color}.}
   \item{residuals.pch}{plotting symbol for partial residuals (default \code{1}, open circles).}
+  \item{bg}{if a single numeric value (the default is \code{3}), the color of the strips at the tops
+    of lattice panels are set to gray scale, with the number of graditions, if there is more than one
+    conditioning variable, corresponding to the value given (which will be rounded to a whole number).
+    This argument can also be a vector of colors, specified in any manner recognized in R (e.g, by name).}
+  \item{fg}{foreground color or colors for the strips at the top of lattice panels (the default is
+    \code{"black"}); can be a single value or a vector of values of the same length as \code{bg}.}
+  \item{clip}{\code{"off"} or \code{"on"}, determines whether or not conditioning values in the strips
+    at the top of lattice panels are clipped on the left and right. The normal lattice default is
+    \code{"on"}; the default in \code{setStrip} is \code{"off"}, allowing the lines representing numeric
+    conditioning values to be displayed more clearly at the extreme left and right of strips.}
+  \item{saved}{a set of lattice strip specifications returned by \code{setStrip}.}
   \item{...}{arguments to be passed down.}
 }
 
@@ -244,8 +270,20 @@
   This approach may also be used with linear models, for example to display effects on the scale of the
   response even if the data are analyzed on a transformed scale, such as log or square-root.
   
+  When a factor is on the x-axis, the \code{plot} method for \code{eff} objects
+  connects the points representing the effect by line segments, creating a
+  response ``profile.'' If you wish to suppress these lines, add the argument
+  \code{lty=0} to the call to \code{plot} (see the examples).
+  
   In a polytomous (multinomial or proportional-odds) logit model, by default effects are plotted on the
   probability scale; they may be alternatively plotted on the scale of the individual-level logits.
+  
+  The \code{setStrip} and \code{restoreStrip} functions modify the strips that appear in subsequent 
+  lattice plots, including those produced by functions in the \pkg{effects} package. The default call
+  \code{setStrip()} provides monochrome (rather than the lattice-default colored) strips with up to 3
+  gray-scale values corresponding to 3 conditioning variables; clipping at the left and right of strips
+  is also turned off by default by \code{setStrip}. \code{restoreStrip} may be used to reset
+  lattice strips to previously saved parameters returned by \code{setStrip}.
 }
 
 \value{
@@ -257,6 +295,9 @@
   \item{lower}{an array containing the lower confidence limits.}
   \item{upper.header}{a character string to label the upper confidence limits.}
   \item{upper}{an array containing the upper confidence limits.}
+  
+  The \code{setStrip} function invisibly returns a list that can supply the argument of the 
+\code{restoreStrip} function to restore the previous lattice strip specification.
   
   The \code{[} method for \code{"efflist"} objects is used to subset an \code{"efflist"} object and returns an object of the same class.
 }
@@ -278,7 +319,9 @@ eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)))
 eff.cowles
 as.data.frame(eff.cowles[[2]]) # neuroticism*extraversion interaction
 
-plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90)
+plot(eff.cowles, 'sex', ylab="Prob(Volunteer)", grid=TRUE, rotx=90, lty=0)
+
+.save.strip <- setStrip()
 
 plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)))
@@ -289,20 +332,20 @@ plot(eff.cowles, 'neuroticism:extraversion', ylab="Prob(Volunteer)",
     ticks=list(at=c(.1,.25,.5,.75,.9)), band.colors="red", band.transparency=.3)
 
 plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
-     ylab="Prob(Volunteer)", key.args = list(x = 0.25, y = 0.90, corner = c(0, 0)))
+     ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)))
 
 # use probability scale in place of logit scale, all lines are black.
 plot(eff.cowles, 'neuroticism:extraversion', multiline=TRUE,
-     ylab="Prob(Volunteer)", key.args = list(x = 0.25, y = 0.90, corner = c(0, 0)),
+     ylab="Prob(Volunteer)", key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)),
      colors="black", lines=1:8,
-     ci.style="bands", rescale.axis=FALSE, band.colors=palette())
+     ci.style="bands", type="response", band.colors=palette())
 
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE)
 
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
     xlevels=list(extraversion=seq(0, 24, 6))), multiline=TRUE,
-    rescale.axis=FALSE, ci.style="bands")
+    type="response", ci.style="bands")
 }
 
 if (require(nnet)){
@@ -343,6 +386,8 @@ plot(eff.pres[1:2])
 plot(eff.pres[1],
     transform.x=list(income=list(trans=log10, inverse=function(x) 10^x)),
     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))))
+restoreStrip(.save.strip)
+remove(.save.strip)
 }
 
 \keyword{hplot}

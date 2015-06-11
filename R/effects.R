@@ -7,8 +7,13 @@
 #    generalized xlevels argument to include the function of default.levels.
 # 2013-10-15: eliminated generic effect() and all its methods. J. Fox
 # 2014-07-02: added vcov. argument to effect 
+# 2014-12-10: Changed 'effect' back to a generic function.  S. Weisberg
 
-effect <- function(term, mod, vcov.=vcov, ...){ 
+effect <- function(term, mod, vcov.=vcov, ...){
+  UseMethod("effect", mod)
+}
+
+effect.default <- function(term, mod, vcov.=vcov, ...){ 
     term <- gsub(" ", "", gsub("\\*", ":", term))
     terms <- term.names(mod)
     if (has.intercept(mod)) terms <- terms[-1]
@@ -20,7 +25,7 @@ effect <- function(term, mod, vcov.=vcov, ...){
     }
     if (!is.high.order.term(term, mod, mod.aug))
         message("NOTE: ", term, " is not a high-order term in the model")
-    predictors <- all.vars(parse(text=term))
+    predictors <- all.vars(parse(text=term)) 
     Effect(predictors, mod, vcov.=vcov., ...)
 }
 

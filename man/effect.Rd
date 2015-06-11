@@ -10,12 +10,9 @@
 \alias{Effect.multinom}
 \alias{Effect.polr}
 \alias{Effect.poLCA}
+\alias{Effect.clm2}
 \alias{Effect.mlm}
 \alias{allEffects}
-\alias{allEffects.mer}
-\alias{allEffects.merMod}
-\alias{allEffects.lme}
-\alias{allEffects.poLCA}
 \alias{as.data.frame.eff}
 \alias{as.data.frame.effpoly}
 \alias{as.data.frame.efflatent}
@@ -23,25 +20,30 @@
 
 \title{Functions For Constructing Effect Plots}
 \description{
-  \code{effect} constructs an \code{"eff"} object for a term (usually a high-order term) 
-  in a linear (fit by \code{lm} or \code{gls}) or generalized linear model (fit by \code{glm}), or an \code{"effpoly"} object for a term in a
-   multinomial or proportional-odds logit model (fit respectively by \code{multinom} or \code{polr}), 
+  \code{effect} and \code{Effect} construct an \code{"eff"} object for a term (usually a high-order term) 
+  in a linear (fit by \code{lm} or \code{gls}) or generalized linear model (fit by \code{glm}), or an 
+  \code{"effpoly"} object for a term in a
+  multinomial or proportional-odds logit model (fit respectively by \code{multinom} or \code{polr}), 
   absorbing the lower-order terms marginal
   to the term in question, and averaging over other terms in the model.  For multivariate linear models
   (\code{mlm}), the function constructs a list of \code{"eff"} objects separately for the various
-  response variables.
+  response variables.  
   
-  The function can
-  also be used with mixed-effects models fit with \code{lmer} from the \pkg{lme4} package,
-  or fit with \code{lme} from the \pkg{nlme} package, and for polytomous latent-class models
-  fit by the \code{poLCA} function in the \pkg{poLCA} package.  In mixed effects models the
-  analysis is for the fixed effects only, not for random effects. The \code{effect} function
+  \code{effect} builds the required object by specifying explicity a focal term like \code{"a:b"} 
+  for an \code{a} by \code{b} interaction.  \code{Effect} requires specifying a the components of 
+  the term, for example \code{c("a", "b")} rather than the term itself.  \code{Effect} is consequently 
+  more flexible and robust than 
+  \code{effect}, and will work with some models for which \code{effect} fails, such as models with
+  nested terms (see the examples).  The \code{effect} function
   works by constructing a call to \code{Effect}.
   
-  \code{Effect} also constructs an an \code{"eff"} object, but rather than focusing on a term in the model,
-  it focuses on a subset of the predictors. \code{Effect} is consequently more flexible and robust than 
-  \code{effect}, and will work with some models for which \code{effect} fails, such as models with
-  nested terms (see the examples). The \code{effect} function calls \code{Effect}. There is a default
+  The function can also be used with some mixed-effects models, including linear and generalized linear model
+  fits from \code{lmer} and \code{glmer} from the \pkg{lme4} package 
+  and \code{lme} from the \pkg{nlme} package; ordinal logistic mixed effects fit with \code{clmm2} from the
+  \pkg{ordinal} package, and polytomous latent-class models fit by the \code{poLCA} function in 
+  the \pkg{poLCA} package.  The analysis in mixed effects is for the fixed effects only, not for random effects. 
+  
+  There is a default
   method for \code{Effect} that should work with any model object that has a linear predictor and responds
   to the \code{\link{coef}}, \code{\link{model.frame}}, \code{\link{formula}}, and \code{\link{vcov}} functions.
   
@@ -73,11 +75,13 @@ Effect(focal.predictors, mod, ...)
     confidence.level=.95, xlevels=list(), default.levels=NULL, 
     given.values, vcov.=vcov, se=TRUE, typical=mean, latent=FALSE, ...)
     
+\method{Effect}{clm2}(focal.predictors, mod, ...)
+    
 \method{Effect}{mer}(focal.predictors, mod, 
-    KR=require("pbkrtest", quietly=TRUE), ...)
+    KR=FALSE, ...)
 
 \method{Effect}{merMod}(focal.predictors, mod, 
-    KR=require("pbkrtest", quietly=TRUE), ...)
+    KR=FALSE, ...)
 
 \method{Effect}{lme}(focal.predictors, mod, ...)
 
@@ -93,13 +97,6 @@ Effect(focal.predictors, mod, ...)
     
 allEffects(mod, ...)
 
-\method{allEffects}{mer}(mod, ...)
-
-\method{allEffects}{merMod}(mod, ...)
-
-\method{allEffects}{lme}(mod, ...)
-
-\method{allEffects}{poLCA}(mod, ...)
 
 \method{as.data.frame}{eff}(x, row.names=NULL, optional=TRUE, 
     transform=x$transformation$inverse, ...)
@@ -156,10 +153,11 @@ allEffects(mod, ...)
     normal distribution is used to get confidence limits.}
   \item{confidence.level}{level at which to compute confidence limits
     based on the standard-normal distribution; the default is \code{0.95}.}
-  \item{KR}{if \code{TRUE}, the default if the \pkg{pbkrtest} package is installed, 
+  \item{KR}{if \code{TRUE} and the \pkg{pbkrtest} package is installed, 
     use the Kenward-Roger coefficient covariance
     matrix to compute effect standard errors for linear mixed models fit with \code{lmer}
-    in the \pkg{lme4} package.}
+    in the \pkg{lme4} package.  The default is \code{FALSE} because the computation can be
+    very slow.}
   \item{transformation}{a two-element list with elements \code{link} and
     \code{inverse}. For a generalized linear model, these are by default
     the link function and inverse-link (mean) function. For a linear model,
@@ -233,8 +231,8 @@ allEffects(mod, ...)
 
 \value{
   For \code{lm}, \code{glm}, \code{mer} and \code{lme}, \code{effect} and \code{Effect} return 
-  an \code{"eff"} object, and for \code{multinom}
-  and \code{polr}, an \code{"effpoly"} object, with the components listed below.
+  an \code{"eff"} object, and for \code{multinom},
+  \code{polr} and \code{clmm2}, an \code{"effpoly"} object, with the components listed below.
   For \code{mlm} with one response specified, an \code{"eff"} object, otherwise a class \code{"efflist"} object, 
   containing one \code{"eff"} object for each \code{response}.
   \item{term}{the term to which the effect pertains.}
@@ -280,6 +278,9 @@ allEffects(mod, ...)
     except for the predictor corresponding to \code{xvar}, which will appear on the horizontal axis of the plotted effect.}
   \item{x.var}{the name of the predictor to appear on the horizontal axis of an effect plot made from the
     returned object; will usually be \code{NULL} if partial residuals aren't computed.}
+  \item{family}{for a \code{"glm"} model, the name of the distributional family of the model;
+    for an \code{"lm"} model, this is \code{"gaussian"}; otherwise \code{NULL}. The \code{family} controls
+    how partial residuals are smoothed in plots.}
     
   \code{effectList} returns a list of \code{"eff"} or \code{"effpoly"} objects
   corresponding to the high-order terms of the model.
@@ -315,6 +316,13 @@ and of class \code{effpoly} with more than 2 categories.
   argument to \code{lm}, \code{glm}, \code{lmer} or \code{glmer}; 
   offsets supplied via calls to the \code{offset} function on the right-hand side
   of the model formula are not supported.
+  
+  Fitting ordinal mixed-models using \code{clmm2} permits many options, including a variety of link functions,
+  scale functions, nominal regressors, and various methods for setting thresholds.  Effects are currently generated 
+  only for the default values of the arguments \code{scale}, \code{nominal}, \code{link} and \code{threshold}, which is 
+  equivalent to fitting an ordinal response mixed effects model with a logistic link.  The effect methods can also be   
+  used with objects created using \code{clm2} fitting ordinal response logistic models with no random effects, with 
+  results similar to those from \code{polr} in the \pkg{MASS} package.
   
   Calling any of these functions from within a user-written function may result in errors due
   to R's scoping rules.  See the vignette \code{embedding.pdf} for the \pkg{car} package 
@@ -367,8 +375,9 @@ and Jangman Hong.}
     \code{\link{densityplot}}}
 
 \examples{
-# Note: Some of these examples are marked as "don't run"
-#       to reduce the execution times of the examples.
+# Note: Some of these examples are marked as "don't test"
+#       to reduce the execution times of the examples
+#       when the package is checked.
 
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,
     data=Cowles, family=binomial)
@@ -455,11 +464,11 @@ plot(eff.pres[1],
 # linear model with log-response and log-predictor
 # to illustrate transforming axes and setting tick labels
 mod.pres1 <- lm(log(prestige) ~ log(income) + poly(education, 3) + poly(women, 2),
-    data=Prestige)
+                data=Prestige)
 # effect of the log-predictor
-eff.log <- Effect(c("income"), mod.pres1)
+eff.log <- Effect("income", mod.pres1)
 # effect of the log-predictor transformed to the arithmetic scale
-eff.trans <- Effect(c("income"), mod.pres1, transformation=list(link=log, inverse=exp))
+eff.trans <- Effect("income", mod.pres1, transformation=list(link=log, inverse=exp))
 #variations:
 # y-axis:  scale is log, tick labels are log
 # x-axis:  scale is arithmetic, tick labels are arithmetic
@@ -468,30 +477,30 @@ plot(eff.log)
 # y-axis:  scale is log, tick labels are log
 # x-axis:  scale is log, tick labels are arithmetic
 plot(eff.log, transform.x=list(income=c(trans=log, inverse=exp)),
-       ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
-       xlab="income, log-scale")
+     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
+     xlab="income, log-scale")
 
-# y-axis:  scale is log, tick labels are airthmetic
+# y-axis:  scale is log, tick labels are arithmetic
 # x-axis:  scale is arithmetic, tick labels are arithmetic
 plot(eff.trans, ylab="prestige")
 
-# y-axis:  scale is arithmetic, tick labels are airthmetic
+# y-axis:  scale is arithmetic, tick labels are arithmetic
 # x-axis:  scale is arithmetic, tick labels are arithmetic
-plot(eff.trans, rescale.axis=FALSE, ylab="prestige")
+plot(eff.trans, type="response", ylab="prestige")
 
 # y-axis:  scale is log, tick labels are arithmetic
 # x-axis:  scale is log, tick labels are arithmetic
 plot(eff.trans, transform.x=list(income=c(trans=log, inverse=exp)),
-       ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
-       xlab="income, log-scale", ylab="prestige, log-scale",
-       main="Both effect and X in log-scale")
+     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
+     xlab="income, log-scale", ylab="prestige, log-scale",
+     main="Both effect and X in log-scale")
 
 # y-axis:  scale is arithmetic, tick labels are airthmetic
 # x-axis:  scale is log, tick labels are arithmetic
 plot(eff.trans, transform.x=list(income=c(trans=log, inverse=exp)),
-       ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
-       rescale.axis=FALSE,
-       xlab="income, log-scale", ylab="prestige")
+     ticks.x=list(income=list(at=c(1000, 2000, 5000, 10000, 20000))),
+     type="link",
+     xlab="income, log-scale", ylab="prestige")
 }
 
 if (require(nlme)){ # for gls()
@@ -577,10 +586,12 @@ mod.1 <- lm(y ~ poly(x1, x2, degree=2, raw=TRUE), data=Data)
 mod.2 <- lm(y ~ x1*x2, data=Data)
 mod.3 <- lm(y ~ x1 + x2, data=Data)
 
+.save.strip <- setStrip() # change color of lattice strips
 plot(Effect(c("x1", "x2"), mod.1, partial.residuals=TRUE)) # correct model
 plot(Effect(c("x1", "x2"), mod.2, partial.residuals=TRUE)) # wrong model
 plot(Effect(c("x1", "x2"), mod.3, partial.residuals=TRUE)) # wrong model
-
+restoreStrip(.save.strip)
+remove(.save.strip)
 }
 
 \keyword{hplot}

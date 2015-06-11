@@ -5,6 +5,7 @@
 # 2013-11-06: fixed drop dimension when only one focal predictor. John
 # 2014-10-10: namespace fixes. John
 # 2014-12-05: made key.args more flexible. John
+# 2014-03-22: use wide columns by default only when x for legend not set. J. Fox
 
 plot.effpoly <- function(x,
     type=c("probability", "logit"),
@@ -115,7 +116,7 @@ plot.effpoly <- function(x,
                     text=list(as.character(unique(response))),
                     lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
                     points=list(pch=symbols[.mods(1:n.y.lev)], col=colors[.modc(1:n.y.lev)]),
-                    columns = find.legend.columns(n.y.lev))
+                    columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
                 for (k in names(key.args)) key[k] <- key.args[k]
                 result <- xyplot(eval(if (type=="probability") 
                     parse(text=if (n.predictors==1) 
@@ -183,7 +184,7 @@ plot.effpoly <- function(x,
                 key <- list(title=x$response, cex.title=1, border=TRUE,
                     text=list(as.character(unique(response))), 
                     lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
-                    columns = find.legend.columns(n.y.lev))
+                    columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
                 for (k in names(key.args)) key[k] <- key.args[k]
                 result <- xyplot(eval(if (type=="probability") 
                     parse(text=if (n.predictors==1) paste("prob ~ trans(", predictors[x.var], ")")
