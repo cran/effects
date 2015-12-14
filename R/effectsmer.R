@@ -13,7 +13,8 @@
 #   that was handled incorrectly by the family.glmResp function.  This function is no longer
 #   used by mer.to.glm.  The same error will recur in any link with an argument.
 # 2015-06-10: requireNamespace("pbkrtest") rather than require("pbkrtest)
-
+# 2015-07-02: fixed bug when the name of the data frame was the name of a function (e.g., sort, or lm)
+# 2015-12-13: make it work with pbkrtest 0.4-3. J. Fox
 
 # the function lm.wfit fit gets the hessian wrong for mer's.  Get the variance
 # from the vcov method applied to the mer object.
@@ -89,11 +90,6 @@ mer.to.glm <- function(mod, KR=FALSE) {
         KR <- FALSE
         warning("pbkrtest is not available, KR set to FALSE")
     }
-    else {
-        vcovAdj <- pbkrtest::vcovAdj
-        vcovAdj.lmerMod <- pbkrtest::vcovAdj.lmerMod
-        vcovAdj.mer <- pbkrtest::vcovAdj.mer
-    }
     # object$family$family doesn't work correctly with the negative binomial family because of the
     # argument in the family function, so the old line
     #   family <- family(mod)
@@ -126,9 +122,10 @@ mer.to.glm <- function(mod, KR=FALSE) {
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")
     cl$formula <- fixmod(as.formula(cl$formula))
+    cl$data <- mod@frame
     mod2 <- eval(cl)
     mod2$coefficients <- lme4::fixef(mod) #mod@fixef
-    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(vcovAdj(mod)) else as.matrix(vcov(mod))
+    mod2$vcov <- if (family == "gaussian" && link == "identity" && KR) as.matrix(pbkrtest::vcovAdj(mod)) else as.matrix(vcov(mod))
     mod2$linear.predictors <- model.matrix(mod2) %*% mod2$coefficients
     mod2$fitted.values <- mod2$family$linkinv(mod2$linear.predictors)
     mod2$weights <- as.vector(with(mod2,
@@ -145,7 +142,7 @@ mer.to.glm <- function(mod, KR=FALSE) {
 #method for 'fakeglm' objects. Do not export   
 vcov.fakeglm <- function(object, ...) object$vcov
 
-#The next six functions should be exported
+#The next six functions should be exported as S3 methods
 
 effect.mer <- function(term, mod, vcov.=vcov, KR=FALSE, ...) {
     result <- effect(term, mer.to.glm(mod, KR=KR), vcov., ...)

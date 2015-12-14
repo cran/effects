@@ -1,13 +1,20 @@
-# last modified 2015-04-08 by J. Fox
+# last modified 2015-07-13 by J. Fox
 
 importFrom(lattice, barchart, current.panel.limits, densityplot, larrows, llines, lpoints,
            panel.abline, panel.grid, panel.polygon, panel.text, strip.default, trellis.par.get,
            trellis.par.set, xyplot)
 importFrom(colorspace, rainbow_hcl, sequential_hcl)
 importFrom(grid, grid.pretty, grid.segments, unit)
-# importFrom(pbkrtest, vcovAdj, vcovAdj.lmerMod, vcovAdj.mer)
 importFrom(lme4, fixef)
 importFrom(nnet, multinom)
+importFrom(graphics, plot)
+importFrom(grDevices, gray, palette)
+importFrom(stats, as.formula, binomial, coef, coefficients, delete.response, family, fitted, 
+    formula, glm, lm, lm.fit, loess.smooth, model.frame, model.matrix, model.offset, 
+    model.response, na.exclude, na.omit, nlm, predict, qnorm, qt, quantile, residuals, 
+    spline, terms, update, vcov, weights, xtabs)
+importFrom(utils, menu)
+
 export(effect, allEffects, all.effects, Effect, setStrip, restoreStrip)
 
 S3method(Effect, default)

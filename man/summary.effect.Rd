@@ -49,7 +49,7 @@
     key.args=NULL, 
     row=1, col=1, nrow=1, ncol=1, more=FALSE, 
     use.splines=TRUE, partial.residuals=c("adjusted", "raw"), show.fitted=FALSE,
-    residuals.color="blue", residuals.pch=1, 
+    residuals.color="blue", residuals.pch=1, residuals.cex=1,
     smooth.residuals=TRUE, residuals.smooth.color=residuals.color, span=2/3, ...)
 \method{plot}{effpoly}(x,
 		type=c("probability", "logit"),
@@ -243,6 +243,7 @@ restoreStrip(saved)
   \item{residuals.color}{color for plotting partial residuals (default \code{"blue"}).}
   \item{residuals.smooth.color}{color for plotting the smooth of the partial residuals; the default is the \code{residuals.color}.}
   \item{residuals.pch}{plotting symbol for partial residuals (default \code{1}, open circles).}
+  \item{residuals.cex}{character expansion (relative size) for symbols plotting partial residuals (default is \code{1}).}
   \item{bg}{if a single numeric value (the default is \code{3}), the color of the strips at the tops
     of lattice panels are set to gray scale, with the number of graditions, if there is more than one
     conditioning variable, corresponding to the value given (which will be rounded to a whole number).

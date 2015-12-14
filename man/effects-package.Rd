@@ -14,10 +14,10 @@ mixed-effect, polytomous latent-class, and some other models; (multidimensional)
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 3.0-4\cr
-Date: \tab 2015/06/10\cr
-Suggests: \tab pbkrtest, nlme, MASS, poLCA, heplots, splines\cr
-Imports: \tab lme4, nnet, lattice, grid, colorspace\cr
+Version: \tab 3.0-5\cr
+Date: \tab 2015/12/13\cr
+Suggests: \tab pbkrtest (>= 0.4-4), nlme, MASS, poLCA, heplots, splines\cr
+Imports: \tab lme4, nnet, lattice, grid, colorspace, graphics, grDevices, stats, utils\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
 License: \tab GPL (>= 2)\cr

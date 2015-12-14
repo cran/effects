@@ -12,6 +12,8 @@
 # 2014-07-08: if no numeric predictor, partial residuals suppressed with warning rather than an error
 # 2014-10-09: namespace fixes. J. Fox
 # 2015-04-08: added setStrip(), restoreStrip(). J. Fox
+# 2015-07-07: fixed matchVarName() so that it handles periods in names properly. J. Fox
+# 2015-09-10: added a fix for class = 'array' in Analyze.model.  S. Weisberg
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -204,6 +206,7 @@ vcov.eff <- function(object, ...) object$vcov
 
 Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, formula.rhs, 
     partial.residuals=FALSE, quantiles, x.var=NULL, data=NULL){
+  #browser()
     if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude") 
         class(mod$na.action) <- "omit"
     all.predictors <- all.vars(formula.rhs)
@@ -303,6 +306,7 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
         sapply(x.excluded, function(x) x$name))
     colclasses <- lapply(X, class)
     colclasses[colclasses == "matrix"] <- "numeric"
+    colclasses[colclasses == "array"] <- "numeric"
     predict.data <-  matrix.to.df(predict.data, colclasses=colclasses)
     list(predict.data=predict.data, 
         factor.levels=factor.levels, 
@@ -488,11 +492,21 @@ Fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod,
 # 	mod.matrix
 # }
 
+# matchVarName <- function(name, expressions){
+# 	a <- !grepl(paste("[.]+", name, sep=""), expressions)
+# 	b <- !grepl(paste(name, "[.]+", sep=""), expressions)
+# 	c <- grepl(paste("\\b", name, "\\b", sep=""), expressions)
+# 	a & b & c
+# }
+
 matchVarName <- function(name, expressions){
-	a <- !grepl(paste("[.]+", name, sep=""), expressions)
-	b <- !grepl(paste(name, "[.]+", sep=""), expressions)
-	c <- grepl(paste("\\b", name, "\\b", sep=""), expressions)
-	a & b & c
+    scratch <- "zAMIjw4RN3" # randomly generated string
+    name <- gsub("\\.", scratch, name)
+    expressions <- gsub("\\.", scratch, as.character(expressions))
+    a <- !grepl(paste("[.]+", name, sep=""), expressions)
+    b <- !grepl(paste(name, "[.]+", sep=""), expressions)
+    c <- grepl(paste("\\b", name, "\\b", sep=""), expressions)
+    a & b & c
 }
 
 Strangers <- function(mod, focal.predictors, excluded.predictors){

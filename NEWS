@@ -1,3 +1,17 @@
+Version 3.0-5
+
+ o Minor bug in handling class=="array" in the Effect() method.
+ 
+ o Fixed bug when the name of the data frame is the name of function like "sort" in mixed-effects models with lme4 (problem originally reported by Saudi Sadiq).
+ 
+ o Fixed bug in predictor-name matching that could occur in names with periods (reported by Trevor Avery).
+ 
+ o Fixed package imports to conform to new CRAN rules.
+ 
+ o Added residuals.cex argument to plot.eff().
+ 
+ o Changes to work with pbkrtest 0.4-4.
+
 Version 3.0-4
 
  o New default of KR=FALSE because KR=TRUE can be very slow.
