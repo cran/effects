@@ -298,7 +298,7 @@ plot.eff <- function(x, x.var,
                         panel.text(rep(current.panel.limits()$xlim[2], length(thresholds)), 
                                    thresholds, threshold.labels, adj=c(1,0), cex=0.75)
                     }
-                    if (!is.null(residuals)){
+                    if (!is.null(residuals)){ 
                         lpoints(trans(x.fit), residuals, col=residuals.color, pch=residuals.pch, cex=residuals.cex)
                         if (show.fitted) lpoints(trans(x.fit), fitted, pch=16, col=residuals.color)  # REMOVE ME
                         if (smooth.residuals){

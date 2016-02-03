@@ -207,7 +207,7 @@ vcov.eff <- function(object, ...) object$vcov
 Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, formula.rhs, 
     partial.residuals=FALSE, quantiles, x.var=NULL, data=NULL){
   #browser()
-    if ((!is.null(mod$na.action)) && class(mod$na.action) == "exclude") 
+    if ((!is.null(mod$nan.action)) && class(mod$na.action) == "exclude") 
         class(mod$na.action) <- "omit"
     all.predictors <- all.vars(formula.rhs)
     check.vars <- !(focal.predictors %in% all.predictors)

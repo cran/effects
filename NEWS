@@ -1,6 +1,12 @@
-Version 3.0-5
+Version 3.0-6
 
+ o Fix bug in Effect for mer objects with 'poly' in the formula (and related issues).
+ 
+ o Allow "||" in variance formulae in lmer4 models.
+ 
  o Minor bug in handling class=="array" in the Effect() method.
+ 
+ Version 3.0-5
  
  o Fixed bug when the name of the data frame is the name of function like "sort" in mixed-effects models with lme4 (problem originally reported by Saudi Sadiq).
  
