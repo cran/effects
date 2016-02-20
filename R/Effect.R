@@ -15,6 +15,7 @@
 # 2014-09-25: added KR argument to Effect.mer() and Effect.merMod(). J. Fox
 # 2014-12-07: don't assume that pbkrtest is installed. J. Fox
 # 2015-03-25: added "family" element to eff objects returned by Effect.lm(). J. Fox
+# 2016-02-16: fixed problem in handling terms like polynomials for non-focal predictors. J. Fox
 
 Effect <- function(focal.predictors, mod, ...){
     UseMethod("Effect", mod)
@@ -43,7 +44,7 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(),
     else stop("offset must be a function or a number")
     formula.rhs <- formula(mod)[[3]]
     model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, 
-        partial.residuals=partial.residuals, quantiles=quantiles, x.var=x.var, data=data)
+        partial.residuals=partial.residuals, quantiles=quantiles, x.var=x.var, data=data, typical=typical)
     excluded.predictors <- model.components$excluded.predictors
     predict.data <- model.components$predict.data
     predict.data.all.rounded <- predict.data.all <- if (partial.residuals) na.omit(data[, all.vars(formula(mod))]) else NULL
@@ -126,22 +127,12 @@ Effect.lm <- function (focal.predictors, mod, xlevels = list(),
     } 
     if (se) {
         if (any(family(mod)$family == c("binomial", "poisson"))) {
-#            dispersion <- 1
             z <- qnorm(1 - (1 - confidence.level)/2)
         }
         else {
-#            dispersion <- sum(wts * (residuals(mod))^2, na.rm=TRUE)/mod$df.residual 
             z <- qt(1 - (1 - confidence.level)/2, df = mod$df.residual)
         }
-# old
-#        V2 <- dispersion * summary.lm(mod)$cov
-#        V1 <- vcov(mod)
-#        V <- if (inherits(mod, "fakeglm")) 
-#            V1
-#        else V2
-# end old, begin new August 2, 2014
-        V <- vcov.(mod)  # I can see no reason to use dispersion * summary.lm(mod)$cov
-# end new
+        V <- vcov.(mod)
         eff.vcov <- mod.matrix %*% V %*% t(mod.matrix)
         rownames(eff.vcov) <- colnames(eff.vcov) <- NULL
         var <- diag(eff.vcov)
@@ -193,7 +184,7 @@ Effect.gls <- function (focal.predictors, mod, xlevels = list(), default.levels 
   formula.rhs <- formula(mod)[[3]]
   .data <- eval(mod$call$data)
   mod.lm <- lm(as.formula(mod$call$model), data=.data, na.action=na.exclude)
-  model.components <- Analyze.model(focal.predictors, mod.lm, xlevels, default.levels, formula.rhs)
+  model.components <- Analyze.model(focal.predictors, mod.lm, xlevels, default.levels, formula.rhs, typical=typical)
   excluded.predictors <- model.components$excluded.predictors
   predict.data <- model.components$predict.data
   factor.levels <- model.components$factor.levels
@@ -258,12 +249,12 @@ Effect.multinom <- function(focal.predictors, mod,
     else if (!all(which <- colnames(given.values) %in% names(coef(mod)))) 
         stop("given.values (", colnames(given.values[!which]),") not in the model")
     formula.rhs <- formula(mod)[c(1, 3)]
-    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, typical=typical)
     excluded.predictors <- model.components$excluded.predictors
     predict.data <- model.components$predict.data
     factor.levels <- model.components$factor.levels
     factor.cols <- model.components$factor.cols
-    n.focal <- model.components$n.focal
+#    n.focal <- model.components$n.focal
     x <- model.components$x
     X.mod <- model.components$X.mod
     cnames <- model.components$cnames
@@ -297,10 +288,12 @@ Effect.multinom <- function(focal.predictors, mod,
     }
     for (i in 1:n){
         res <- eff.mul(X0[i,], B, se, m, p, r, V) # compute effects
-        P[i,] <- prob <- res$p # fitted probabilities
+#        P[i,] <- prob <- res$p # fitted probabilities
+        P[i,] <- res$p # fitted probabilities
         Logit[i,] <- logit <- res$logits # fitted logits
         if (se){
-            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs		
+#            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs
+            SE.P[i,] <- res$std.err.p # std. errors of fitted probs	
             SE.logit[i,] <- se.logit <- res$std.error.logits # std. errors of logits
             Lower.P[i,] <- logit2p(logit - z*se.logit)
             Upper.P[i,] <- logit2p(logit + z*se.logit)
@@ -364,12 +357,12 @@ Effect.polr <- function(focal.predictors, mod,
     else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
         stop("given.values (", names(given.values[!which]),") not in the model")
     formula.rhs <- formula(mod)[c(1, 3)]
-    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, typical=typical)
     excluded.predictors <- model.components$excluded.predictors
     predict.data <- model.components$predict.data
     factor.levels <- model.components$factor.levels
     factor.cols <- model.components$factor.cols
-    n.focal <- model.components$n.focal
+#    n.focal <- model.components$n.focal
     x <- model.components$x
     X.mod <- model.components$X.mod
     cnames <- model.components$cnames
@@ -428,10 +421,12 @@ Effect.polr <- function(focal.predictors, mod,
     }
     for (i in 1:n){
         res <- eff.polr(X0[i,], b, alpha, V, m, r, se) # compute effects
-        P[i,] <- prob <- res$p # fitted probabilities
+#        P[i,] <- prob <- res$p # fitted probabilities
+        P[i,] <- res$p # fitted probabilities
         Logit[i,] <- logit <- res$logits # fitted logits
         if (se){
-            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs		
+#            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs
+            SE.P[i,] <- res$std.err.p # std. errors of fitted probs
             SE.Logit[i,] <- se.logit <- res$std.error.logits # std. errors of logits
             Lower.P[i,] <- logit2p(logit - z*se.logit)
             Upper.P[i,] <- logit2p(logit + z*se.logit)
@@ -465,7 +460,7 @@ Effect.default <- function(focal.predictors, mod, xlevels = list(), default.leve
     }
     else stop("offset must be a function or a number")
     formula.rhs <- formula(mod)[[3]]
-    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs)
+    model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, typical=typical)
     excluded.predictors <- model.components$excluded.predictors
     predict.data <- model.components$predict.data
     factor.levels <- model.components$factor.levels

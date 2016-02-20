@@ -1,3 +1,11 @@
+Version 3.0-7
+
+ o Extends to logistic ordinal response models fit using 'clm' and 'clmm' in the 'ordinal package.
+ 
+ o Fixed bug in handling of terms like polynomials in non-focal covariates (reported by Urs Kalbitzer).
+ 
+ o Added package tests.
+ 
 Version 3.0-6
 
  o Fix bug in Effect for mer objects with 'poly' in the formula (and related issues).

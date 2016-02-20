@@ -11,6 +11,8 @@
 \alias{Effect.polr}
 \alias{Effect.poLCA}
 \alias{Effect.clm2}
+\alias{Effect.clm}
+\alias{Effect.clmm}
 \alias{Effect.mlm}
 \alias{allEffects}
 \alias{as.data.frame.eff}
@@ -39,7 +41,7 @@
   
   The function can also be used with some mixed-effects models, including linear and generalized linear model
   fits from \code{lmer} and \code{glmer} from the \pkg{lme4} package 
-  and \code{lme} from the \pkg{nlme} package; ordinal logistic mixed effects fit with \code{clmm2} from the
+  and \code{lme} from the \pkg{nlme} package; ordinal logistic mixed effects fit with \code{clm2} or \code{clmm} from the
   \pkg{ordinal} package, and polytomous latent-class models fit by the \code{poLCA} function in 
   the \pkg{poLCA} package.  The analysis in mixed effects is for the fixed effects only, not for random effects. 
   
@@ -76,6 +78,10 @@ Effect(focal.predictors, mod, ...)
     given.values, vcov.=vcov, se=TRUE, typical=mean, latent=FALSE, ...)
     
 \method{Effect}{clm2}(focal.predictors, mod, ...)
+
+\method{Effect}{clmm}(focal.predictors, mod, ...)
+
+\method{Effect}{clm}(focal.predictors, mod, ...)
     
 \method{Effect}{mer}(focal.predictors, mod, 
     KR=FALSE, ...)
@@ -232,7 +238,7 @@ allEffects(mod, ...)
 \value{
   For \code{lm}, \code{glm}, \code{mer} and \code{lme}, \code{effect} and \code{Effect} return 
   an \code{"eff"} object, and for \code{multinom},
-  \code{polr} and \code{clmm2}, an \code{"effpoly"} object, with the components listed below.
+  \code{polr}, \code{clm}, \code{clmm} and \code{clm2}, an \code{"effpoly"} object, with the components listed below.
   For \code{mlm} with one response specified, an \code{"eff"} object, otherwise a class \code{"efflist"} object, 
   containing one \code{"eff"} object for each \code{response}.
   \item{term}{the term to which the effect pertains.}
@@ -317,11 +323,12 @@ and of class \code{effpoly} with more than 2 categories.
   offsets supplied via calls to the \code{offset} function on the right-hand side
   of the model formula are not supported.
   
-  Fitting ordinal mixed-models using \code{clmm2} permits many options, including a variety of link functions,
+  Fitting ordinal mixed-models using \code{clmm} or \code{clmm2} permits many options, including a variety of link functions,
   scale functions, nominal regressors, and various methods for setting thresholds.  Effects are currently generated 
-  only for the default values of the arguments \code{scale}, \code{nominal}, \code{link} and \code{threshold}, which is 
-  equivalent to fitting an ordinal response mixed effects model with a logistic link.  The effect methods can also be   
-  used with objects created using \code{clm2} fitting ordinal response logistic models with no random effects, with 
+  only for the default values of the arguments \code{scale}, \code{nominal}, \code{link} and \code{threshold}, 
+  which is equivalent to fitting an ordinal response mixed effects model with a logistic link.  
+  The effect methods can also be   
+  used with objects created using \code{dlm} or \code{clm2} fitting ordinal response logistic models with no random effects, with 
   results similar to those from \code{polr} in the \pkg{MASS} package.
   
   Calling any of these functions from within a user-written function may result in errors due
