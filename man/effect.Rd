@@ -183,9 +183,10 @@ allEffects(mod, ...)
     by the \code{offset} argument to \code{lm}, \code{glm}, \code{lmer}, or \code{glmer} will be handled
     correctly; use of the \code{offset} function in the model formula is
     not supported.}
-  \item{partial.residuals}{if \code{TRUE}, partial residuals will be computed
-    for an effect in a linear or generalized linear model; if \code{FALSE}
-    (the default), partial residuals are suppressed.}
+  \item{partial.residuals}{if \code{TRUE}, residuals for a linear or generalized linear model 
+    will be computed and saved; if \code{FALSE}
+    (the default), residuals are suppressed. If residuals are saved, partial residuals are computed when the
+    the effect is plotted: see \code{link{plot.eff}}.}
   \item{quantiles}{quantiles at which to evaluate numeric focal predictors \emph{not} on the
     horizontal axis, used only when partial residuals are displayed; superceded if the \code{xlevels} argument
     gives specific values for a predictor.}
@@ -273,15 +274,8 @@ allEffects(mod, ...)
   \item{confidence.level}{for the confidence limits.}
   \item{transformation}{(for \code{"eff"} objects) a two-element list, with element \code{link} giving the
     link function, and element \code{inverse} giving the inverse-link (mean) function.}
-  \item{fitted.rounded}{partial fitted values at the observed values of the predictor \code{x.var} and the values of the
-    other predictors that appear in the effect display; predictors not in the effect are held constant to typical values.
-    This and the following two elements are \code{NULL} if partial residuals aren't computed and pertain only to linear
-    or generalized linear models.}
-  \item{fitted}{partial fitted values for the observed values of all predictors that appear in the effect display; 
-    predictors not in the effect are held constant to typical values.}
-  \item{partial.residuals.raw}{partial residuals for the effect computed at the actual values of all focal predictors.}
-  \item{partial.residuals.adjusted}{partial residuals for the effect computed at the panel-rounded values of focal predictors,
-    except for the predictor corresponding to \code{xvar}, which will appear on the horizontal axis of the plotted effect.}
+  \item{residuals}{(working) residuals for linear or generalized linear models, to be used by
+  \code{\link{plot.eff}} to plot partial residuals.}
   \item{x.var}{the name of the predictor to appear on the horizontal axis of an effect plot made from the
     returned object; will usually be \code{NULL} if partial residuals aren't computed.}
   \item{family}{for a \code{"glm"} model, the name of the distributional family of the model;

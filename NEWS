@@ -1,3 +1,7 @@
+Version 3.1-0
+
+ o Corrected and improved computation of partial residuals, fixing bug introduced by bug fix in 3.0-7.
+
 Version 3.0-7
 
  o Extends to logistic ordinal response models fit using 'clm' and 'clmm' in the 'ordinal package.

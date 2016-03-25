@@ -48,7 +48,7 @@
     transform.x=NULL, ticks.x=NULL,
     key.args=NULL, 
     row=1, col=1, nrow=1, ncol=1, more=FALSE, 
-    use.splines=TRUE, partial.residuals=c("adjusted", "raw"), show.fitted=FALSE,
+    use.splines=TRUE, partial.residuals=TRUE, show.fitted=FALSE,
     residuals.color="blue", residuals.pch=1, residuals.cex=1,
     smooth.residuals=TRUE, residuals.smooth.color=residuals.color, span=2/3, ...)
 \method{plot}{effpoly}(x,
@@ -151,7 +151,14 @@ restoreStrip(saved)
   \item{cex}{character expansion for plotted symbols; default is \code{1.5}.}
   \item{lwd}{line width for fitted lines.}
   \item{ylim}{2-element vector containing the lower and upper limits of the vertical axes;
-    if \code{NULL}, the default, then the vertical axes are scaled from the data.}
+    if \code{NULL}, the default, then the vertical axes are scaled from the data.
+    
+    \bold{Warning:} By default, the vertical axis for a generalized linear model is on the
+    scale of the linear predictor (e.g., the logit scale for a logit model), not on the scale
+    of the response (e.g., the probability scale for a logit model), although the \emph{tick labels}
+    are by default on the scale of the response. Consequently, the axis limits should be on the scale
+    of the linear predictor. E.g., for a logit model with axes to run from probabilities of 0.1 to
+    0.8, you can specify \code{log(c(0.1, 0.8)/c(0.9, 0.2))}.}
   \item{xlim}{a named list of 2-element vectors, with the names corresponding to numeric
     predictors; if a numeric predictor is in the list, then when it appears on the horizontal
     axis, the axis limits will be taken from the corresponding vector; if a predictor is
@@ -181,7 +188,13 @@ restoreStrip(saved)
     attempts to find `nice' locations for the ticks, and the value of \code{n} (default, 
     \code{5}) gives the
     approximate number of tick marks desired; if \code{at} is non-\code{NULL}, then the
-    value of \code{n} is ignored.}
+    value of \code{n} is ignored.
+    
+    \bold{Warning:} For a generalized linear model, by default the vertical axis is on the
+    scale of the linear predictor (e.g., the logit scale for a logit model), 
+    but labels for tick marks are displayed on the scale of
+    the response (e.g., the probability scale for a logit model); \code{at} should be given
+    on the \emph{response} scale (e.g., the probability scale for a logit model).}
   \item{ticks.x}{a named list of two-item lists controlling the placement of tick marks
     on the horizontal axis. Each list element is named for a numeric predictor in the model,
     and each sublist has elements \code{at} or \code{n} are for the \code{ticks} argument.
@@ -227,19 +240,15 @@ restoreStrip(saved)
     axis is not a factor use interpolating splines computed by the \code{\link{spline}} 
     function.  If FALSE, then linear interpoliation is used.  This argument is ignored if
     the horizontal axis is a factor.}
-  \item{partial.residuals}{use \code{"adjusted"} partial residuals, computed at the panel-rounded
-    values of the focal predictors not on the horizontal axis of each panel, or \code{"raw"}
-    partial residuals, computed at the actual values of all focal predictors; the default is
-    \code{"adjusted"}, and this argument is effective only when partial residuals are included
-    in the effect object to be plotted --- see \code{\link{Effect}}.}
+  \item{partial.residuals}{If \code{TRUE}, the default, plot partial residuals if residuals are saved in the effect object --- see \code{\link{Effect}}.}
   \item{smooth.residuals}{whether to show a \code{\link{loess}} smooth of the partial residuals, if
     they are present; the default is \code{TRUE}. For a non-Gaussian \code{glm} model,
     a non-robust \code{loess} smooth is used; for a \code{lm} model or a Gaussian \code{glm} model,
     a robust smooth is employed.}
   \item{span}{of the \code{\link{xyplot}} smoother to be applied to partial residuals;
     the default is \code{2/3}.}
-  \item{show.fitted}{if partial residuals are present in the effect object, also plot the partial
-    fitted values (which will be shown as filled circles).}
+  \item{show.fitted}{if \code{TRUE} and partial residuals are present in the effect object, also plot the partial
+    fitted values (which will be shown as filled circles); the default is \code{FALSE}.}
   \item{residuals.color}{color for plotting partial residuals (default \code{"blue"}).}
   \item{residuals.smooth.color}{color for plotting the smooth of the partial residuals; the default is the \code{residuals.color}.}
   \item{residuals.pch}{plotting symbol for partial residuals (default \code{1}, open circles).}
