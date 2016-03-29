@@ -1,3 +1,7 @@
+Version 3.1-1
+
+ o Requires R >= 3.2.0 (requested by CRAN).
+
 Version 3.1-0
 
  o Corrected and improved computation of partial residuals, fixing bug introduced by bug fix in 3.0-7.

@@ -1,6 +1,6 @@
-0e0cb1e23d5e63462f68b3dc5976ece6 *DESCRIPTION
+23b0e18ef8d25e107a0bbbb5ef244b31 *DESCRIPTION
 ee7fb6653c722dfda2a177ea0fda6a8d *NAMESPACE
-34aba701857e3638ac34d88a615414cd *NEWS
+0644448db3d70012055f2ad3399a243e *NEWS
 1e1ca30361964e314020beb403a2236e *R/Effect.R
 fd5534d1b50f0256571b3e20a4211520 *R/Effect.mlm.R
 c020ab794be53beba8b33f354c0fa04f *R/effects.R
@@ -31,7 +31,7 @@ a2697326c6634deeba023eb2db80ffea *man/Titanic.Rd
 18f83ed88afe8b1ecae2dbc3dc986b66 *man/Wells.Rd
 a47e2771036aca437153e7f5f5dc5a75 *man/effect.Rd
 03336c030e40258fc3316c4cb0c707d1 *man/effects-deprecated.Rd
-7377147f20550216fc29b36eaf3c0ded *man/effects-package.Rd
+68d0f1ed597ed1aefc278b3c68f620c6 *man/effects-package.Rd
 3b70cbeb82e39d1abbef8ca3cc4c1fe2 *man/summary.effect.Rd
 2347eef2e7e5f733e038f0513d37987c *tests/effect-tests-1.R
 616b7da96f65c6302a616b03b1d9e04d *tests/effect-tests-2.R
