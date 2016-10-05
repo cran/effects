@@ -17,8 +17,24 @@
 # 2015-03-25: added "family" element to eff objects returned by Effect.lm(). J. Fox
 # 2016-02-16: fixed problem in handling terms like polynomials for non-focal predictors. J. Fox
 # 2016-03-01: recoded calculation of partial residuals. J. Fox
+# 2016-07-19: added checkFormula(). J. Fox
+
+checkFormula <- function(object){
+  if (!inherits(object, "formula")){
+    object <- formula(object)
+  }
+  formula <- as.character(object)
+  rhs <- formula[length(formula)]
+  res <- regexpr("as.factor\\(|factor\\(|as.ordered\\(|ordered\\(|as.numeric\\(|as.integer\\(", 
+                 rhs)
+  res == -1 || attr(res, "match.length") == 0
+}
 
 Effect <- function(focal.predictors, mod, ...){
+  if (!checkFormula(mod)) stop("model formula should not contain calls to", 
+                                  "\n  factor(), as.factor(), ordered(), as.ordered(),",
+                                  " as.numeric(), or as.integer();",
+                                  "\n  see 'Warnings and Limitations' in ?Effect")
   UseMethod("Effect", mod)
 }
 

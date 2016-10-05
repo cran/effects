@@ -6,6 +6,7 @@
 # 2014-10-10: namespace fixes. John
 # 2014-12-05: made key.args more flexible. John
 # 2014-03-22: use wide columns by default only when x for legend not set. J. Fox
+# 2016-09-08: added show.strip.values argument to plot.effpoly(). J. Fox
 
 plot.effpoly <- function(x,
     type=c("probability", "logit"),
@@ -15,7 +16,8 @@ plot.effpoly <- function(x,
     ylab=paste(x$response, " (", type, ")", sep=""), 
     main=paste(effect, "effect plot"),
     colors, symbols, lines, cex=1.5, lwd=2,
-    factor.names=TRUE, ci.style, band.colors, band.transparency=0.3,
+    factor.names=TRUE, show.strip.values=TRUE,
+    ci.style, band.colors, band.transparency=0.3,
     style=c("lines", "stacked"), 
     confint=(style == "lines" && !is.null(x$confidence.level)), 
     transform.x=NULL, ticks.x=NULL, xlim=NULL,
@@ -87,14 +89,14 @@ plot.effpoly <- function(x,
         upper.logit <- as.vector(x$upper.logit)
     }
     response <- factor(response, levels=y.lev)
-    data <- data.frame(prob, logit)
-    if (has.se) data <- cbind(data, data.frame(lower.prob, upper.prob, lower.logit, upper.logit))
-    data[[x$response]] <- response
+    Data <- data.frame(prob, logit)
+    if (has.se) Data <- cbind(Data, data.frame(lower.prob, upper.prob, lower.logit, upper.logit))
+    Data[[x$response]] <- response
     for (i in 1:length(predictors)){
-        data <-cbind(data, x.frame[predictors[i]])
+        Data <-cbind(Data, x.frame[predictors[i]])
     }
     levs <- levels(x$data[[predictors[x.var]]])
-    n.predictor.cats <- sapply(data[, predictors[-c(x.var)], drop=FALSE], 
+    n.predictor.cats <- sapply(Data[, predictors[-c(x.var)], drop=FALSE], 
         function(x) length(unique(x)))
     if (length(n.predictor.cats) == 0) n.predictor.cats <- 1
     ci.style <- if(is.null(ci.style)) {
@@ -118,6 +120,11 @@ plot.effpoly <- function(x,
                     points=list(pch=symbols[.mods(1:n.y.lev)], col=colors[.modc(1:n.y.lev)]),
                     columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
                 for (k in names(key.args)) key[k] <- key.args[k]
+                if (show.strip.values){
+                  for (pred in predictors[-x.var]){
+                    Data[[pred]] <- as.factor(Data[[pred]])
+                  }
+                }
                 result <- xyplot(eval(if (type=="probability") 
                     parse(text=if (n.predictors==1) 
                         paste("prob ~ as.numeric(", predictors[x.var], ")")
@@ -127,7 +134,7 @@ plot.effpoly <- function(x,
                         paste("logit ~ as.numeric(", predictors[x.var], ")")
                         else paste("logit ~ as.numeric(", predictors[x.var],") | ", 
                             paste(predictors[-x.var], collapse="*")))), 
-                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
                     panel=function(x, y, subscripts, rug, z, x.vals, ...){
                         if (grid) panel.grid()
                         for (i in 1:n.y.lev){
@@ -152,7 +159,7 @@ plot.effpoly <- function(x,
 #                    key=c(key, key.args),
                     key=key,
                     layout=layout,
-                    data=data, ...)
+                    data=Data, ...)
                 result$split <- split
                 result$more <- more
                 class(result) <- c("plot.eff", class(result))    		
@@ -172,7 +179,7 @@ plot.effpoly <- function(x,
                 xlm <- if (nm %in% names(xlim)){
                     xlim[[nm]]
                 }
-                else range.adj(data[nm]) # range(x.vals)
+                else range.adj(Data[nm]) # range(x.vals)
                 tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                     trans <- transform.x[[nm]]$trans
                     make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -186,6 +193,11 @@ plot.effpoly <- function(x,
                     lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
                     columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
                 for (k in names(key.args)) key[k] <- key.args[k]
+                if (show.strip.values){
+                  for (pred in predictors[-x.var]){
+                    Data[[pred]] <- as.factor(Data[[pred]])
+                  }
+                }
                 result <- xyplot(eval(if (type=="probability") 
                     parse(text=if (n.predictors==1) paste("prob ~ trans(", predictors[x.var], ")")
                         else paste("prob ~ trans(", predictors[x.var],") |", 
@@ -193,7 +205,7 @@ plot.effpoly <- function(x,
                     else parse(text=if (n.predictors==1) paste("logit ~ trans(", predictors[x.var], ")")
                         else paste("logit ~ trans(", predictors[x.var],") | ", 
                             paste(predictors[-x.var], collapse="*")))), 
-                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
                     panel=function(x, y, subscripts, rug, z, x.vals, ...){
                         if (grid) panel.grid()
                         if (rug) lrug(trans(x.vals))
@@ -218,7 +230,7 @@ plot.effpoly <- function(x,
 #                    key=c(key, key.args),
                     key=key,
                     layout=layout,
-                    data=data, ...)
+                    data=Data, ...)
                 result$split <- split
                 result$more <- more
                 class(result) <- c("plot.eff", class(result))			
@@ -234,12 +246,12 @@ plot.effpoly <- function(x,
                     paste("prob ~ ", predictors[x.var], sep="")
                     else paste("prob ~ ", predictors[x.var]," | ", 
                         paste(predictors[-x.var], collapse="*")))), 
-                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
                     groups = response,
                     col=colors,
                     horizontal=FALSE, 
                     stack=TRUE, 
-                    data=data, 
+                    data=Data, 
                     ylim=if (missing(ylim)) 0:1 else ylim,
                     ylab=ylab, 
                     xlab=if (missing(xlab)) predictors[x.var] else xlab,
@@ -268,7 +280,7 @@ plot.effpoly <- function(x,
                 xlm <- if (nm %in% names(xlim)){
                     xlim[[nm]]
                 }
-                else range.adj(data[nm]) # range(x.vals)
+                else range.adj(Data[nm]) # range(x.vals)
                 tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                     trans <- transform.x[[nm]]$trans
                     make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -277,12 +289,17 @@ plot.effpoly <- function(x,
                     trans <- I
                     make.ticks(xlm, link=I, inverse=I, at=at, n=n)
                 }
+                if (show.strip.values){
+                  for (pred in predictors[-x.var]){
+                    x$x[[pred]] <- as.factor(x$x[[pred]])
+                  }
+                }
                 result <- densityplot(eval(parse(text=if (n.predictors == 1)
                     paste("~ trans(", predictors[x.var], ")", sep="")
                     else paste("~ trans(", predictors[x.var], ") | ",
                         paste(predictors[-x.var], collapse="*")))),
                     probs=x$prob,
-                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+                    strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
                     panel =  function(x, subscripts, rug, x.vals, probs=probs, col=colors, ...){
                         fill <- function(x, y1, y2, col){
                             if (length(y2) == 1) y2 <- rep(y2, length(y1))
@@ -331,6 +348,11 @@ plot.effpoly <- function(x,
         ### factor
         if (is.factor(x$data[[predictors[x.var]]])){ # x-variable a factor
             levs <- levels(x$data[[predictors[x.var]]])
+            if (show.strip.values){
+              for (pred in predictors[-x.var]){
+                Data[[pred]] <- as.factor(Data[[pred]])
+              }
+            }
             result <- xyplot(eval(if (type=="probability") 
                 parse(text=if (n.predictors==1) 
                     paste("prob ~ as.numeric(", predictors[x.var],") |", x$response)
@@ -343,12 +365,12 @@ plot.effpoly <- function(x,
                         paste(predictors[-x.var], collapse="*"), 
                         paste("*", x$response)))),
                 par.strip.text=list(cex=0.8),							
-                strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+                strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
                 panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
                     if (grid) panel.grid()
                     good <- !is.na(y)
                     effect.llines(x[good], y[good], lwd=lwd, type="b", pch=19, col=colors[1], cex=cex, ...)
-                    subs <- subscripts+as.numeric(rownames(data)[1])-1		
+                    subs <- subscripts+as.numeric(rownames(Data)[1])-1		
                     if (ci.style == "bars"){
                         larrows(x0=x[good], y0=lower[subs][good], 
                             x1=x[good], y1=upper[subs][good], 
@@ -377,7 +399,7 @@ plot.effpoly <- function(x,
                 scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx), 
                     y=list(rot=roty), alternating=alternating),
                 layout=layout,
-                data=data, ...)
+                data=Data, ...)
             result$split <- split
             result$more <- more
             class(result) <- c("plot.eff", class(result))
@@ -397,7 +419,7 @@ plot.effpoly <- function(x,
             xlm <- if (nm %in% names(xlim)){
                 xlim[[nm]]
             }
-            else range.adj(data[nm]) # range(x.vals)
+            else range.adj(Data[nm]) # range(x.vals)
             tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
                 trans <- transform.x[[nm]]$trans
                 make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -405,6 +427,11 @@ plot.effpoly <- function(x,
             else {
                 trans <- I
                 make.ticks(xlm, link=I, inverse=I, at=at, n=n)
+            }
+            if (show.strip.values){
+              for (pred in predictors[-x.var]){
+                Data[[pred]] <- as.factor(Data[[pred]])
+              }
             }
             result <- xyplot(eval(if (type=="probability") 
                 parse(text=if (n.predictors==1) 
@@ -419,13 +446,13 @@ plot.effpoly <- function(x,
                         paste("*", x$response)))
             ),
                 par.strip.text=list(cex=0.8),							
-                strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+                strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
                 panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
                     if (grid) panel.grid()
                     if (rug) lrug(trans(x.vals))
                     good <- !is.na(y)
                     effect.llines(x[good], y[good], lwd=lwd, col=colors[1], ...)
-                    subs <- subscripts+as.numeric(rownames(data)[1])-1	
+                    subs <- subscripts+as.numeric(rownames(Data)[1])-1	
                     if (ci.style == "bars"){
                         larrows(x0=x[good], y0=lower[subs][good], 
                             x1=x[good], y1=upper[subs][good], 
@@ -453,7 +480,7 @@ plot.effpoly <- function(x,
                 scales=list(y=list(rot=roty), x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx),
                     alternating=alternating),
                 layout=layout,
-                data=data, ...)
+                data=Data, ...)
             result$split <- split
             result$more <- more
             class(result) <- c("plot.eff", class(result))

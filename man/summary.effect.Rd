@@ -45,10 +45,10 @@
     factor.names=TRUE, ci.style, band.transparency=0.15, band.colors=colors,
     type=c("rescale", "response", "link"), ticks=list(at=NULL, n=5),  
     alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis, 
-    transform.x=NULL, ticks.x=NULL,
+    transform.x=NULL, ticks.x=NULL, show.strip.values = !partial.residuals,
     key.args=NULL, 
     row=1, col=1, nrow=1, ncol=1, more=FALSE, 
-    use.splines=TRUE, partial.residuals=TRUE, show.fitted=FALSE,
+    use.splines=TRUE, partial.residuals=!is.null(x$residuals), show.fitted=FALSE,
     residuals.color="blue", residuals.pch=1, residuals.cex=1,
     smooth.residuals=TRUE, residuals.smooth.color=residuals.color, span=2/3, ...)
 \method{plot}{effpoly}(x,
@@ -59,7 +59,8 @@
 		ylab=paste(x$response, " (", type, ")", sep=""),
 		main=paste(effect, "effect plot"),
 		colors, symbols, lines, cex=1.5, lwd=2,
-		factor.names=TRUE, ci.style, band.colors, band.transparency=0.3,
+		factor.names=TRUE, show.strip.values = TRUE, 
+		ci.style, band.colors, band.transparency=0.3,
 		style=c("lines", "stacked"),
 		confint=(style == "lines" && !is.null(x$confidence.level)),
 		transform.x=NULL, ticks.x=NULL, xlim=NULL,
@@ -189,7 +190,7 @@ restoreStrip(saved)
     \code{5}) gives the
     approximate number of tick marks desired; if \code{at} is non-\code{NULL}, then the
     value of \code{n} is ignored.
-    
+
     \bold{Warning:} For a generalized linear model, by default the vertical axis is on the
     scale of the linear predictor (e.g., the logit scale for a logit model), 
     but labels for tick marks are displayed on the scale of
@@ -200,6 +201,8 @@ restoreStrip(saved)
     and each sublist has elements \code{at} or \code{n} are for the \code{ticks} argument.
     If a predictor doesn't appear in the list, or if \code{ticks.x} is \code{NULL} (the default),
     then the tick marks are computed by the function.}
+  \item{show.strip.values}{show numeric values rather than lines for numeric conditioning values; the default is \code{TRUE} for
+    an \code{effpoly} object, and \code{TRUE} for an \code{eff} object if partial residuals aren't plotted.}
   \item{transform.x}{transformations to be applied to the horizontal axis, in the form of a named list,
     each of whose elements is itself a list of two functions, with sublist element names \code{trans} and \code{inverse}.
     The names of the list elements are numeric predictors in the model whose axes are to be transformed; the
@@ -240,7 +243,8 @@ restoreStrip(saved)
     axis is not a factor use interpolating splines computed by the \code{\link{spline}} 
     function.  If FALSE, then linear interpoliation is used.  This argument is ignored if
     the horizontal axis is a factor.}
-  \item{partial.residuals}{If \code{TRUE}, the default, plot partial residuals if residuals are saved in the effect object --- see \code{\link{Effect}}.}
+  \item{partial.residuals}{If \code{TRUE} (the default if residuals are in the effect object), plot partial residuals --- see \code{\link{Effect}};
+    partial residuals are suppressed (with a warning) in multiline displays.}
   \item{smooth.residuals}{whether to show a \code{\link{loess}} smooth of the partial residuals, if
     they are present; the default is \code{TRUE}. For a non-Gaussian \code{glm} model,
     a non-robust \code{loess} smooth is used; for a \code{lm} model or a Gaussian \code{glm} model,

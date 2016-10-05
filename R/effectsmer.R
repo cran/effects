@@ -17,6 +17,7 @@
 # 2015-12-13: make it work with pbkrtest 0.4-3. J. Fox
 # 2016-01-07: modified 'fixmod' to allow "||" in variance formulae
 # 2016-01-19: Fixed bug in glm.to.mer when 'poly' is used in a model.
+# 2016-06-08: Fixed bug handling the 'start' argument in glm.to.mer.  Fix by Ben Bolker, bug from Mariano Devoto
 
 # the function lm.wfit fit gets the hessian wrong for mer's.  Get the variance
 # from the vcov method applied to the mer object.
@@ -117,7 +118,7 @@ mer.to.glm <- function(mod, KR=FALSE) {
     cl <- mod@call
     if(cl[[1]] =="nlmer") stop("effects package does not support 'nlmer' objects")
     m <- match(c("formula", "family", "data", "weights", "subset", 
-        "na.action", "start", "offset",  
+        "na.action", "offset",  
         "model", "contrasts"), names(cl), 0L)
     cl <- cl[c(1L, m)]
     cl[[1L]] <- as.name("glm")

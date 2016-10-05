@@ -1,3 +1,19 @@
+Version 3.1-2
+
+ o Fixed bug handling 'start' argument in glmm's.  Reported by Mariano Devoto; fix by Ben Bolker
+ 
+ o Modified internal function make.ticks() so that it doesn't fail due to floating-point inaccuracy (following error reported by Joe Clayton Ford).
+ 
+ o Check formula for presence of factor(), etc. (suggestion of Ulrike Gromping).
+ 
+ o Fixed bug in Effect.clm() and some other methods (reported by David Barron), which didn't pass ... argument.
+ 
+ o A warning is now printed if partial residuals are requested in a multiline plot.
+ 
+ o Corrected plotting of partial residuals with various scalings of the y-axis and x-axis. 
+ 
+ o Added show.strip.values argument to plot.eff() and plot.effpoly().
+
 Version 3.1-1
 
  o Requires R >= 3.2.0 (requested by CRAN).

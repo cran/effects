@@ -2,6 +2,7 @@
 # 2014-12-11 effect.clm built from effect.mer as modified 2014-12-07,  by S. Weisberg
 # 2015-06-10: requireNamespace("MASS") rather than require("MASS")
 # 2016-02-12: added support for clmm and clm objects from 'ordinal' S. Weisberg
+# 2016-08-16: added ... argument to effect() and Effect() methods. J. Fox
 
 ###
 ###  clm2
@@ -47,7 +48,7 @@ vcov.fakeclm2 <- function(object, ...) object$vcov
 #The next three functions should be exported
 
 effect.clm2 <- function(term, mod, ...) {
-    effect(term, clm.to.polr(mod))
+    effect(term, clm.to.polr(mod), ...)
 }
 
 allEffects.clm2 <- function(mod, ...){ 
@@ -55,7 +56,7 @@ allEffects.clm2 <- function(mod, ...){
 }
 
 Effect.clm2 <- function(focal.predictors, mod, ...){
-    Effect(focal.predictors, clm.to.polr(mod))
+    Effect(focal.predictors, clm.to.polr(mod), ...)
 }
 
 ###
@@ -102,7 +103,7 @@ vcov.fakeclmm <- function(object, ...) object$vcov
 #The next three functions should be exported
 
 effect.clmm <- function(term, mod, ...) {
-  effect(term, clmm.to.polr(mod))
+  effect(term, clmm.to.polr(mod), ...)
 }
 
 allEffects.clmm <- function(mod, ...){ 
@@ -110,7 +111,7 @@ allEffects.clmm <- function(mod, ...){
 }
 
 Effect.clmm <- function(focal.predictors, mod, ...){
-  Effect(focal.predictors, clmm.to.polr(mod))
+  Effect(focal.predictors, clmm.to.polr(mod), ...)
 }
 
 
@@ -158,7 +159,7 @@ vcov.fakeclm <- function(object, ...) object$vcov
 #The next three functions should be exported
 
 effect.clm <- function(term, mod, ...) {
-  effect(term, clm.to.polr(mod))
+  effect(term, clm.to.polr(mod), ...)
 }
 
 allEffects.clm <- function(mod, ...){ 
@@ -166,10 +167,5 @@ allEffects.clm <- function(mod, ...){
 }
 
 Effect.clm <- function(focal.predictors, mod, ...){
-  Effect(focal.predictors, clm.to.polr(mod))
+  Effect(focal.predictors, clm.to.polr(mod), ...)
 }
-
-
-
-
-

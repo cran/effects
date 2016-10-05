@@ -1,3 +1,4 @@
+
 # plot.eff method for effects package, moved here from plot-summary-print-methods.R
 # The plot.effpoly method remains there for now.
 # 2013-10-17: Added use.splines keyword to plot.eff. Sandy
@@ -14,6 +15,9 @@
 # 2015-05-28: added residuals.smooth.color argument. J. Fox
 # 2015-08-28: added residuals.cex argument. J. Fox
 # 2016-03-01: move computation of partial residuals to the plot.eff() method. J. Fox
+# 2016-05-22: modified make.ticks() to avoid possible failure due to floating-point inaccuracy. J. Fox
+# 2016-08-31: fixed plotting with partial residuals with various scalings of y-axis and x-axis. J. Fox
+# 2016-09-16: added show.strip.values argument to plot.eff(). J. Fox
 
 # the following functions aren't exported
 
@@ -36,7 +40,10 @@ make.ticks <- function(range, link, inverse, at, n) {
     labels <- pretty(sapply(range, inverse), n=n+1)
   }
   else at
-  ticks <- sapply(labels, link)
+  ticks <- try(sapply(labels, link), silent=TRUE)
+  if (inherits(ticks, "try-error")){
+      ticks <- seq(range[1], range[2], length=5)
+  }
   list(at=ticks, labels=format(labels))
 }
 
@@ -84,9 +91,10 @@ plot.eff <- function(x, x.var,
                      type=c("rescale", "response", "link"), ticks=list(at=NULL, n=5),  
                      alternating=TRUE, rotx=0, roty=0, grid=FALSE, layout, rescale.axis, 
                      transform.x=NULL, ticks.x=NULL,
+                     show.strip.values=!partial.residuals,
                      key.args=NULL, 
                      row=1, col=1, nrow=1, ncol=1, more=FALSE, 
-                     use.splines=TRUE, partial.residuals=TRUE,
+                     use.splines=TRUE, partial.residuals=!is.null(x$residuals),
                      show.fitted=FALSE,
                      residuals.color="blue", residuals.pch=1, residuals.cex=1,
                      smooth.residuals=TRUE, residuals.smooth.color=residuals.color, span=2/3, ...)
@@ -141,13 +149,13 @@ plot.eff <- function(x, x.var,
                               paste(threshold.labels[-length(threshold.labels)], threshold.labels[-1], sep=" - "),
                               " ", sep="")
   }
-  trans.link <- x$transformation$link
-  trans.inverse <- x$transformation$inverse
+  original.link <- trans.link <- x$transformation$link
+  original.inverse <- trans.inverse <- x$transformation$inverse
   residuals <- if (partial.residuals) x$residuals else NULL
   partial.residuals.range <- x$partial.residuals.range
-  if (!is.null(residuals) && !rescale.axis) {
-    residuals <- trans.inverse(residuals)
-  }
+  # if (!is.null(residuals) && !rescale.axis) {  # BUG
+  #   residuals <- trans.inverse(residuals)
+  # }
   if (!rescale.axis){
     x$lower[!is.na(x$lower)] <- trans.inverse(x$lower[!is.na(x$lower)])
     x$upper[!is.na(x$upper)] <- trans.inverse(x$upper[!is.na(x$upper)])
@@ -178,13 +186,13 @@ plot.eff <- function(x, x.var,
         range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
       ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
                                               range[2] + .025*(range[2] - range[1]))
-      tickmarks <- if (type == "response") make.ticks(ylim, 
+      tickmarks <- if (type == "response" && rescale.axis) make.ticks(ylim, 
                                                       link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
       else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
       levs <- levels(x[,1])  
       plot <- xyplot(eval(parse(
         text=paste("fit ~ as.numeric(", names(x)[1], ")"))), 
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)), 
         panel=function(x, y, lower, upper, has.se, ...){
           if (grid) panel.grid()
           good <- !is.na(y)
@@ -234,10 +242,11 @@ plot.eff <- function(x, x.var,
       
       ylim <- if (!missing(ylim)) ylim
       else if (is.null(residuals)) c(range[1] - .025*(range[2] - range[1]), range[2] + .025*(range[2] - range[1]))
-      else c(min(partial.residuals.range[1], range[1] - .025*(range[2] - range[1])), 
+      else if (rescale.axis) c(min(partial.residuals.range[1], range[1] - .025*(range[2] - range[1])), 
              max(partial.residuals.range[2], range[2] + .025*(range[2] - range[1])))
-      
-      tickmarks <- if (type == "response") make.ticks(ylim, 
+      else c(min(original.inverse(partial.residuals.range[1]), range[1] - .025*(range[2] - range[1])), 
+             max(original.inverse(partial.residuals.range[2]), range[2] + .025*(range[2] - range[1])))
+      tickmarks <- if (type == "response" && rescale.axis) make.ticks(ylim, 
                                                       link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
       else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
       nm <- names(x)[1]
@@ -304,8 +313,9 @@ plot.eff <- function(x, x.var,
                        thresholds, threshold.labels, adj=c(1,0), cex=0.75)
           }
           if (!is.null(residuals)){ 
-            fitted <- y[good][closest(x.fit, x[good])]
-            partial.res <- fitted + residuals
+            fitted <- y[good][closest(trans(x.fit), x[good])]
+            partial.res <- if (!rescale.axis) original.inverse(original.link(fitted) + residuals)
+              else fitted + residuals
             lpoints(trans(x.fit), partial.res, col=residuals.color, pch=residuals.pch, cex=residuals.cex)
             if (show.fitted) lpoints(trans(x.fit), fitted, pch=16, col=residuals.color)  # REMOVE ME
             if (smooth.residuals){
@@ -353,7 +363,8 @@ plot.eff <- function(x, x.var,
   }    
   if (x.var == z.var) z.var <- z.var + 1
   ### multiline
-  if (multiline){ 
+  if (multiline){
+    if (!is.null(residuals)) warning("partial residuals are not displayed in a multiline plot")
     ci.style <- if(is.null(ci.style)) "none" else ci.style
     if(ci.style == "lines") { 
       cat("Confidence interval style 'lines' changed to 'bars'\n")
@@ -362,7 +373,7 @@ plot.eff <- function(x, x.var,
       range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
     ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
                                             range[2] + .025*(range[2] - range[1]))
-    tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, 
+    tickmarks <- if (type == "response" && rescale.axis) make.ticks(ylim, link=trans.link, 
                                                     inverse=trans.inverse, at=ticks$at, n=ticks$n)
     else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
     zvals <- unique(x[, z.var])
@@ -375,11 +386,16 @@ plot.eff <- function(x, x.var,
                   points=list(col=colors[.modc(1:length(zvals))], pch=symbols[.mods(1:length(zvals))]),
                   columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(length(zvals)))
       for (k in names(key.args)) key[k] <- key.args[k]
+      if (show.strip.values && n.predictors > 2){
+        for (pred in predictors[-c(x.var, z.var)]){
+          x[[pred]] <- as.factor(x[[pred]])
+        }
+      }
       plot <- xyplot(eval(parse( 
         text=paste("fit ~ as.numeric(", predictors[x.var], ")",
                    if (n.predictors > 2) paste(" |", 
                                                paste(predictors[-c(x.var, z.var)])), collapse="*"))),
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
         panel=function(x, y, subscripts, z, lower, upper, show.se, ...){
           if (grid) panel.grid()
           for (i in 1:length(zvals)){
@@ -454,11 +470,16 @@ plot.eff <- function(x, x.var,
                   lines=list(col=colors[.modc(1:length(zvals))], lty=lines[.modl(1:length(zvals))], lwd=lwd),
                   columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(length(zvals)))
       for (k in names(key.args)) key[k] <- key.args[k]
+      if (show.strip.values && n.predictors > 2){
+        for (pred in predictors[-c(x.var, z.var)]){
+          x[[pred]] <- as.factor(x[[pred]])
+        }
+      }
       plot <- xyplot(eval(parse( 
         text=paste("fit ~trans(", predictors[x.var], ")", 
                    if (n.predictors > 2) paste(" |", 
                                                paste(predictors[-c(x.var, z.var)])), collapse="*"))),
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
         panel=function(x, y, subscripts, x.vals, rug, z, lower, upper, show.se, ...){
           if (grid) panel.grid()
           if (rug && is.null(residuals)) lrug(trans(x.vals))
@@ -527,15 +548,20 @@ plot.eff <- function(x, x.var,
     
     ylim <- if (!missing(ylim)) ylim else c(range[1] - .025*(range[2] - range[1]),                                              
                                             range[2] + .025*(range[2] - range[1]))
-    tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, 
+    tickmarks <- if (type == "response" && rescale.axis) make.ticks(ylim, link=trans.link, 
                                                     inverse=trans.inverse, at=ticks$at, n=ticks$n)
     else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)  
     
     levs <- levels(x[,x.var])
+    if (show.strip.values){
+      for (pred in predictors[-x.var]){
+        x[[pred]] <- as.factor(x[[pred]])
+      }
+    }
     plot <- xyplot(eval(parse( 
       text=paste("fit ~ as.numeric(", predictors[x.var], ") |", 
                  paste(predictors[-x.var], collapse="*")))),
-      strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+      strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
       panel=function(x, y, subscripts, lower, upper, has.se, ...){  
         if (grid) panel.grid()
         good <- !is.na(y)
@@ -602,18 +628,25 @@ plot.eff <- function(x, x.var,
     }
     ylim <- if (!missing(ylim)) ylim
     else if (is.null(residuals)) c(range[1] - .025*(range[2] - range[1]), range[2] + .025*(range[2] - range[1]))
-    else c(min(partial.residuals.range[1], range[1] - .025*(range[2] - range[1])), 
-           max(partial.residuals.range[2], range[2] + .025*(range[2] - range[1])))
-    tickmarks <- if (type == "response") make.ticks(ylim, link=trans.link, 
+    else if (rescale.axis) c(min(partial.residuals.range[1], range[1] - .025*(range[2] - range[1])), 
+                             max(partial.residuals.range[2], range[2] + .025*(range[2] - range[1])))
+    else c(min(original.inverse(partial.residuals.range[1]), range[1] - .025*(range[2] - range[1])), 
+           max(original.inverse(partial.residuals.range[2]), range[2] + .025*(range[2] - range[1])))
+    tickmarks <- if (type == "response" && rescale.axis) make.ticks(ylim, link=trans.link, 
                                                     inverse=trans.inverse, at=ticks$at, n=ticks$n)
     else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)  
     x.fit <- x.data[, predictors[x.var]]
     use <- rep(TRUE, length(residuals))
     xx <- x[, predictors[-x.var], drop=FALSE]
+    if (show.strip.values){
+      for (pred in predictors[-x.var]){
+        x[[pred]] <- as.factor(x[[pred]])
+      }
+    }
     plot <- xyplot(eval(parse( 
       text=paste("fit ~ trans(", predictors[x.var], ") |", 
                  paste(predictors[-x.var], collapse="*")))),
-      strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+      strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
       panel=function(x, y, subscripts, x.vals, rug, lower, upper, has.se, ...){
         if (grid) panel.grid()
         good <- !is.na(y)
@@ -643,8 +676,9 @@ plot.eff <- function(x, x.var,
             }
             n.in.panel <- sum(use)
             if (n.in.panel > 0){
-              fitted <- y[good][closest(x.fit[use], x[good])]
-              partial.res <- fitted + residuals[use]
+              fitted <- y[good][closest(trans(x.fit[use]), x[good])]
+              partial.res <- if (!rescale.axis) original.inverse(original.link(fitted) + residuals[use])
+              else fitted + residuals[use]
               lpoints(trans(x.fit[use]), partial.res, col=residuals.color, pch=residuals.pch, cex=residuals.cex)
               if (show.fitted) lpoints(trans(x.fit[use]), fitted, pch=16, col=residuals.color)  # REMOVE ME
               if (smooth.residuals && n.in.panel >= 10) {
