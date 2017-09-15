@@ -3,6 +3,7 @@
 # 2015-06-10: requireNamespace("MASS") rather than require("MASS")
 # 2016-02-12: added support for clmm and clm objects from 'ordinal' S. Weisberg
 # 2016-08-16: added ... argument to effect() and Effect() methods. J. Fox
+# 2017-03-28: fixed bug to allow data=m S. Weisberg
 
 ###
 ###  clm2
@@ -10,12 +11,12 @@
 clm2.to.polr <- function(mod) {
   if (requireNamespace("MASS", quietly=TRUE)){
     polr <- MASS::polr
-  } 
+  }
   else stop("The MASS package is needed for this function")
-  cl <- mod$call 
+  cl <- mod$call
   present <- match(c("scale", "nominal", "link", "threshold"), names(cl), 0L)
   if(any(present != 0)) {
-    if(present[3] != 0){if(cl$link != "logistic") stop("'link' must be 'logisitic' for use with effects")}
+    if(present[3] != 0){if(cl$link != "logit") stop("'link' must be 'logisitic' for use with effects")}
     if(present[4] != 0){if(cl$threshold != "flexible") stop("'threshold' must be 'flexible' for use with effects")}
     if(present[1] != 0){if(!is.null(cl$scale)) stop("'scale' must be NULL for use with effects")}
     if(present[2] != 0){if(!is.null(cl$nominal)) stop("'nominal' must be NULL for use with effects")}
@@ -26,9 +27,9 @@ clm2.to.polr <- function(mod) {
   }
   cl$formula <- cl$location
   cl$method <- cl$link
-  m <- match(c("formula", "data", "subset","weights", 
-               "na.action",  "contrasts", "method"), names(cl), 0L)
-  cl <- cl[c(1L, m)]
+  .m <- match(c("formula", "data", "subset","weights",
+                "na.action",  "contrasts", "method"), names(cl), 0L)
+  cl <- cl[c(1L, .m)]
   cl$start <- c(mod$beta, mod$Theta)
   cl[[1L]] <- as.name("polr")
   mod2 <- eval(cl)
@@ -42,21 +43,21 @@ clm2.to.polr <- function(mod) {
   mod2
 }
 
-#method for 'fakeglm' objects. Do not export   
+#method for 'fakeglm' objects. Do not export
 vcov.fakeclm2 <- function(object, ...) object$vcov
 
 #The next three functions should be exported
 
 effect.clm2 <- function(term, mod, ...) {
-    effect(term, clm.to.polr(mod), ...)
+  effect(term, clm.to.polr(mod), ...)
 }
 
-allEffects.clm2 <- function(mod, ...){ 
-    allEffects(clm.to.polr(mod), ...)
+allEffects.clm2 <- function(mod, ...){
+  allEffects(clm.to.polr(mod), ...)
 }
 
 Effect.clm2 <- function(focal.predictors, mod, ...){
-    Effect(focal.predictors, clm.to.polr(mod), ...)
+  Effect(focal.predictors, clm.to.polr(mod), ...)
 }
 
 ###
@@ -65,12 +66,12 @@ Effect.clm2 <- function(focal.predictors, mod, ...){
 clmm.to.polr <- function(mod) {
   if (requireNamespace("MASS", quietly=TRUE)){
     polr <- MASS::polr
-  } 
+  }
   else stop("The MASS package is needed for this function")
-  cl <- mod$call 
+  cl <- mod$call
   present <- match(c("scale", "nominal", "link", "threshold"), names(cl), 0L)
   if(any(present != 0)) {
-    if(present[3] != 0){if(cl$link != "logistic") stop("'link' must be 'logisitic' for use with effects")}
+    if(present[3] != 0){if(cl$link != "logit") stop("'link' must be 'logit' for use with effects")}
     if(present[4] != 0){if(cl$threshold != "flexible") stop("'threshold' must be 'flexible' for use with effects")}
     if(present[1] != 0){if(!is.null(cl$scale)) stop("'scale' must be NULL for use with effects")}
     if(present[2] != 0){if(!is.null(cl$nominal)) stop("'nominal' must be NULL for use with effects")}
@@ -81,9 +82,9 @@ clmm.to.polr <- function(mod) {
   }
   cl$formula <- fixmod(mod$formula)  # changed for clm2
   cl$method <- cl$link
-  m <- match(c("formula", "data", "subset","weights", 
-               "na.action",  "contrasts", "method"), names(cl), 0L)
-  cl <- cl[c(1L, m)]
+  .m <- match(c("formula", "data", "subset","weights",
+                "na.action",  "contrasts", "method"), names(cl), 0L)
+  cl <- cl[c(1L, .m)]
   cl$start <- c(mod$beta, mod$Theta)
   cl[[1L]] <- as.name("polr")
   mod2 <- eval(cl)
@@ -97,7 +98,7 @@ clmm.to.polr <- function(mod) {
   mod2
 }
 
-#method for 'fakeglm' objects. Do not export   
+#method for 'fakeglm' objects. Do not export
 vcov.fakeclmm <- function(object, ...) object$vcov
 
 #The next three functions should be exported
@@ -106,7 +107,7 @@ effect.clmm <- function(term, mod, ...) {
   effect(term, clmm.to.polr(mod), ...)
 }
 
-allEffects.clmm <- function(mod, ...){ 
+allEffects.clmm <- function(mod, ...){
   allEffects(clmm.to.polr(mod), ...)
 }
 
@@ -121,12 +122,12 @@ Effect.clmm <- function(focal.predictors, mod, ...){
 clm.to.polr <- function(mod) {
   if (requireNamespace("MASS", quietly=TRUE)){
     polr <- MASS::polr
-  } 
+  }
   else stop("The MASS package is needed for this function")
-  cl <- mod$call 
+  cl <- mod$call
   present <- match(c("scale", "nominal", "link", "threshold"), names(cl), 0L)
   if(any(present != 0)) {
-    if(present[3] != 0){if(cl$link != "logistic") stop("'link' must be 'logisitic' for use with effects")}
+    if(present[3] != 0){if(cl$link != "logit") stop("'link' must be 'logit' for use with effects")}
     if(present[4] != 0){if(cl$threshold != "flexible") stop("'threshold' must be 'flexible' for use with effects")}
     if(present[1] != 0){if(!is.null(cl$scale)) stop("'scale' must be NULL for use with effects")}
     if(present[2] != 0){if(!is.null(cl$nominal)) stop("'nominal' must be NULL for use with effects")}
@@ -135,11 +136,11 @@ clm.to.polr <- function(mod) {
     message("\nRe-fitting to get Hessian\n")
     mod <- update(mod, Hess=TRUE)
   }
-# cl$formula <- cl$location
+  # cl$formula <- cl$location
   cl$method <- cl$link
-  m <- match(c("formula", "data", "subset","weights", 
-               "na.action",  "contrasts", "method"), names(cl), 0L)
-  cl <- cl[c(1L, m)]
+  .m <- match(c("formula", "data", "subset","weights",
+                "na.action",  "contrasts", "method"), names(cl), 0L)
+  cl <- cl[c(1L, .m)]
   cl$start <- c(mod$beta, mod$Theta)
   cl[[1L]] <- as.name("polr")
   mod2 <- eval(cl)
@@ -153,7 +154,7 @@ clm.to.polr <- function(mod) {
   mod2
 }
 
-#method for 'fakeglm' objects. Do not export   
+#method for 'fakeglm' objects. Do not export
 vcov.fakeclm <- function(object, ...) object$vcov
 
 #The next three functions should be exported
@@ -162,7 +163,7 @@ effect.clm <- function(term, mod, ...) {
   effect(term, clm.to.polr(mod), ...)
 }
 
-allEffects.clm <- function(mod, ...){ 
+allEffects.clm <- function(mod, ...){
   allEffects(clm.to.polr(mod), ...)
 }
 

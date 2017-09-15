@@ -1,0 +1,324 @@
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Partial Residuals}
+
+\documentclass{article}
+
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+\usepackage[margin=1in]{geometry}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\code}[1]{\normalfont\texttt{\hyphenchar\font45\relax #1}}
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\tild}{\symbol{126}}
+\newcommand{\Rtilde}{\,\raisebox{-.5ex}{\code{\tild{}}}\,}
+\newcommand{\captilde}{\mbox{\protect\Rtilde}} % use in figure captions.
+\newcommand{\Rmod}[2]{\code{#1 \raisebox{-.5ex}{\tild{}} #2}}
+\newcommand{\Rmoda}[2]{\code{#1} &\code{\raisebox{-.5ex}{\tild{}} #2}}
+\newcommand{\Rmodb}[2]{\code{#1 &\raisebox{-.5ex}{\tild{}}& #2}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\betahat}{\widehat{\beta}}
+\newcommand{\bbetahat}{\widehat{\boldsymbol{\beta}}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\xbf}{\x_{\backslash{}f}}
+\newcommand{\hbf}{h_{\backslash{}f}}
+\newcommand{\xtb}{\x_{2\backslash{}f}}
+\newcommand{\xbfi}{\x_{\backslash{}f,i}}
+\newcommand{\inter}[2]{\mbox{$#1$:$#2$}}
+\newcommand{\cross}[2]{\mbox{$#1$\code{*}$#2$}}
+\newcommand{\N}{\mathrm{N}}
+\newcommand{\fn}{\textbf}
+\newcommand{\R}{\proglang{R}}
+\newcommand{\yx}{\widehat{y}(\x)}
+\newcommand{\lvn}[1]{\mbox{$\log(\mbox{\texttt{#1}})$}}
+
+\begin{document}
+
+\title{Examples of Effect Displays with Partial Residuals\\ 
+Using Contrived Regression Data}
+
+\author{John Fox and Sanford Weisberg}
+
+\date{2017-09-13}
+
+\maketitle
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+tidy=FALSE,fig.width=5,fig.height=5,cache=FALSE
+)
+@
+
+
+<<echo=FALSE, results='hide', include=FALSE>>=
+#options(continue="+    ", prompt="R> ", width=76)
+options(show.signif.stars=FALSE)
+options(scipen=3)
+@
+
+The examples developed in this vignette are meant to supplement \citet{FoxWeisberg17}.
+
+\section{Basic Setup}
+We will analyze contrived data generated according to the following setup:
+
+\begin{itemize}
+
+\item We sample $n = 5000$ observations from a trivariate distribution for predictors $x_1$, $x_2$, and $x_3$, with uniform margins on the interval $[-2, 2]$, and with a prespecified bivariate correlation $\rho$ between each pair of predictors. The method employed, described by \citet{Schumann15} and traceable to results reported by \citet{Pearson07}, produces predictors that are nearly linearly related. Using 5000 observations allows us to focus on essentially asymptotic behavior of partial residuals in effect plots while still being able to discern individual points in the resulting graphs.
+
+\item We then generate the response $y$ according to the model
+\begin{equation}
+y = \beta_0 + h\left(\bbeta, \{x_1, x_2, x_3\}\right) + \varepsilon
+\end{equation}
+where $\varepsilon \Rtilde \N(0, 1.5^2)$. The regression function $h(\cdot)$ varies from example to example.
+
+\end{itemize}
+
+The following functions make it convenient to generate data according to this setup. These functions are more general than is strictly necessary so as to encourage further experimentation.
+
+<<>>=
+mvrunif <- function(n, R, min = 0, max = 1){
+    # method (but not code) from E. Schumann,
+    # "Generating Correlated Uniform Variates"
+    # URL:
+    # <http://comisef.wikidot.com/tutorial:correlateduniformvariates>
+    # downloaded 2015-05-21
+    if (!is.matrix(R) || nrow(R) != ncol(R) ||
+    max(abs(R - t(R))) > sqrt(.Machine$double.eps))
+    stop("R must be a square symmetric matrix")
+    if (any(eigen(R, only.values = TRUE)$values <= 0))
+    stop("R must be positive-definite")
+    if (any(abs(R) - 1 > sqrt(.Machine$double.eps)))
+    stop("R must be a correlation matrix")
+    m <- nrow(R)
+    R <- 2 * sin(pi * R / 6)
+    X <- matrix(rnorm(n * m), n, m)
+    X <- X %*% chol(R)
+    X <- pnorm(X)
+    min + X * (max - min)
+}
+
+gendata <- function(n = 5000, R, min = -2, max = 2, s = 1.5,
+    model = expression(x1 + x2 + x3)){
+    data <- mvrunif(n = n, min = min, max = max, R = R)
+    colnames(data) <- c("x1", "x2", "x3")
+    data <- as.data.frame(data)
+    data$error <- s * rnorm(n)
+    data$y <- with(data, eval(model) + error)
+    data
+}
+
+R <- function(offdiag = 0, m = 3){
+    R <- diag(1, m)
+    R[lower.tri(R)] <- R[upper.tri(R)] <- offdiag
+    R
+}
+@
+
+\section{Unmodelled Interaction}
+
+We begin with uncorrelated predictors and the true regression mean function $\E(y|\x) = x_1 + x_2x_3$, but fit the incorrect additive working model $y \Rtilde x_1 + x_2 + x_3$ to the data.
+<<>>=
+set.seed(682626)
+Data.1 <- gendata(R = R(0), model = expression(x1 + x2 * x3))
+round(cor(Data.1), 2)
+summary(mod.1 <- lm(y ~ x1 + x2 + x3, data = Data.1))
+@
+For reproducibility, we set a known seed for the pseudo-random number generator; this seed was itself generated pseudo-randomly, and we reuse it in the examples reported below. As well, in this first example, but not for those below, we show the correlation matrix of the randomly generated data along with the fit of the working model to the data.
+
+Effect plots with partial residuals corresponding to the terms in the working model are shown in Figure~\ref{fig-contrived-1a}:
+<<fig-contrived-1a,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+library(effects)
+plot(predictorEffects(mod.1, partial.residuals=TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     rows=1, cols=3)
+@
+In these graphs and, unless noted to the contrary, elsewhere in this vignette, the loess smooths are drawn with span 2/3. Because of the large number of points in the graphs, optional arguments to \code{plot} are specified to de-emphasize the partial residuals. To this end, the residuals are plotted as small points (\code{pch="."}) and in a translucent magenta color (\code{col="\#FF00FF80"}).
+
+\begin{figure}[tbp]
+  \caption{Effect displays with partial residuals for the individual predictors $x_1$, $x_2$, and $x_3$ in the incorrect model $y \captilde x_1 + x_2 + x_3$ fit to data generated with the mean function $\E(y|\x) = x_1 + x_2x_3$, with uncorrelated predictors.\label{fig-contrived-1a}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-1a-1.pdf}
+\end{figure}
+
+The failure of the model is not apparent in these traditional partial residual plots, but it is clear in the term effect plot for $\{x_2, x_3\}$, corresponding to the unmodelled interaction \inter{x_2}{x_3}, and shown in the top panel of Figure~\ref{fig-contrived-1b}, generated using
+<<fig-contrived-1b,include=TRUE, fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x2", "x3"), mod.1, partial.residuals = TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     lattice=list(layout=c(4, 1)))
+@
+Moreover, the effect plot in the bottom panel of the figure for  $\{x_1, x_2\}$, corresponding to a term \emph{not} in the true mean function, correctly indicates lack of interaction between these two predictors:
+<<fig-contrived-1c,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x1", "x2"), mod.1, partial.residuals = TRUE),
+    partial.residual=list(pch=".", col="#FF00FF80"),
+    axes=list(x=list(rotate=45)),
+    lattice=list(layout=c(4, 1)))
+@
+
+\begin{figure}[tbp]
+  \caption{Term effect displays with partial residuals for $\{x_2, x_3 \}$, corresponding to the missing interaction \inter{x_2}{x_3}, and for $\{x_1, x_2 \}$, corresponding to an interaction not present in the model that generated the data.\label{fig-contrived-1b}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-1b-1.pdf} \\
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-1c-1.pdf}
+\end{figure}
+
+As a partly contrasting example, we turn to a similar data set, generated with the same regression mean function but with moderately correlated predictors, where the pairwise predictor correlations are $\rho = 0.5$:
+<<>>=
+set.seed(682626)
+Data.2 <- gendata(R = R(0.5), model = expression(x1 + x2 * x3))
+mod.2 <- lm(y ~ x1 + x2 + x3, data = Data.2)
+@
+Graphs analogous to those from the preceding example appear in Figures~\ref{fig-contrived-2a} and \ref{fig-contrived-2b}:
+<<fig-contrived-2a,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(predictorEffects(mod.2, partial.residuals=TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80",fig.show='hide'),
+     axes=list(x=list(rotate=45)),
+     rows=1, cols=3)
+@
+<<fig-contrived-2b,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x2", "x3"), mod.2, partial.residuals = TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     lattice=list(layout=c(4, 1)))
+@
+<<fig-contrived-2c,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x1", "x2"), mod.2, partial.residuals = TRUE),
+    partial.residual=list(pch=".", col="#FF00FF80",fig.show='hide'),
+    axes=list(x=list(rotate=45)),
+    lattice=list(layout=c(4, 1)))
+@
+The predictor effect plots for  $x_2$ and $x_3$, and to a much lesser extent, for $x_1$, in the incorrect model in Figure~\ref{fig-contrived-2a} show apparent nonlinearity as a consequence of the unmodelled interaction and the correlations among the predictors. A similar phenomenon was noted in our analysis of the Canadian occupational prestige data in \citet[Section~4.2]{FoxWeisberg17}, where the unmodelled interaction between \code{type} and \code{income} induced nonlinearity in the partial relationship of \code{prestige} to \code{income}. The omitted interaction is clear in the effect plot for $\{x_2, x_3\}$, but also, to a lesser extent, contaminates the effect plot for $\{x_1,x_2\}$, which corresponds to an interaction that does not enter the model generating the data. These artifacts become more prominent if we increase the predictor correlations, say to $\rho = 0.9$ (as we invite the reader to do).
+
+\begin{figure}[tbp]
+  \caption{Predictor effect displays with partial residuals for the individual predictors $x_1$, $x_2$, and $x_3$ in the incorrect model $y \captilde x_1 + x_2 + x_3$ fit to data generated with the mean function $\E(y|\x) = x_1 + x_2x_3$, with moderately correlated predictors.\label{fig-contrived-2a}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-2a-1.pdf}
+\end{figure}
+\begin{figure}[tbp]
+  \caption{Term effect displays with partial residuals for $\{x_2, x_3 \}$, corresponding to the missing interaction \inter{x_2}{x_3}, and for $\{x_1, x_2 \}$, corresponding to an interaction not present in the model that generated the data.\label{fig-contrived-2b}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-2b-1.pdf}\\
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-2c-1.pdf}
+\end{figure}
+
+\section{Unmodelled Nonlinearity}
+
+We generate data as before, but from the true model $\E(y|\x) = x_1^2 + x_2 + x_3$, where the predictors are moderately correlated, with pairwise correlations $\rho = 0.5$, but fit the incorrect additive working model $y \Rtilde x_1 + x_2 + x_3$ to the data:
+<<>>=
+set.seed(682626)
+Data.3 <- gendata(R = R(0.5), model = expression(x1^2 + x2 + x3))
+mod.3 <- lm(y ~ x1 + x2 + x3, data = Data.3)
+@
+
+Effect plots with residuals for the predictors in the working model appear in Figure~\ref{fig-contrived-3a}. The unmodelled nonlinearity in the partial relationship of $y$ to $x_1$ is clear, but there is some contamination of the plots for $x_2$ and $x_3$. The contamination is much more dramatic if the correlations among the predictors are increased to, say, $\rho = 0.9$ (as the reader may verify).
+<<fig-contrived-3a,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(predictorEffects(mod.3, partial.residuals=TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     rows=1, cols=3)
+@
+
+\begin{figure}[tbp]
+  \caption{Predictor effect displays with partial residuals for the individual predictors $x_1$, $x_2$, and $x_3$  in the incorrect model $y \captilde x_1 + x_2 + x_3$ fit to data generated with the mean function $\E(y|\x) = x_1^2 + x_2 + x_3$, with moderately correlated predictors.\label{fig-contrived-3a}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-3a-1.pdf}
+\end{figure}
+
+Effect plots for $\{x_1, x_2 \}$ and $\{x_2, x_3 \}$ are shown in Figure~\ref{fig-contrived-3b}:
+<<fig-contrived-3b,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x2", "x3"), mod.3, partial.residuals = TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     lattice=list(layout=c(4, 1)))
+@
+<<fig-contrived-3c,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x1", "x2"), mod.3, partial.residuals = TRUE),
+    partial.residual=list(pch=".", col="#FF00FF80"),
+    axes=list(x=list(rotate=45)),
+    lattice=list(layout=c(4, 1)))
+@
+Neither of these graphs corresponds to a term in the model generating the data nor in the working model, and the effect plots largely confirm the absence of \inter{x_1}{x_2} and \inter{x_2}{x_3} interactions, along with the nonlinearity of the partial effect of $x_1$, apparent in the top panel.
+
+\begin{figure}[tbp]
+  \caption{Term effect displays with partial residuals for $\{x_1, x_2 \}$ and for $\{x_2, x_3 \}$, neither of which corresponds to an interaction in the model generating the data.\label{fig-contrived-3b}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-3c-1.pdf} \\
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-3b-1.pdf}
+\end{figure}
+
+\section{Simultaneous Unmodelled Nonlinearity and Interaction}
+
+This last example also appears in \citet[Section~4.3]{FoxWeisberg17}. We consider a true model that combines nonlinearity and interaction, $\E(y|\x) = x_1^2 + x_2 x_3$; the predictors are moderately correlated, with $\rho = 0.5$. We then fit the incorrect working model $y \Rtilde x_1 + x_2 + x_3$ to the data, producing the predictor effect displays with partial residuals in Figure~\ref{fig-contrived-4a}, for the predictors $x_1$, $x_2$, and $x_3$, which appear additively in the working model, and the term effect displays in Figure~\ref{fig-contrived-4b} for $\{x_2, x_3 \}$ and $\{x_1, x_2 \}$, corresponding respectively to the incorrectly excluded \inter{x_2}{x_3} term and the correctly excluded \inter{x_1}{x_2} interaction. 
+
+<<>>=
+set.seed(682626)
+Data.4 <- gendata(R = R(0.5), model = expression(x1^2 + x2 * x3))
+mod.4 <- lm(y ~ x1 + x2 + x3, data = Data.4)
+@
+<<fig-contrived-4a,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(predictorEffects(mod.4, partial.residuals=TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     rows=1, cols=3)
+@
+<<fig-contrived-4b,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x2", "x3"), mod.4, partial.residuals = TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+      axes=list(x=list(rotate=45)),
+     lattice=list(layout=c(4, 1)))
+@
+<<fig-contrived-4c,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x1", "x2"), mod.4, partial.residuals = TRUE),
+    partial.residual=list(pch=".", col="#FF00FF80"),
+    axes=list(x=list(rotate=45)),
+    lattice=list(layout=c(4, 1)))
+@
+The nonlinearity in the partial relationship of $y$ to $x_1$ shows up clearly. The nonlinearity apparent in the plots for $x_2$ and $x_3$ is partly due to contamination with $x_1$, but largely to the unmodelled interaction between $x_2$ and $x_3$, coupled with the correlation between these predictors. The plot corresponding to the missing \inter{x_2}{x_3} term (in the top panel of Figure~\ref{fig-contrived-4b}) does a good job of detecting the unmodelled interaction, and curvature in this plot is slight. The plot for the \inter{x_1}{x_2} term (in the bottom panel of Figure~\ref{fig-contrived-4b}), a term neither in the true model nor in the working model, primarily reveals the unmodelled nonlinearity in the partial relationship of $y$ to $x_1$.
+
+\begin{figure}[tbp]
+  \caption{Effect displays with partial residuals for the predictors $x_1$, $x_2$, and $x_3$ in the incorrect model $y \captilde x_1 + x_2 + x_3$ fit to data generated with the mean function $\E(y|\x) = x_1^2 + x_2x_3$, with moderately correlated predictors.\label{fig-contrived-4a}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-4a-1.pdf}
+\end{figure}
+\begin{figure}[tbp]
+  \caption{Term effect displays with partial residuals for $\{x_2, x_3 \}$ (top) and for $\{x_1, x_2 \}$ (bottom), the first of which corresponds to the missing \inter{x_2}{x_3} interaction in the model generating the data.\label{fig-contrived-4b}}
+  \centering
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-4b-1.pdf} \\
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-4c-1.pdf}
+\end{figure}
+
+If we fit the correct model, $y \Rtilde{} x_1^2 + x_2*x_3$, to the data, we obtain the plots shown in Figure~\ref{fig-contrived-5}. As theory suggests, the partial residuals in these effect displays validate the model, supporting the exclusion of the \inter{x_1}{x_2} interaction, the linear-by-linear interaction between $x_1$ and $x_2$, and the quadratic partial relationship of $y$ to $x_1$.
+
+<<fig-contrived-5a,include=TRUE,fig.width=5,fig.height=4,fig.show='hide'>>=
+mod.5 <- lm(y ~ poly(x1, 2) + x2*x3, data=Data.4)
+plot(Effect("x1", mod.5, partial.residuals=TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80", span=0.2))
+@
+<<fig-contrived-5b,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x2", "x3"), mod.5, partial.residuals = TRUE),
+     partial.residual=list(pch=".", col="#FF00FF80"),
+     axes=list(x=list(rotate=45)),
+     lattice=list(layout=c(4, 1)), span=0.5)
+@
+<<fig-contrived-5c,include=TRUE,fig.width=12,fig.height=4,fig.show='hide'>>=
+plot(Effect(c("x1", "x2"), mod.5, partial.residuals = TRUE),
+    partial.residual=list(pch=".", col="#FF00FF80", span=0.35),
+    axes=list(x=list(rotate=45)),
+    lattice=list(layout=c(4, 1)))
+@
+
+\noindent In these graphs, we adjust the span of the loess smoother to the approximately smallest value that produces a smooth fit to the partial residuals in each case.
+
+\begin{figure}[tbp]
+  \caption{Effect displays with partial residuals for $x_1$ and  $\{x_2, x_3 \}$, which correspond to terms in the model generating \emph{and} fitted to the data, $y \captilde x_1^2 + x_2 * x_3$, and for $\{x_1, x_2 \}$, which corresponds to an interaction that is not in the model.\label{fig-contrived-5}}
+  \centering
+    \includegraphics[width=0.45\textwidth]{figure/fig-contrived-5a-1.pdf} \\
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-5b-1.pdf} \\
+    \includegraphics[width=1\textwidth]{figure/fig-contrived-5c-1.pdf}
+\end{figure}
+
+\bibliography{partial-residuals}
+
+\end{document}

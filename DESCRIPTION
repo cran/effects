@@ -1,6 +1,6 @@
 Package: effects
-Version: 3.1-2
-Date: 2016-09-16
+Version: 4.0-0
+Date: 2017-09-14
 Title: Effect Displays for Linear, Generalized Linear, and Other Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Sanford", "Weisberg", role = "aut", email = "sandy@umn.edu"),
@@ -8,31 +8,31 @@ Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaste
     person("Jangman", "Hong", role = "aut"),
     person("Robert", "Andersen", role = "ctb"),
     person("David", "Firth", role = "ctb"),
-    person("Steve", "Taylor", role = "ctb"))
-Depends: R (>= 3.2.0)
+    person("Steve", "Taylor", role = "ctb"),
+    person("R Core Team", role="ctb"))
+Depends: R (>= 3.2.0), carData
 Suggests: pbkrtest (>= 0.4-4), nlme, MASS, poLCA, heplots, splines,
-        ordinal, car
+        ordinal, car, knitr
 Imports: lme4, nnet, lattice, grid, colorspace, graphics, grDevices,
-        stats, utils
+        stats, survey, utils
 LazyLoad: yes
 LazyData: yes
 Description: 
   Graphical and tabular effect displays, e.g., of interactions, for 
   various statistical models with linear predictors.
 License: GPL (>= 2)
-URL: http://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/
+URL: https://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2017-09-15 20:00:21 UTC; jfox
 Author: John Fox [aut, cre],
   Sanford Weisberg [aut],
   Michael Friendly [aut],
   Jangman Hong [aut],
   Robert Andersen [ctb],
   David Firth [ctb],
-  Steve Taylor [ctb]
+  Steve Taylor [ctb],
+  R Core Team [ctb]
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
-Repository/R-Forge/Project: effects
-Repository/R-Forge/Revision: 241
-Repository/R-Forge/DateTimeStamp: 2016-09-16 22:26:09
-Date/Publication: 2016-10-05 09:29:51
-NeedsCompilation: no
-Packaged: 2016-09-16 22:45:24 UTC; rforge
+Date/Publication: 2017-09-15 20:40:30 UTC

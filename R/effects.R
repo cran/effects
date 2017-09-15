@@ -14,60 +14,55 @@ effect <- function(term, mod, vcov.=vcov, ...){
 }
 
 effect.default <- function(term, mod, vcov.=vcov, ...){ 
-    term <- gsub(" ", "", gsub("\\*", ":", term))
-    terms <- term.names(mod)
-    if (has.intercept(mod)) terms <- terms[-1]
-    which.term <- which(term == terms)
-    mod.aug<- list()
-    if (length(which.term) == 0){
-        message("NOTE: ", term, " does not appear in the model")
-        mod.aug <- update(formula(mod), eval(parse(text=paste(". ~ . +", term))))
-    }
-    if (!is.high.order.term(term, mod, mod.aug))
-        message("NOTE: ", term, " is not a high-order term in the model")
-    predictors <- all.vars(parse(text=term)) 
-    Effect(predictors, mod, vcov.=vcov., ...)
+  term <- gsub(" ", "", gsub("\\*", ":", term))
+  terms <- term.names(mod)
+  if (has.intercept(mod)) terms <- terms[-1]
+  which.term <- which(term == terms)
+  mod.aug<- list()
+  if (length(which.term) == 0){
+    message("NOTE: ", term, " does not appear in the model")
+    mod.aug <- update(formula(mod), eval(parse(text=paste(". ~ . +", term))))
+  }
+  if (!is.high.order.term(term, mod, mod.aug))
+    message("NOTE: ", term, " is not a high-order term in the model")
+  predictors <- all.vars(parse(text=term)) 
+  Effect(predictors, mod, vcov.=vcov., ...)
 }
 
 
 allEffects <- function(mod, ...) UseMethod("allEffects")
 
 allEffects.default <- function(mod, ...){
-	high.order.terms <- function(mod){
-		names <- term.names(mod)
-		if (has.intercept(mod)) names<-names[-1]
-		rel <- lapply(names, descendants, mod=mod)
-		(1:length(names))[sapply(rel, function(x) length(x)==0)]
-	}
-	names <- term.names(mod)
-	if (has.intercept(mod)) names <- names[-1]
-	if (length(names) == 0) stop("the model contains no terms (beyond a constant)")
-	terms <- names[high.order.terms(mod)]
-	result <- lapply(terms, effect, mod=mod, ...)
-	names(result) <- terms
-	class(result) <- 'efflist'
-	result
+  high.order.terms <- function(mod){
+    names <- term.names(mod)
+    if (has.intercept(mod)) names<-names[-1]
+    rel <- lapply(names, descendants, mod=mod)
+    (1:length(names))[sapply(rel, function(x) length(x)==0)]
+  }
+  names <- term.names(mod)
+  if (has.intercept(mod)) names <- names[-1]
+  if (length(names) == 0) stop("the model contains no terms (beyond a constant)")
+  terms <- names[high.order.terms(mod)]
+  result <- lapply(terms, effect, mod=mod, ...)
+  names(result) <- terms
+  class(result) <- 'efflist'
+  result
 }
 
 allEffects.gls <- function(mod, ...){
-	high.order.terms <- function(mod){
-		mod <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
-		names <- term.names(mod)
-		if (has.intercept(mod)) names<-names[-1]
-		rel <- lapply(names, descendants, mod=mod)
-		(1:length(names))[sapply(rel, function(x) length(x)==0)]
-	}
-	names <- term.names(mod)
-	if (has.intercept(mod)) names <- names[-1]
-	if (length(names) == 0) stop("the model contains no terms (beyond a constant)")
-	terms <- names[high.order.terms(mod)]
-	result <- lapply(terms, effect, mod=mod, ...)
-	names(result) <- terms
-	class(result) <- 'efflist'
-	result
-}
-
-all.effects <- function(...){
-	.Deprecated("allEffects")
-	allEffects(...)
+  high.order.terms <- function(mod){
+    mod <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
+    names <- term.names(mod)
+    if (has.intercept(mod)) names<-names[-1]
+    rel <- lapply(names, descendants, mod=mod)
+    (1:length(names))[sapply(rel, function(x) length(x)==0)]
+  }
+  names <- term.names(mod)
+  if (has.intercept(mod)) names <- names[-1]
+  if (length(names) == 0) stop("the model contains no terms (beyond a constant)")
+  terms <- names[high.order.terms(mod)]
+  result <- lapply(terms, effect, mod=mod, ...)
+  names(result) <- terms
+  class(result) <- 'efflist'
+  result
 }

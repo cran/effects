@@ -16,6 +16,15 @@
 # 2015-09-10: added a fix for class = 'array' in Analyze.model.  S. Weisberg
 # 2016-02-16: fix Analyze.model(), Fixup.model.matrix() to handle non-focal terms like polynomials correctly; clean up code. J. Fox
 # 2016-03-01: correct and improve computation of partial residuals
+# 2017-07-10: fix warnings about 1 x 1 arrays produced in eff.mul() and eff.polr() in R 3.4.0 (reported by Stefan Th. Gries). J. Fox
+# 2017-07-14: added applyDefaults() and isFALSE(). J. Fox
+# 2017-07-27: added effectsTheme(); removed setStrip(), restoreStrip(). J. Fox
+# 2017-08-08: added .onAttach() to set lattice theme. J. Fox
+# 2017-08-26: added scheffe() to compute multipler for Scheffe-type confidence bounds. J. Fox
+# 2017-08-29: enhanced applyDefaults() with onFALSE argument. J. Fox
+# 2017-09-02: added nice()
+# 2017-09-08: small changes to accommodate Effect.svyglm()
+# 2017-09-10: added replacement for ticksGrid()
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -255,12 +264,13 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
           quantile(X[, name], quantiles)
         }
         else{
-          grid.pretty(range(X[, name]))
+          #         grid.pretty(range(X[, name]))
+          nice(seq(min(X[, name]), max(X[, name]), length.out=5))
         }
       }
       else {
         if(length(xlevels[[name]]) == 1L) { 
-          seq(min(X[, name]), max(X[,name]), length=xlevels[[name]])} else
+          nice(seq(min(X[, name]), max(X[,name]), length=xlevels[[name]]))} else
             xlevels[[name]]}
     }
     else factor.levels[[name]] <- levels
@@ -317,7 +327,7 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
 
 Fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod,
                                factor.cols, cnames, focal.predictors, excluded.predictors, 
-                               typical, given.values){
+                               typical, given.values, apply.typical.to.factors=FALSE){
   attr(mod.matrix, "assign") <- attr(mod.matrix.all, "assign")
   if (length(excluded.predictors) > 0){
     strangers <- Strangers(mod, focal.predictors, excluded.predictors)
@@ -331,7 +341,8 @@ Fixup.model.matrix <- function(mod, mod.matrix, mod.matrix.all, X.mod,
     covs <- (!factor.cols) & stranger.cols
     if (has.intercept(mod)) covs[1] <- FALSE
     if (any(facs)){ 
-      mod.matrix[,facs] <-  matrix(apply(as.matrix(X.mod[,facs]), 2, mean), 
+      mod.matrix[,facs] <-  matrix(apply(as.matrix(X.mod[,facs]), 2, 
+                                         if (apply.typical.to.factors) typical else mean), 
                                    nrow=nrow(mod.matrix), ncol=sum(facs), byrow=TRUE)
     }
     if (!is.null(given.values)){
@@ -385,7 +396,7 @@ eff.mul <- function(x0, B, se, m, p, r, V){
     d[m, j,] <- - exp.x0.B[j]*x0
     for (jj in 1:(m-1)){
       d[j, jj,] <- if (jj != j)
-        - exp(x0 %*% (B[,jj] + B[,j]))*x0
+        - exp(as.vector(x0 %*% (B[,jj] + B[,j])))*x0
       else exp.x0.B[j]*(1 + sum.exp.x0.B - exp.x0.B[j])*x0
     }
   }
@@ -407,7 +418,7 @@ eff.mul <- function(x0, B, se, m, p, r, V){
 # the following are used by effect.polr() and Effect.polr()
 
 eff.polr <- function(x0, b, alpha, V, m, r, se){
-  eta0 <- x0 %*% b
+  eta0 <- as.vector(x0 %*% b)
   mu <- rep(0, m)
   mu[1] <- 1/(1 + exp(alpha[1] + eta0))
   for (j in 2:(m-1)){
@@ -461,32 +472,78 @@ is.numeric.predictor <- function(predictor, model) {
   is.null(model$xlevels[[predictor]])
 }
 
-# manage lattice strips
+# custom lattice theme
 
-setStrip <- function(bg=3, fg="black", clip=c("off", "on")){
-  clip <- match.arg(clip)
-  bg.save <- strip.background <- trellis.par.get("strip.background")
-  if (is.numeric(bg) && length(bg) == 1){
-    if (bg <= 0) stop("bg should be a positive integer or vector of colors")
-    bg <- gray(seq(.95, .5, length=round(bg)))
-  }
-  strip.background$col <- bg
-  fg.save <- strip.shingle <- trellis.par.get("strip.shingle")
-  trellis.par.set("strip.background", strip.background)
-  if (length(fg) != 1 && length(fg) != length(bg)) 
-    stop("lengths of fg and bg incompatible")
-  strip.shingle$col <- fg
-  trellis.par.set("strip.shingle", strip.shingle)
-  clip.save <- .clip <- trellis.par.get("clip")
-  .clip$strip <- clip
-  trellis.par.set("clip", .clip)
-  invisible(list(strip.background=bg.save, strip.shingle=fg.save, clip=clip.save))
+effectsTheme <- function(strip.background=list(col=gray(seq(0.95, 0.5, length=3))),
+                         strip.shingle=list(col="black"), clip=list(strip="off"),
+                         superpose.line=list(lwd=c(2, rep(1, 6)))){
+  
+  current <- sapply(c("strip.background", "strip.shingle", "clip", "superpose.line"),
+                    trellis.par.get)
+  result <- list(strip.background=strip.background, strip.shingle=strip.shingle, clip=clip,
+                 superpose.line=superpose.line)
+  attr(result, "current") <- current
+  result
 }
 
-restoreStrip <- function(saved){
-  if (!identical(names(saved), c("strip.background", "strip.shingle", "clip")))
-    stop("argument saved does not contain strip parameters")
-  trellis.par.set("strip.background", saved$strip.background)
-  trellis.par.set("strip.shingle", saved$strip.shingle)
-  trellis.par.set("clip", saved$clip)
+.onAttach <- function(libname, pkgname){
+  if (!"package:lattice" %in% search()){
+    lattice::trellis.par.set(effectsTheme(), warn=FALSE)
+    packageStartupMessage("lattice theme set by effectsTheme()",
+                          "\nSee ?effectsTheme for details.")
+  }
+  else packageStartupMessage("Use the command",
+                             "\n    lattice::trellis.par.set(effectsTheme())",
+                             "\n  to customize lattice options for effects plots.",
+                             "\nSee ?efffectTheme for details.")
+}
+
+# to handle defaults for list-style arguments
+
+applyDefaults <- function(args, defaults, onFALSE, arg=""){
+  if (is.null(args)) return(defaults)
+  if (isFALSE(args)) {
+    if (missing(onFALSE)) return(FALSE)
+    else return(onFALSE)
+  }
+  names <- names(args)
+  names <- names[names != ""]
+  if (!isTRUE(args) && length(names) != length(args)) warning("unnamed ", arg, " arguments, will be ignored")
+  if (isTRUE(args) || is.null(names)) defaults
+  else defaults[names] <- args[names]
+  as.list(defaults)
+}
+
+isFALSE <- function(x){ 
+  length(x) == 1 && is.logical(x) && !isTRUE(x)
+}
+
+# compute multiplier for Scheffe-type confidence bounds
+
+scheffe <- function(level, p, df=Inf){
+  sqrt(p*qf(level, p, df))
+}
+
+# function to compute "nice" numbers
+
+nice <- function (x, direction = c("round", "down", "up"), lead.digits = 1) {
+  direction <- match.arg(direction)
+  if (length(x) > 1){
+    result <- sapply(x, nice, direction = direction, lead.digits = lead.digits)
+    if (anyDuplicated(result)) result <- nice(x, direction=direction, lead.digits = lead.digits + 1)
+    return(result)
+  }
+  if (x == 0) 
+    return(0)
+  power.10 <- floor(log(abs(x), 10))
+  if (lead.digits > 1) 
+    power.10 <- power.10 - lead.digits + 1
+  lead.digit <- switch(direction, round = round(abs(x)/10^power.10), 
+                       down = floor(abs(x)/10^power.10), up = ceiling(abs(x)/10^power.10))
+  sign(x) * lead.digit * 10^power.10
+}
+
+ticksGrid <- function(x, y, col=reference.line$col){
+  reference.line <- trellis.par.get("reference.line")
+  panel.abline(h=y, v=x, col=col, lty=reference.line$lty)
 }

@@ -1,21 +1,29 @@
-# last modified 2015-07-13 by J. Fox
+# last modified 2017-09-11 by J. Fox
 
-importFrom(lattice, barchart, current.panel.limits, densityplot, larrows, llines, lpoints,
-           panel.abline, panel.grid, panel.polygon, panel.text, strip.default, trellis.par.get,
+import(carData)
+
+importFrom(lattice, barchart, current.panel.limits, densityplot, larrows, llines, lpoints, ltext,
+           panel.abline, panel.barchart, #panel.grid, 
+           panel.polygon, panel.text, strip.default, trellis.par.get,
            trellis.par.set, xyplot)
 importFrom(colorspace, rainbow_hcl, sequential_hcl)
 importFrom(grid, grid.pretty, grid.segments, unit)
 importFrom(lme4, fixef)
 importFrom(nnet, multinom)
 importFrom(graphics, plot)
-importFrom(grDevices, gray, palette)
-importFrom(stats, as.formula, binomial, coef, coefficients, delete.response, family, fitted, 
-    formula, glm, lm, lm.fit, loess.smooth, model.frame, model.matrix, model.offset, 
-    model.response, na.exclude, na.omit, nlm, predict, qnorm, qt, quantile, residuals, 
+importFrom(grDevices, gray, palette, rgb)
+importFrom(survey, svymean)
+importFrom(stats, as.formula, binomial, coef, coefficients, cov, delete.response, family, fitted,
+    formula, glm, glm.control, lm, lm.fit, loess.smooth, mahalanobis, 
+    model.frame, model.matrix, model.offset,
+    model.response, na.exclude, na.omit, nlm, predict, qf, qnorm, qt, quantile, residuals,
     spline, terms, update, vcov, weights, xtabs)
 importFrom(utils, menu)
 
-export(effect, allEffects, all.effects, Effect, setStrip, restoreStrip)
+export(effect, allEffects, Effect, effectsTheme)
+export(predictorEffect, predictorEffects)
+S3method(plot, predictoreff)
+S3method(plot, predictorefflist)
 
 S3method(Effect, default)
 S3method(Effect, lm)
@@ -30,13 +38,19 @@ S3method(Effect, multinom)
 S3method(Effect, polr)
 S3method(Effect, poLCA)
 S3method(Effect, mlm)
+S3method(Effect, svyglm)
+S3method(predictorEffect, default)
+S3method(predictorEffect, svyglm)
 S3method(print, eff)
 S3method(print, efflist)
 S3method(print, mlm.efflist)
 S3method(print, summary.eff)
+S3method(print, predictoreff)
+S3method(print, predictorefflist)
 S3method(summary, eff)
 S3method(summary, efflist)
 S3method(summary, mlm.efflist)
+S3method(summary, predictorefflist)
 S3method(as.data.frame, eff)
 S3method(as.data.frame, effpoly)
 S3method(as.data.frame, efflatent)
