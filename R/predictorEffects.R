@@ -1,7 +1,12 @@
 # last update:  2017-07-16
 # 2017-08-14 fixed bug in plot.predictoreff on passing 'multiline' to lines list
-# 2017-08-30 for compatibility with other effect plots, default 
+# 2017-08-30 for compatibility with other effect plots, default
 #            is now multiline=FALSE
+# 2017-11-09 fixed bug in setting the class for multinom models, and possibly others
+# 2017-11-17 added methods for clm, clm2, clmm in the file effectsclmm.R
+# 2017-12-08 modified predictorEffect.default and predictorEffects.default for compatibility to Effect.default
+# 201*-01-09 fixed bug in predictorEffects.default with log() in a formula.
+# 2018-01-24 fixed bug with minus sign in a formula predictorEffects.default
 
 predictorEffect <- function(predictor, mod, xlevels, ...){
   UseMethod("predictorEffect", mod)
@@ -12,14 +17,12 @@ predictorEffect.svyglm <- function(predictor, mod, xlevels, ...){
   NextMethod(object=mod)
 }
 
-predictorEffect.default <- function(predictor, mod, xlevels=list(), ...){
-  all.vars <- all.vars(formula(mod))
-  data <- na.omit(expand.model.frame(mod, all.vars)[, all.vars])
-  if (is.null(xlevels[[predictor]]) && is.numeric(data[[predictor]])){
-    xlevels[[predictor]] <- quantile(data[[predictor]], seq(0.01, 0.99, by=0.02))
-  } 
+#simplified 12/10/17
+predictorEffect.default <- function(predictor, mod, ...){
+  form <- Effect.default(NULL, mod) #returns the fixed-effects formula
+  all.vars <- all.vars(parse(text=form))
   # find the right effect to use
-  terms <- attr(terms(mod), "term.labels")
+  terms <- attr(terms(form), "term.labels")
   # get the predictor names:
   predictors <- all.vars(parse(text=terms))
   sel <- which(predictors == predictor)
@@ -30,75 +33,47 @@ predictorEffect.default <- function(predictor, mod, xlevels=list(), ...){
   for(j in 1:length(terms)){if(predictor %in% decode(terms[j])) tab[j] <- TRUE}
   ans <- unlist(strsplit(paste(terms[tab], collapse=":"), ":"))
   ans <- unique(all.vars(parse(text=ans)))
-  result <- Effect(ans, mod, xlevels=xlevels, ...)
-  class(result) <- c("predictoreff", "eff")
+  ans <- unique(c(predictor, ans)) # guarantees focal predictor is first
+  result <- Effect(ans, mod, ...)
+  class(result) <- c("predictoreff", class(result))
   result
 }
 
-predictorEffects <- function(mod, predictors = ~ ., ...){
-  # convert `predictors` arg to a list of predictors
-  vterms <- if(is.character(predictors)) paste("~",predictors) else predictors
-  vform <- update(formula(mod), vterms)
-  vlabels <- attr(terms(vform), "term.labels")
-  vpred <- all.vars(parse(text=vlabels))
-  # get list of predictors from the model
-  mlabels <- attr(attr(model.frame(mod), "terms"), "term.labels")
-  mpred <- all.vars(parse(text=mlabels))
-  # check that 'vpred' is a subset of 'mpred'. If so apply predictorEffect
-  if(!all(vpred %in% mpred)) stop("argument 'predictors' not a subset of the predictors") else {
+predictorEffects <- function(mod, predictors, ...){
+  UseMethod("predictorEffects", mod)
+}
+
+# rewritten, simplified, 12/08/17, bug in formulas fixed 01/24/2018
+predictorEffects.default <- function(mod, predictors = ~ ., ...) {
+  mform <- Effect.default(NULL, mod)  # returns the fixed-effect formula for any method
+  cform <- if(is.character(predictors)) 
+    as.formula(paste("~", paste(predictors, collapse="+"))) else
+      predictors
+  cform <- update(as.formula(paste(". ~", 
+                paste(all.vars(formula(mform)[[3]]), collapse="+"))), 
+                cform)
+  mvars <- all.vars(mform[[3]])
+  cvars <- all.vars(cform[[3]])
+# check that 'cvars' is a subset of 'mvars'. If so apply predictorEffect
+  if(!all(cvars %in% mvars))
+    stop("argument 'predictors' not a subset of the predictors in the formula") else {
     result <- list()
-    for(p in vpred) result[[p]] <- predictorEffect(p, mod, ...)
-  }
-  class(result) <- 'predictorefflist'
+    for(p in cvars) result[[p]] <- predictorEffect(p, mod, ...)
+    }
+  class(result) <- c("predictorefflist", "list")
   result
 }
 
 # plot methods
 
-plot.predictoreff <- function(x, x.var, 
+plot.predictoreff <- function(x, x.var,
                               main = paste(names(x$variables)[1], "predictor effect plot"), ...){
   if(missing(x.var)) x.var <- names(x$variables)[1]
   NextMethod(x, x.var=x.var, main=main, ...)
 }
 
-# This next function differs for plot.efflist only by changing the title on each plot
-plot.predictorefflist <- function(x, selection, rows, cols, ask=FALSE, graphics=TRUE, 
-                                  lattice, ...){
-  lattice <- if(missing(lattice)) list() else lattice
-  if(length(x) == 1) plot(x[[1]],  ...) else {
-    if (!missing(selection)){
-      if (is.character(selection)) selection <- gsub(" ", "", selection)
-      return(plot(x[[selection]], ...))
-    }
-    effects <- gsub(":", "*", names(x))
-    if (ask){
-      repeat {
-        selection <- menu(effects, graphics=graphics, title="Select Term to Plot")
-        if (selection == 0) break
-        else print(plot(x[[selection]], z.var=names(x)[selection], ...))
-      }
-    }
-    else {
-      neffects <- length(x)
-      mfrow <- mfrow(neffects)
-      if (missing(rows) || missing(cols)){
-        rows <- mfrow[1]
-        cols <- mfrow[2]
-      }
-      for (i in 1:rows) {
-        for (j in 1:cols){
-          if ((i-1)*cols + j > neffects) break
-          more <- !((i-1)*cols + j == neffects)
-          lattice[["array"]] <- list(row=i, col=j, nrow=rows, ncol=cols, more=more)
-          print(plot(x[[(i-1)*cols + j]], lattice=lattice,
-                     x.var=names(x)[(i-1)*cols + j],
-                     main=paste(names(x)[(i-1)*cols + j], "predictor effect plot"), ...))
-        }
-      }
-    }
-  }}
 
-plot.predictorefflist <- function(x, selection, rows, cols, ask=FALSE, graphics=TRUE, 
+plot.predictorefflist <- function(x, selection, rows, cols, ask=FALSE, graphics=TRUE,
                                   lattice, ...){
   # Next line added 8/23/17 along with lattice, also lattice arg above
   lattice <- if(missing(lattice)) list() else lattice
@@ -126,7 +101,7 @@ plot.predictorefflist <- function(x, selection, rows, cols, ask=FALSE, graphics=
         if ((i-1)*cols + j > neffects) break
         more <- !((i-1)*cols + j == neffects)
         lattice[["array"]] <- list(row=i, col=j, nrow=rows, ncol=cols, more=more)
-        print(plot(x[[(i-1)*cols + j]], lattice=lattice, 
+        print(plot(x[[(i-1)*cols + j]], lattice=lattice,
                    ...))
       }
     }

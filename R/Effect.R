@@ -1,6 +1,6 @@
 # Effect generic and methods
 # John Fox and Sanford Weisberg
-# 12-21-2012 Allow for empty cells in factor interactions, S. Weisberg
+# 2012-12-21: Allow for empty cells in factor interactions, S. Weisberg
 # 2012-03-05: Added .merMod method for development version of lme4, J. Fox
 # 2012-04-06: Added support for lme4.0, J. Fox
 # 2013-07-15:  Changed default xlevels and default.levels
@@ -8,7 +8,6 @@
 # 2013-10-22: fixed bug in Effect.lm() when na.action=na.exclude. J. Fox
 # 2013-10-29: code to handle "valid" NAs in factors. J. Fox
 # 2013-11-06: fixed bug in Effect.multinom() in construction of effect object
-#             when there is only one focal predictor; caused as.data.frame.effpoly() to fail
 # 2014-03-13: modified Effect.lm() to compute partial residuals. J. Fox
 # 2014-05-06: fixed bug in Effect.gls() when cor or var structure depends on variables in the data set. J. Fox
 # 2014-08-02: added vcov.=vcov argument to allow other methods of estimating var(coef.estimates)
@@ -23,46 +22,165 @@
 # 2017-08-29: reintroduce legacy se and confidence.level arguments.
 # 2017-09-07: added Effect.svyglm()
 # 2017-09-14: no partial residuals for Effect.svyglm()
+# 2017-11-03: correct handling of rank deficient models, now using `estimability` package
+# 2017-11-22: modified checkFormula to work with clm2 models that don't have a 'formula' argument
+# 2017-12-10: Effect.default. Effect.mer, .merMod, .lme, gls have been replaced to use the default.
+# 2018-01-22: allow given.values="equal" or given.values="default" 
+# 2018-01-25: substitute se for confint arg; make confint a legacy arg
+
+### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
+.set.given.equal <- function(m){
+  if(inherits(m, "lm") & !("(Intercept)" %in% names(coef(m))))
+      stop("Seting given.vales='equal' requires an intercept in the model formula")
+  terms <- terms(m)
+  classes <- attr(terms, "dataClasses")
+  response <- attr(terms, "response")
+  classes <- classes[-response]
+  factors <- names(classes)[classes=="factor"]
+  out <- NULL
+  for (f in factors){
+    form <- as.formula(paste( "~", f, collapse=""))
+    .m0 <- if(inherits(class(m), "glm")) 
+              {update(m, form, control=glm.control(epsilon=1))} else {
+    if(inherits(class(m), "polr"))
+              {update(m, form, control=list(maxit=1))} else {
+    if(inherits(class(m), "multinom"))    
+              {update(m, form, maxit=0, trace=FALSE)} else
+        update(m, form)}}
+    names <- colnames(model.matrix(.m0))[-1]
+    vals <- rep(1/(length(names)+1), length(names))
+    names(vals) <- names
+    out <- c(out, vals)
+  }
+  out
+}
+### end of non-exported function
 
 checkFormula <- function(object){
+# clm2 does not have a formula,
+  if(inherits(object, "clm2")) formula <- function(x) x$call$location
   if (!inherits(object, "formula")){
     object <- formula(object)
   }
   formula <- as.character(object)
   rhs <- formula[length(formula)]
-  res <- regexpr("as.factor\\(|factor\\(|as.ordered\\(|ordered\\(|as.numeric\\(|as.integer\\(", 
+  res <- regexpr("as.factor\\(|factor\\(|as.ordered\\(|ordered\\(|as.numeric\\(|as.integer\\(",
                  rhs)
   res == -1 || attr(res, "match.length") == 0
 }
 
 Effect <- function(focal.predictors, mod, ...){
-  if (!checkFormula(mod)) stop("model formula should not contain calls to", 
+  if (!checkFormula(mod)) stop("model formula should not contain calls to",
                                "\n  factor(), as.factor(), ordered(), as.ordered(),",
                                " as.numeric(), or as.integer();",
                                "\n  see 'Warnings and Limitations' in ?Effect")
   UseMethod("Effect", mod)
 }
 
+# 2017-12-04 new Effect.default that actually works
+# 2017-12-07 added Effects.lme, .mer, gls that work
+
+Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
+  # set sources for type, call, coefficients and vcov
+  formula <- fixFormula(
+    if(is.null(sources$formula)) formula(mod) else sources$formula)
+
+  if(is.null(focal.predictors)) return(formula)
+  type <- if(is.null(sources$type)) "glm" else sources$type
+# Effect uses the link funtion and the inverse function.  This ordinarily are found in
+# family(mod)$linkfun and family(mod)$invlinkfun.  Some models, e.g., betareg, have a fixed family,
+# and so the link is specified separately, typically by an argument link
+# If neither family nor link are specified in sources do nothing
+# If family is specified use it, and ignore link
+  if(!is.null(sources$family)) family <- sources$family
+  if(!is.null(sources$link) & is.null(sources$family))
+    family <- if(is.character(sources$link)) make.link(sources$link) else sources$link
+  cl <- if(is.null(sources$call)) {if(isS4(mod)) mod@call else mod$call} else sources$call
+  coefficients <- if(is.null(sources$coefficients)) coef(mod) else sources$coefficients
+  vcov <- if(is.null(sources$vcov)) as.matrix(vcov(mod)) else sources$vcov
+  # end setting sources
+  cl$formula <- fixFormula(formula) # deletes terms with | or ||
+# suppress iterations: suggested by Nate TeGrotenhuis
+  cl$control <- switch(type,
+          glm = glm.control(epsilon=1),
+          polr = list(maxit=1),
+          multinom = c(maxit=1))
+  .m <- switch(type,
+               glm=match(c("formula", "data", "contrasts", "weights", "subset",
+                "family", "control", "offset"), names(cl), 0L),
+               polr=match(c("formula", "data", "contrasts", "weights", "subset",
+                "control"), names(cl), 0L),
+               multinom=match(c("formula", "data", "contrasts", "weights", "subset",
+                "family", "maxit", "offset"), names(cl), 0L))
+  cl <- cl[c(1L, .m)]
+  cl[[1L]] <- as.name(type)
+  mod2 <- eval(cl)
+  mod2$coefficients <- coefficients
+  mod2$vcov <- vcov
+  if(type == "glm"){
+       mod2$weights <- as.vector(with(mod2,
+                                 prior.weights * (family$mu.eta(linear.predictors)^2 /
+                                                    family$variance(fitted.values))))}
+  class(mod2) <- c("fakeeffmod", class(mod2))
+  vcov.fakeeffmod <- function(object, ...) object$vcov
+  Effect(focal.predictors, mod2, ...)  # call the glm method
+}
+
+## This function removes terms with "|" or "||" in the formula, assumking these
+## correspond to random effects.
+fixFormula <- function (term)
+{
+  if (!("|" %in% all.names(term)) && !("||" %in% all.names(term)))
+    return(term)
+  if ((is.call(term) && term[[1]] == as.name("|")) ||
+      (is.call(term) && term[[1]] == as.name("||")))
+    return(NULL)
+  if (length(term) == 2) {
+    nb <- fixFormula(term[[2]])
+    if (is.null(nb))
+      return(NULL)
+    term[[2]] <- nb
+    return(term)
+  }
+  nb2 <- fixFormula(term[[2]])
+  nb3 <- fixFormula(term[[3]])
+  if (is.null(nb2))
+    return(nb3)
+  if (is.null(nb3))
+    return(nb2)
+  term[[2]] <- nb2
+  term[[3]] <- nb3
+  term
+}
+
 Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
-                      vcov. = vcov, confint=TRUE,
-                      transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv), 
-                      partial.residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
-                      x.var=NULL,  ...,
-                      #legacy arguments:
-                      given.values, typical, offset, se, confidence.level){
+        vcov. = vcov, se=TRUE,
+        transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv),
+        residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
+        x.var=NULL,  ...,
+        #legacy arguments:
+        given.values, typical, offset, confint, confidence.level, partial.residuals){
+  if (!missing(partial.residuals)) residuals <- partial.residuals
+  partial.residuals <- residuals
   if (missing(fixed.predictors)) fixed.predictors <- NULL
-  fixed.predictors <- applyDefaults(fixed.predictors, 
-                                    list(given.values=NULL, typical=mean, 
+  fixed.predictors <- applyDefaults(fixed.predictors,
+                                    list(given.values=NULL, typical=mean,
                                          apply.typical.to.factors=FALSE, offset=mean),
                                     arg="fixed.predictors")
   if (missing(given.values)) given.values <- fixed.predictors$given.values
+# new 1/22/18 to allow for automatical equal weighting of factor levels
+  if(!is.null(given.values)){
+   if (given.values == "default") given.values <- NULL
+   if (given.values == "equal") given.values <- .set.given.equal(mod)}
+# end new code
   if (missing(typical)) typical <- fixed.predictors$typical
   if (missing(offset)) offset <- fixed.predictors$offset
   apply.typical.to.factors <- fixed.predictors$apply.typical.to.factors
-  confint <- applyDefaults(confint, list(compute=TRUE, level=.95, type="pointwise"), 
+  if (!missing(confint)) se <- confint
+  confint <- applyDefaults(se, list(compute=TRUE, level=.95, type="pointwise"),
                            onFALSE=list(compute=FALSE, level=.95, type="pointwise"),
-                           arg="confint")
-  if (missing(se)) se <- confint$compute
+                           arg="se")
+  se <- confint$compute
   if (missing(confidence.level)) confidence.level <- confint$level
   confidence.type <- match.arg(confint$type, c("pointwise", "Scheffe", "scheffe"))
   default.levels <- NULL # just for backwards compatibility
@@ -71,7 +189,7 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
     expand.model.frame(mod, all.vars)[, all.vars]
   }
   else NULL
-  if (!is.null(given.values) && !all(which <- names(given.values) %in% names(coef(mod)))) 
+  if (!is.null(given.values) && !all(which <- names(given.values) %in% names(coef(mod))))
     stop("given.values (", names(given.values[!which]), ") not in the model")
   off <- if (is.numeric(offset) && length(offset) == 1) offset
   else if (is.function(offset)) {
@@ -80,7 +198,7 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
   }
   else stop("offset must be a function or a number")
   formula.rhs <- formula(mod)[[3]]
-  model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, 
+  model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs,
                                     partial.residuals=partial.residuals, quantiles=quantiles, x.var=x.var, data=data, typical=typical)
   excluded.predictors <- model.components$excluded.predictors
   predict.data <- model.components$predict.data
@@ -108,15 +226,23 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
     }
   }
   mod.matrix.all <- model.matrix(mod)
-  wts <- weights(mod) 
-  if (is.null(wts)) 
+  wts <- weights(mod)
+  if (is.null(wts))
     wts <- rep(1, length(residuals(mod)))
-  mod.matrix <- Fixup.model.matrix(mod, mod.matrix, mod.matrix.all, 
-                                   X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, 
-                                   typical, given.values, apply.typical.to.factors) #,
-  # look for aliased coefficients and remove those columns from mod.matrix
-  mod.matrix <- mod.matrix[, !is.na(mod$coefficients)]
-  effect <- off + mod.matrix %*% mod$coefficients[!is.na(mod$coefficients)]
+  mod.matrix <- Fixup.model.matrix(mod, mod.matrix, mod.matrix.all,
+                                   X.mod, factor.cols, cnames, focal.predictors, 
+                                   excluded.predictors, typical, given.values, 
+                                   apply.typical.to.factors) 
+# 11/3/2017.  Check to see if the model is full rank
+  # Compute a basis for the null space, using estimibility package
+  null.basis <- estimability::nonest.basis(mod)  # returns basis for null space
+  # check to see if each row of mod.matrix is estimable
+  is.estimable <- estimability::is.estble(mod.matrix, null.basis) # TRUE if effect is estimable else FALSE
+  # substitute 0 for NA in coef vector and compute effects
+  scoef <- ifelse(is.na(mod$coefficients), 0L, mod$coefficients)
+  effect <- off + mod.matrix %*% scoef
+  effect[!is.estimable] <- NA  # set all non-estimable effects to NA
+# end estimability check
   if (partial.residuals){
     res <- na.omit(residuals(mod, type="working"))
     fitted <- na.omit(if (inherits(mod, "glm")) predict(mod, type="link") else predict(mod))
@@ -125,33 +251,15 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
   else {
     res <- partial.residuals.range <- NULL
   }
-  result <- list(term = paste(focal.predictors, collapse="*"), 
-                 formula = formula(mod), response = response.name(mod), 
-                 variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], 
+  result <- list(term = paste(focal.predictors, collapse="*"),
+                 formula = formula(mod), response = response.name(mod),
+                 variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE],
                  x.all=predict.data.all.rounded[, focal.predictors, drop=FALSE],
-                 model.matrix = mod.matrix, 
-                 data = X, 
+                 model.matrix = mod.matrix,
+                 data = X,
                  discrepancy = 0, offset=off,
                  residuals=res, partial.residuals.range=partial.residuals.range,
                  x.var=x.var)
-  # find empty cells, if any, and correct
-  whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
-  zeroes <- NULL
-  if(sum(whichFact) > 1){
-    nameFact <- names(whichFact)[whichFact]
-    counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
-                    model.frame(mod))
-    zeroes <- which(counts == 0)  
-  }
-  if(length(zeroes) > 0){
-    levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
-    good <- rep(TRUE, dim(levs)[1])
-    for(z in zeroes){
-      good <- good &  
-        apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
-    } 
-    result$fit[!good] <- NA
-  } 
   if (se) {
     if (any(family(mod)$family == c("binomial", "poisson"))) {
       z <- if (confidence.type == "pointwise") {
@@ -170,19 +278,16 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
       }
     }
     V <- vcov.(mod)
-    eff.vcov <- mod.matrix %*% V %*% t(mod.matrix)
+    mmat <- mod.matrix[, !is.na(mod$coefficients)] # remove non-cols with NA coeffs
+    eff.vcov <- mmat %*% V %*% t(mmat)
     rownames(eff.vcov) <- colnames(eff.vcov) <- NULL
     var <- diag(eff.vcov)
-    result$vcov <- eff.vcov        
+    result$vcov <- eff.vcov
     result$se <- sqrt(var)
+    result$se[!is.estimable] <- NA
     result$lower <- effect - z * result$se
     result$upper <- effect + z * result$se
     result$confidence.level <- confidence.level
-    if(length(zeroes) > 0){
-      result$se[!good] <- NA
-      result$lower[!good] <- NA
-      result$upper[!good] <- NA
-    }
   }
   if (is.null(transformation$link) && is.null(transformation$inverse)) {
     transformation$link <- I
@@ -194,132 +299,34 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
   result
 }
 
-Effect.mer <- function(focal.predictors, mod, KR=FALSE, ...) {
-  result <- Effect(focal.predictors, mer.to.glm(mod, KR=KR), ...)
-  result$formula <- as.formula(formula(mod))
-  result
-}
-
-Effect.merMod <- function(focal.predictors, mod, KR=FALSE, ...){
-  Effect.mer(focal.predictors, mod, KR=KR, ...)
-}
-
-Effect.lme <- function(focal.predictors, mod, ...) {
-  result <- Effect(focal.predictors, lme.to.glm(mod), ...)
-  result$formula <- as.formula(formula(mod))
-  result
-}
-
-Effect.gls <- function(focal.predictors, mod, xlevels = list(), fixed.predictors,
-                       vcov. = vcov, confint=TRUE, 
-                       transformation = NULL, 
-                       ...,
-                       #legacy arguments:
-                       given.values, typical,
-                       se, confidence.level){
-  if (missing(fixed.predictors)) fixed.predictors <- NULL
-  fixed.predictors <- applyDefaults(fixed.predictors, 
-                                    list(given.values=NULL, typical=mean),
-                                    arg="fixed.predictors")
-  if (missing(given.values)) given.values <- fixed.predictors$given.values
-  if (missing(typical)) typical <- fixed.predictors$typical
-  confint <- applyDefaults(confint, list(compute=TRUE, level=.95, type="pointwise"), 
-                           onFALSE=list(compute=FALSE, level=.95, type="pointwise"),
-                           arg="confint")
-  if (missing(se)) se <- confint$compute
-  if (missing(confidence.level)) confidence.level <- confint$level
-  confidence.type <- match.arg(confint$type, c("pointwise", "Scheffe", "scheffe"))
-  default.levels <- NULL # just for backwards compatibility
-  if (missing(given.values)) 
-    given.values <- NULL
-  else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
-    stop("given.values (", names(given.values[!which]), ") not in the model")
-  formula.rhs <- formula(mod)[[3]]
-  .data <- eval(mod$call$data)
-  mod.lm <- lm(as.formula(mod$call$model), data=.data, na.action=na.exclude)
-  model.components <- Analyze.model(focal.predictors, mod.lm, xlevels, default.levels, formula.rhs, typical=typical)
-  excluded.predictors <- model.components$excluded.predictors
-  predict.data <- model.components$predict.data
-  factor.levels <- model.components$factor.levels
-  factor.cols <- model.components$factor.cols
-  n.focal <- model.components$n.focal
-  x <- model.components$x
-  X.mod <- model.components$X.mod
-  cnames <- model.components$cnames
-  X <- model.components$X
-  formula.rhs <- formula(mod)[c(1, 3)]
-  nrow.X <- nrow(X)
-  mf <- model.frame(formula.rhs, data=rbind(X[,names(predict.data),drop=FALSE], predict.data), 
-                    xlev=factor.levels)
-  mod.matrix.all <- model.matrix(formula.rhs, data=mf, contrasts.arg=mod$contrasts)
-  mod.matrix <- mod.matrix.all[-(1:nrow.X),]
-  mod.matrix <- Fixup.model.matrix(mod.lm, mod.matrix, model.matrix(mod.lm), 
-                                   X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
-  fit.1 <- na.omit(predict(mod))
-  mod.2 <- lm.fit(mod.matrix.all[1:nrow.X,], fit.1)
-  class(mod.2) <- "lm"
-  use <- !is.na(residuals(mod.lm))
-  .data <- .data[use, ]
-  .data$.y <- model.response.gls(mod)
-  .data$.X <- mod.matrix.all[1:nrow.X, ]
-  mod.3 <- update(mod, .y ~ .X - 1, data=.data)
-  discrepancy <- 100*mean(abs(fitted(mod.2)- fit.1)/(1e-10 + mean(abs(fit.1))))
-  if (discrepancy > 1e-3) warning(paste("There is a discrepancy of", round(discrepancy, 3),
-                                        "percent \n     in the 'safe' predictions used to generate effect", paste(focal.predictors, collapse="*")))
-  effect <- mod.matrix %*% mod$coefficients
-  result <- list(term = paste(focal.predictors, collapse="*"), 
-                 formula = formula(mod), response = response.name(mod), 
-                 variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
-                 discrepancy = discrepancy, offset=0)
-  if (se){
-    p <- mod$dims[["p"]]
-    df.res <- mod$dims[["N"]] - p
-    z <- if (confidence.type == "pointwise") {
-      qt(1 - (1 - confidence.level)/2, df = df.res)
-    } else {
-      scheffe(confidence.level, p, df.res)
-    }
-    mod.2$terms <- terms(mod)
-    V <- vcov.(mod.3)
-    eff.vcov <- mod.matrix %*% V %*% t(mod.matrix)
-    rownames(eff.vcov) <- colnames(eff.vcov) <- NULL
-    var <- diag(eff.vcov)
-    result$vcov <- eff.vcov
-    result$se <- sqrt(var)        
-    result$lower <- effect - z*result$se
-    result$upper <- effect + z*result$se
-    result$confidence.level <- confidence.level
-  }
-  if (is.null(transformation$link) && is.null(transformation$inverse)){
-    transformation$link <- I
-    transformation$inverse <- I
-  }
-  result$transformation <- transformation
-  class(result) <- "eff"
-  result
-}
-
-Effect.multinom <- function(focal.predictors, mod, 
+Effect.multinom <- function(focal.predictors, mod,
                             xlevels=list(), fixed.predictors,
-                            vcov. = vcov, confint=TRUE, ...,
+                            vcov. = vcov, se=TRUE, ...,
                             #legacy arguments:
-                            se, confidence.level, given.values, typical){  
+                            confint, confidence.level, given.values, typical){
   if (missing(fixed.predictors)) fixed.predictors <- NULL
-  fixed.predictors <- applyDefaults(fixed.predictors, 
+  fixed.predictors <- applyDefaults(fixed.predictors,
                                     list(given.values=NULL, typical=mean),
                                     arg="fixed.predictors")
   if (missing(given.values)) given.values <- fixed.predictors$given.values
+  # new 1/22/18 to allow for automatical equal weighting of factor levels
+  if(!is.null(given.values)){
+    if (given.values == "default") given.values <- NULL
+    if (given.values == "equal") given.values <- .set.given.equal(mod)}
+  # end new code
+  # end new code
   if (missing(typical)) typical <- fixed.predictors$typical
-  confint <- applyDefaults(confint, list(compute=TRUE, level=.95, type="pointwise"), 
+  if (!missing(confint)) se <- confint
+  confint <- applyDefaults(se, list(compute=TRUE, level=.95, type="pointwise"),
                            onFALSE=list(compute=FALSE, level=.95, type="pointwise"),
-                           arg="confint")    
-  if (missing(se)) se <- confint$compute
+                           arg="se")
+  se <- confint$compute
   if (missing(confidence.level)) confidence.level <- confint$level
   confidence.type <- match.arg(confint$type, c("pointwise", "Scheffe", "scheffe"))
   default.levels <- NULL # just for backwards compatibility
   if (length(mod$lev) < 3) stop("effects for multinomial logit model only available for response levels > 2")
   if (missing(given.values)) given.values <- NULL
-  else if (!all(which <- colnames(given.values) %in% names(coef(mod)))) 
+  else if (!all(which <- colnames(given.values) %in% names(coef(mod))))
     stop("given.values (", colnames(given.values[!which]),") not in the model")
   formula.rhs <- formula(mod)[c(1, 3)]
   model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, typical=typical)
@@ -336,7 +343,7 @@ Effect.multinom <- function(focal.predictors, mod,
   Terms <- delete.response(terms(mod))
   mf <- model.frame(Terms, predict.data, xlev = factor.levels)
   mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
-  X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+  X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod),
                            X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
   resp.names <- make.names(mod$lev, unique=TRUE)
   resp.names <- c(resp.names[-1], resp.names[1]) # make the last level the reference level
@@ -344,7 +351,7 @@ Effect.multinom <- function(focal.predictors, mod,
   V <- vcov.(mod)
   m <- ncol(B) + 1
   p <- nrow(B)
-  r <- p*(m - 1)	
+  r <- p*(m - 1)
   n <- nrow(X0)
   P <- Logit <- matrix(0, n, m)
   colnames(P) <-  paste("prob.", resp.names, sep="")
@@ -370,7 +377,7 @@ Effect.multinom <- function(focal.predictors, mod,
     Logit[i,] <- logit <- res$logits # fitted logits
     if (se){
       #            SE.P[i,] <- se.p <- res$std.err.p # std. errors of fitted probs
-      SE.P[i,] <- res$std.err.p # std. errors of fitted probs	
+      SE.P[i,] <- res$std.err.p # std. errors of fitted probs
       SE.logit[i,] <- se.logit <- res$std.error.logits # std. errors of logits
       Lower.P[i,] <- logit2p(logit - z*se.logit)
       Upper.P[i,] <- logit2p(logit + z*se.logit)
@@ -394,59 +401,70 @@ Effect.multinom <- function(focal.predictors, mod,
                  model.matrix=X0, data=X, discrepancy=0, model="multinom",
                  prob=P, logit=Logit)
   if (se) result <- c(result, list(se.prob=SE.P, se.logit=SE.logit,
-                                   lower.logit=Lower.logit, upper.logit=Upper.logit, 
+                                   lower.logit=Lower.logit, upper.logit=Upper.logit,
                                    lower.prob=Lower.P, upper.prob=Upper.P,
                                    confidence.level=confidence.level))
   # find empty cells, if any, and correct
+## 11/3/17:  The code until the next comment is surely incorrect, but
+## generally harmless.  One must learn if the notion of estimablilty applied
+## to multinomial models and figure out the right thing to do
   whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
   zeroes <- NULL
   if(sum(whichFact) > 1){
     nameFact <- names(whichFact)[whichFact]
-    counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
+    counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))),
                     model.frame(mod))
-    zeroes <- which(counts == 0)  
+    zeroes <- which(counts == 0)
   }
   if(length(zeroes) > 0){
-    levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
+    levs <- expand.grid(lapply(result$variables, function(x) x$levels))
     good <- rep(TRUE, dim(levs)[1])
     for(z in zeroes){
-      good <- good &  
+      good <- good &
         apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
     }
     result$prob[!good, ] <- NA
-    result$logit[!good, ] <- NA 
+    result$logit[!good, ] <- NA
     if (se){
       result$se.prob[!good, ] <- NA
       result$se.logit[!good, ] <- NA
       result$lower.prob[!good, ] <- NA
       result$upper.prob[!good, ] <- NA
     }
-  } 
+  }
+## End of unnecessary code
   class(result) <-'effpoly'
   result
 }
 
-Effect.polr <- function(focal.predictors, mod, 
+Effect.polr <- function(focal.predictors, mod,
                         xlevels=list(), fixed.predictors,
-                        vcov.=vcov, confint=TRUE, latent=FALSE, ...,
+                        vcov.=vcov, se=TRUE, latent=FALSE, ...,
                         #legacy arguments:
-                        se, confidence.level, given.values, typical){
+                        confint, confidence.level, given.values, typical){
   if (missing(fixed.predictors)) fixed.predictors <- NULL
-  fixed.predictors <- applyDefaults(fixed.predictors, 
+  fixed.predictors <- applyDefaults(fixed.predictors,
                                     list(given.values=NULL, typical=mean),
                                     arg="fixed.predictors")
   if (missing(given.values)) given.values <- fixed.predictors$given.values
+  # new 1/22/18 to allow for automatical equal weighting of factor levels
+  # new 1/22/18 to allow for automatical equal weighting of factor levels
+  if(!is.null(given.values)){
+    if (given.values == "default") given.values <- NULL
+    if (given.values == "equal") given.values <- .set.given.equal(mod)}
+  # end new code
   if (missing(typical)) typical <- fixed.predictors$typical
-  confint <- applyDefaults(confint, list(compute=TRUE, level=.95, type="pointwise"), 
+  if (!missing(confint)) se <- confint
+  confint <- applyDefaults(se, list(compute=TRUE, level=.95, type="pointwise"),
                            onFALSE=list(compute=FALSE, level=.95, type="pointwise"),
-                           arg="confint")
-  if (missing(se)) se <- confint$compute
+                           arg="se")
+  se <- confint$compute
   if (missing(confidence.level)) confidence.level <- confint$level
   confidence.type <- match.arg(confint$type, c("pointwise", "Scheffe", "scheffe"))
   default.levels <- NULL # just for backwards compatibility
-  if (mod$method != "logistic") stop('method argument to polr must be "logistic"')    
+  if (mod$method != "logistic") stop('method argument to polr must be "logistic"')
   if (missing(given.values)) given.values <- NULL
-  else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
+  else if (!all(which <- names(given.values) %in% names(coef(mod))))
     stop("given.values (", names(given.values[!which]),") not in the model")
   formula.rhs <- formula(mod)[c(1, 3)]
   model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, typical=typical)
@@ -462,7 +480,7 @@ Effect.polr <- function(focal.predictors, mod,
   Terms <- delete.response(terms(mod))
   mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
   mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
-  X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
+  X0 <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod),
                            X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
   resp.names <- make.names(mod$lev, unique=TRUE)
   X0 <- X0[,-1, drop=FALSE]
@@ -475,7 +493,7 @@ Effect.polr <- function(focal.predictors, mod,
     scheffe(confidence.level, p + length(alpha))
   }
   result <- list(term=paste(focal.predictors, collapse="*"), formula=formula(mod), response=response.name(mod),
-                 y.levels=mod$lev, variables=x, 
+                 y.levels=mod$lev, variables=x,
                  x=predict.data[, focal.predictors, drop=FALSE],
                  model.matrix=X0, data=X, discrepancy=0, model="polr")
   if (latent){
@@ -501,7 +519,7 @@ Effect.polr <- function(focal.predictors, mod,
   V <- vcov.(mod)[indices, indices]
   for (j in 1:(m-1)){  # fix up the signs of the covariances
     V[j,] <- -V[j,]  #  for the intercepts
-    V[,j] <- -V[,j]}	
+    V[,j] <- -V[,j]}
   n <- nrow(X0)
   P <- Logit <- matrix(0, n, m)
   colnames(P) <-  paste("prob.", resp.names, sep="")
@@ -532,126 +550,33 @@ Effect.polr <- function(focal.predictors, mod,
   result$logit <- Logit
   if (se) result <- c(result,
                       list(se.prob=SE.P, se.logit=SE.Logit,
-                           lower.logit=Lower.logit, upper.logit=Upper.logit, 
+                           lower.logit=Lower.logit, upper.logit=Upper.logit,
                            lower.prob=Lower.P, upper.prob=Upper.P,
                            confidence.level=confidence.level))
   class(result) <-'effpoly'
   result
 }
 
-Effect.default <- function(focal.predictors, mod, xlevels = list(), 
-                           fixed.predictors,
-                           vcov. = vcov, confint=TRUE, 
-                           transformation = list(link = I, inverse = I), ...,
-                           #legacy arguments:
-                           se, confidence.level, given.values, typical, offset){
-  if (missing(fixed.predictors)) fixed.predictors <- NULL
-  fixed.predictors <- applyDefaults(fixed.predictors, 
-                                    list(given.values=NULL, typical=mean),
-                                    arg="fixed.predictors")
-  if (missing(given.values)) given.values <- fixed.predictors$given.values
-  if (missing(typical)) typical <- fixed.predictors$typical
-  confint <- applyDefaults(confint, list(compute=TRUE, level=.95, type="pointwise"), 
-                           onFALSE=list(compute=FALSE, level=.95, type="pointwise"),
-                           arg="confint")
-  if (missing(se)) se <- confint$compute
-  if (missing(confidence.level)) confidence.level <- confint$level
-  confidence.type <- match.arg(confint$type, c("pointwise", "Scheffe", "scheffe"))
-  default.levels <- NULL # just for backwards compatibility
-  if (missing(given.values)) 
-    given.values <- NULL
-  else if (!all(which <- names(given.values) %in% names(coef(mod)))) 
-    stop("given.values (", names(given.values[!which]), ") not in the model")
-  off <- if (is.numeric(offset) && length(offset) == 1) offset
-  else if (is.function(offset)) {
-    mod.off <- model.offset(model.frame(mod))
-    if (is.null(mod.off)) 0 else offset(mod.off)
-  }
-  else stop("offset must be a function or a number")
-  formula.rhs <- formula(mod)[[3]]
-  model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs, typical=typical)
-  excluded.predictors <- model.components$excluded.predictors
-  predict.data <- model.components$predict.data
-  factor.levels <- model.components$factor.levels
-  factor.cols <- model.components$factor.cols
-  n.focal <- model.components$n.focal
-  x <- model.components$x
-  X.mod <- model.components$X.mod
-  cnames <- model.components$cnames
-  X <- model.components$X
-  formula.rhs <- formula(mod)[c(1, 3)]
-  Terms <- delete.response(terms(mod))
-  mf <- model.frame(Terms, predict.data, xlev = factor.levels, na.action=NULL)
-  mod.matrix <- model.matrix(formula.rhs, data = mf, contrasts.arg = mod$contrasts)
-  mod.matrix <- Fixup.model.matrix(mod, mod.matrix, model.matrix(mod), 
-                                   X.mod, factor.cols, cnames, focal.predictors, excluded.predictors, typical, given.values)
-  mod.matrix <- mod.matrix[, !is.na(coef(mod))]
-  effect <- off + mod.matrix %*% mod$coefficients[!is.na(coef(mod))]
-  result <- list(term = paste(focal.predictors, collapse="*"), 
-                 formula = formula(mod), response = response.name(mod), 
-                 variables = x, fit = effect, x = predict.data[, 1:n.focal, drop=FALSE], model.matrix = mod.matrix, data = X, 
-                 discrepancy = 0, offset=off)
-  whichFact <- unlist(lapply(result$variables, function(x) x$is.factor))
-  zeroes <- NULL
-  if(sum(whichFact) > 1){
-    nameFact <- names(whichFact)[whichFact]
-    counts <- xtabs(as.formula( paste("~", paste(nameFact, collapse="+"))), 
-                    model.frame(mod))
-    zeroes <- which(counts == 0)  
-  }
-  if(length(zeroes) > 0){
-    levs <- expand.grid(lapply(result$variables, function(x) x$levels)) 
-    good <- rep(TRUE, dim(levs)[1])
-    for(z in zeroes){
-      good <- good &  
-        apply(levs, 1, function(x) !all(x == levs[z, whichFact]))
-    } 
-    result$fit[!good] <- NA
-  } 
-  if (se) {
-    z <- if (confidence.type == "pointwise") {
-      qnorm(1 - (1 - confidence.level)/2)
-    } else {
-      p <- length(na.omit(coef(mod)))
-      scheffe(confidence.level, p)
-    }
-    V <- vcov.(mod)
-    eff.vcov <- mod.matrix %*% V %*% t(mod.matrix)
-    rownames(eff.vcov) <- colnames(eff.vcov) <- NULL
-    var <- diag(eff.vcov)
-    result$vcov <- eff.vcov    	
-    result$se <- sqrt(var)
-    result$lower <- effect - z * result$se
-    result$upper <- effect + z * result$se
-    result$confidence.level <- confidence.level
-    if(length(zeroes) > 0){
-      result$se[!good] <- NA
-      result$lower[!good] <- NA
-      result$upper[!good] <- NA
-    }
-  }
-  result$transformation <- transformation
-  class(result) <- "eff"
-  result
-}
-
+# svyglm
 Effect.svyglm <- function(focal.predictors, mod, fixed.predictors, ...){
   Svymean <- function(x){
     svymean(x, design=mod$survey.design)
   }
   ellipses.list <- list(...)
-  if (!is.null(ellipses.list$partial.residuals) && !isFALSE(ellipses.list$partial.residuals)){
+  if ((!is.null(ellipses.list$residuals) && !isFALSE(residuals)) || 
+      (!is.null(ellipses.list$partial.residuals) && !isFALSE(ellipses.list$partial.residuals))){
     stop("partial residuals are not available for svy.glm models")
   }
   if (missing(fixed.predictors)) fixed.predictors <- NULL
-  fixed.predictors <- applyDefaults(fixed.predictors, 
-                                    list(given.values=NULL, typical=Svymean, 
+  fixed.predictors <- applyDefaults(fixed.predictors,
+                                    list(given.values=NULL, typical=Svymean,
                                          apply.typical.to.factors=TRUE, offset=Svymean),
                                     arg="fixed.predictors")
   typical <- fixed.predictors$typical
   apply.typical.to.factors <- fixed.predictors$apply.typical.to.factors
   offset <- fixed.predictors$offset
   mod$call <- list(mod$call, data=mod$data)
-  Effect.lm(focal.predictors, mod, typical=typical, 
+  Effect.lm(focal.predictors, mod, typical=typical,
             apply.typical.to.factors=apply.typical.to.factors, offset=offset, ...)
 }
+

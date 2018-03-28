@@ -11,6 +11,10 @@
 # 2017-08-20: reintroduce legacy arguments for plot.effpoly()
 # 2017-08-20: introduced multiline argument under lines argument and as a "legacy" argument
 # 2017-09-10: use replacement for grid.panel()
+# 2017-11-22: added a check for non-estimable factor combinations with style="stacked"
+# 2018-01-02, 2018-01-30: changed defaults for key.args, lines 140-141
+# 2018-02-09: Use one-column key for stacked plot.
+# 2018-02-28: Fix handling of rug arg (error reported by Dave Armstrong).
 
 plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect plot"),
                          symbols=TRUE, lines=TRUE, axes, confint, lattice, ...,
@@ -29,7 +33,7 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
   if (missing(use.splines)) use.splines <- lines$splines
   lines.col <- lines$col
   lines <- if (missing(lty)) lines$lty else lty
-  
+ 
   if (!is.logical(symbols) && !is.list(symbols)) symbols <- list(pch=symbols)
   symbols <- applyDefaults(symbols,
                            defaults= list(pch=trellis.par.get("superpose.symbol")$pch, cex=trellis.par.get("superpose.symbol")$cex[1]),
@@ -64,8 +68,6 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
   }
   if (missing(rotx)) rotx <- x.args$rotate
   if (missing(rug)) rug <- x.args$rug
-  rotx <- x.args$rotate
-  rug <- x.args$rug
   x.args$rotate <- NULL
   x.args$rug <- NULL
   x.pred.names <- names(x.args)
@@ -107,7 +109,7 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
   
   if (missing(confint)) confint <- NULL
   confint <- applyDefaults(confint,
-                           defaults=list(style=if (style == "lines" && !is.null(x$se.prob)) "bands" else "none", alpha=0.15, col=colors),
+                           defaults=list(style=if (style == "lines" && !is.null(x$se.prob)) "auto" else "none", alpha=0.15, col=colors),
                            onFALSE=list(style="none", alpha=0, col="white"),
                            arg="confint")
   if (missing(ci.style)) ci.style <- confint$style
@@ -135,10 +137,14 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
   
   if (missing(lattice)) lattice <- NULL
   lattice <- applyDefaults(lattice, defaults=list(
-    layout=NULL, key.args=NULL, 
+    layout=NULL, #key.args=list(),  #New default added 1/2/2017 by sw
     strip=list(factor.names=TRUE, values=TRUE),
     array=list(row=1, col=1, nrow=1, ncol=1, more=FALSE),
     arg="lattice"
+  ))
+  lattice$key.args <- applyDefaults(lattice$key.args, defaults=list(
+    space="top", border=FALSE, fontfamily="sans", cex=.75, cex.title=1, 
+    arg="key.args"
   ))
   if (missing(layout)) layout <- lattice$layout
   if (missing(key.args)) key.args <- lattice$key.args
@@ -351,7 +357,9 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
                       text=list(as.character(unique(response))),
                       lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
                       points=list(pch=symbols[.mods(1:n.y.lev)], col=colors[.modc(1:n.y.lev)]),
-                      columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
+                      columns = if ("x" %in% names(key.args)) 1 else 
+                        find.legend.columns(length(n.y.lev), 
+                              space=if("x" %in% names(key.args)) "top" else key.args$space))
           for (k in names(key.args)) key[k] <- key.args[k]
           if (show.strip.values){
             for (pred in predictors[-x.var]){
@@ -427,7 +435,9 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
           key <- list(title=x$response, cex.title=1, border=TRUE,
                       text=list(as.character(unique(response))), 
                       lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
-                      columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
+                      columns = if ("x" %in% names(key.args)) 1 else 
+                        find.legend.columns(length(n.y.lev), 
+                                space=if("x" %in% names(key.args)) "top" else key.args$space))
           for (k in names(key.args)) key[k] <- key.args[k]
           if (show.strip.values){
             for (pred in predictors[-x.var]){
@@ -483,9 +493,16 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
       else layout
       if (n.y.lev > length(colors))
         stop(paste('Not enough colors to plot', n.y.lev, 'regions'))
-      key <- list(text=list(lab=rev(y.lev)), rectangle=list(col=rev(colors[1:n.y.lev])))
+      key <- list(text=list(lab=rev(y.lev)), 
+                  rectangle=list(col=rev(colors[1:n.y.lev])),
+                  columns = 1)
+                    # if ("x" %in% names(key.args)) 1 else 
+                    # find.legend.columns(length(n.y.lev), 
+                    #       space=if("x" %in% names(key.args)) "top" else key.args$space))
       for (k in names(key.args)) key[k] <- key.args[k]
       if (is.factor(x$data[[predictors[x.var]]])){ # x-variable a factor
+# 11/22/17 check for rank deficient models and if found stop
+        if(any(is.na(Data$prob))) stop("At least one combination of factor levels is not estimable.\n  Stacked plots are misleading, change to style='lines'")
         result <- barchart(eval(parse(text=if (n.predictors == 1) 
           paste("prob ~ ", predictors[x.var], sep="")
           else paste("prob ~ ", predictors[x.var]," | ", 
@@ -764,7 +781,10 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
                     text=list(as.character(unique(response))),
                     lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
                     points=list(pch=symbols[.mods(1:n.y.lev)], col=colors[.modc(1:n.y.lev)]),
-                    columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
+                    columns = if ("x" %in% names(key.args)) 1 else 
+                      find.legend.columns(length(n.y.lev), 
+                            space=if("x" %in% names(key.args)) "top" else key.args$space))
+
         for (k in names(key.args)) key[k] <- key.args[k]
         if (show.strip.values){
           for (pred in predictors[-x.var]){
@@ -854,7 +874,9 @@ plot.effpoly <- function(x, x.var=which.max(levels), main=paste(effect, "effect 
         key <- list(title=x$response, cex.title=1, border=TRUE,
                     text=list(as.character(unique(response))), 
                     lines=list(col=colors[.modc(1:n.y.lev)], lty=lines[.modl(1:n.y.lev)], lwd=lwd),
-                    columns = if ("x" %in% names(key.args)) 1 else find.legend.columns(n.y.lev))
+                    columns = if ("x" %in% names(key.args)) 1 else 
+                      find.legend.columns(length(n.y.lev), 
+                            space=if("x" %in% names(key.args)) "top" else key.args$space))
         for (k in names(key.args)) key[k] <- key.args[k]
         if (show.strip.values){
           for (pred in predictors[-x.var]){

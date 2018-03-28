@@ -3,6 +3,7 @@
 \alias{predictorEffect.svyglm}
 \alias{predictorEffect.default}
 \alias{predictorEffects}
+\alias{predictorEffects.default}
 \title{
 Functions For Computing Predictor Effects
 }
@@ -14,16 +15,19 @@ predictorEffect(predictor, mod, xlevels, ...)
 
 \method{predictorEffect}{svyglm}(predictor, mod, xlevels, ...)
 
-\method{predictorEffect}{default}(predictor, mod, xlevels=list(), ...)
+\method{predictorEffect}{default}(predictor, mod, ...)
 
-predictorEffects(mod, predictors = ~., ...)
+predictorEffects(mod, predictors, ...)
+
+\method{predictorEffects}{default}(mod, predictors = ~ ., ...)
+
 }
 \arguments{
   \item{mod}{
 A model object.  Supported models include all those described on the help page for \code{\link{Effect}}.
 }
-  \item{predictor}{quoted name of the focal predictor}
-  \item{xlevels}{this argument is used to set the values for any predictor in the 
+  \item{predictor}{quoted name of the focal predictor.}
+  \item{xlevels}{this argument is used to set the values for any predictor in the
   effect that is not a factor.  For a predictor
   effect, the default is to use 50 quantiles of the focal predictor on the x-axis
   between the 0.01 and 0.98 quantiles. See \code{\link{Effect}} for details and for
@@ -68,12 +72,12 @@ plot(predictorEffects(mod, ~ education + income + women))
 \donttest{
 if (require(survey)){
   data(api)
-  dstrat<-svydesign(id=~1, strata=~stype, weights=~pw, 
-    data=apistrat, fpc=~fpc) 
-  mod <- svyglm(sch.wide ~ ell + meals + mobility, design=dstrat, 
+  dstrat<-svydesign(id=~1, strata=~stype, weights=~pw,
+    data=apistrat, fpc=~fpc)
+  mod <- svyglm(sch.wide ~ ell + meals + mobility, design=dstrat,
     family=quasibinomial())
-  plot(predictorEffects(mod), 
-    axes=list(y=list(lim=log(c(0.4, 0.99)/c(0.6, 0.01)), 
+  plot(predictorEffects(mod),
+    axes=list(y=list(lim=log(c(0.4, 0.99)/c(0.6, 0.01)),
       ticks=list(at=c(0.4, 0.75, 0.9, 0.95, 0.99)))))
 }
 }

@@ -8,6 +8,8 @@
 # 2013-10-15: eliminated generic effect() and all its methods. J. Fox
 # 2014-07-02: added vcov. argument to effect 
 # 2014-12-10: Changed 'effect' back to a generic function.  S. Weisberg
+# 2017-12-08: For compatibility with Effect.default, changed test for itercept i effect.default.  SW
+# 2017-12-08: Removed unneeded allEffects.gls
 
 effect <- function(term, mod, vcov.=vcov, ...){
   UseMethod("effect", mod)
@@ -16,7 +18,8 @@ effect <- function(term, mod, vcov.=vcov, ...){
 effect.default <- function(term, mod, vcov.=vcov, ...){ 
   term <- gsub(" ", "", gsub("\\*", ":", term))
   terms <- term.names(mod)
-  if (has.intercept(mod)) terms <- terms[-1]
+  if ( terms[1] == "(Intercept)") terms <- terms[-1]
+#  if (has.intercept(mod)) terms <- terms[-1]
   which.term <- which(term == terms)
   mod.aug<- list()
   if (length(which.term) == 0){
@@ -49,20 +52,4 @@ allEffects.default <- function(mod, ...){
   result
 }
 
-allEffects.gls <- function(mod, ...){
-  high.order.terms <- function(mod){
-    mod <- lm(as.formula(mod$call$model), data=eval(mod$call$data))
-    names <- term.names(mod)
-    if (has.intercept(mod)) names<-names[-1]
-    rel <- lapply(names, descendants, mod=mod)
-    (1:length(names))[sapply(rel, function(x) length(x)==0)]
-  }
-  names <- term.names(mod)
-  if (has.intercept(mod)) names <- names[-1]
-  if (length(names) == 0) stop("the model contains no terms (beyond a constant)")
-  terms <- names[high.order.terms(mod)]
-  result <- lapply(terms, effect, mod=mod, ...)
-  names(result) <- terms
-  class(result) <- 'efflist'
-  result
-}
+

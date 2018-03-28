@@ -37,28 +37,28 @@
 \method{summary}{efflatent}(object, ...)
 \method{summary}{efflist}(object, ...)
 \method{summary}{mlm.efflist}(object, ...)
-\method{plot}{eff}(x, x.var, z.var=which.min(levels), 
+\method{plot}{eff}(x, x.var, z.var=which.min(levels),
     main=paste(effect, "effect plot"),
-    symbols=TRUE, lines=TRUE, axes, confint, 
+    symbols=TRUE, lines=TRUE, axes, confint,
     partial.residuals, id, lattice, ...,
     # legacy arguments:
-    multiline, rug, xlab, ylab, colors, cex, lty, lwd, 
+    multiline, rug, xlab, ylab, colors, cex, lty, lwd,
     ylim, xlim, factor.names, ci.style,
-    band.transparency, band.colors, type, ticks, 
+    band.transparency, band.colors, type, ticks,
     alternating, rotx, roty, grid, layout,
-    rescale.axis, transform.x, ticks.x, show.strip.values, 
+    rescale.axis, transform.x, ticks.x, show.strip.values,
     key.args, use.splines,
     residuals.color, residuals.pch, residuals.cex, smooth.residuals,
     residuals.smooth.color, show.fitted, span)
-\method{plot}{effpoly}(x, x.var=which.max(levels), 
+\method{plot}{effpoly}(x, x.var=which.max(levels),
     main=paste(effect, "effect plot"),
     symbols=TRUE, lines=TRUE, axes, confint, lattice, ...,
     # legacy arguments:
-    type, multiline, rug, xlab, ylab, colors, cex, lty, lwd, 
+    type, multiline, rug, xlab, ylab, colors, cex, lty, lwd,
     factor.names, show.strip.values,
-    ci.style, band.colors, band.transparency, style, 
+    ci.style, band.colors, band.transparency, style,
     transform.x, ticks.x, xlim,
-    ticks, ylim, rotx, roty, alternating, grid, 
+    ticks, ylim, rotx, roty, alternating, grid,
     layout, key.args, use.splines)
 \method{plot}{efflist}(x, selection, rows, cols, ask=FALSE, graphics=TRUE, lattice, ...)
 \method{plot}{mlm.efflist}(x, ...)
@@ -95,7 +95,7 @@
     generally reasonable default values are used. See Detailed Argument Descriptions under Details for more information.}
   \item{partial.residuals}{an optional list of specifications for plotting partial residuals for linear
     and generalized linear models; if not given, generally reasonable default values are used. See Detailed Argument Descriptions under Details for more information.}
-  \item{id}{an optional list of specifications for identifying points when partial residuals are 
+  \item{id}{an optional list of specifications for identifying points when partial residuals are
   plotted; if not specified, no points are labelled. See Detailed Argument Descriptions under Details
   for more information.}
   \item{lattice}{an optional list of specifications for various lattice properties, such as legend placement;
@@ -111,11 +111,11 @@
   \item{graphics}{if \code{TRUE} (the default), then the menu of terms to plot is presented
     in a dialog box rather than as a text menu.}
   \item{...}{arguments to be passed down.}
-  \item{multiline, rug, xlab, ylab, colors, cex, lty, lwd, 
+  \item{multiline, rug, xlab, ylab, colors, cex, lty, lwd,
      ylim, xlim, factor.names, ci.style,
-     band.transparency, band.colors, ticks, 
+     band.transparency, band.colors, ticks,
      alternating, rotx, roty, grid, layout,
-     rescale.axis, transform.x, ticks.x, show.strip.values, 
+     rescale.axis, transform.x, ticks.x, show.strip.values,
      key.args, use.splines,
      residuals.color, residuals.pch, residuals.cex, smooth.residuals,
      residuals.smooth.color, show.fitted, span, style}{legacy arguments retained for backwards compatibility;
@@ -152,7 +152,7 @@ assumes its default value. Some of the list elements are themselves lists, so in
 the form of nested lists.  All of these arguments can also be used on objects created with \code{\link{predictorEffects}}.
 
 \describe{
-\item{\code{symbols}}{\code{TRUE}, \code{FALSE}, or a list of options that controls the plotting symbols and their sizes for use with factors; 
+\item{\code{symbols}}{\code{TRUE}, \code{FALSE}, or a list of options that controls the plotting symbols and their sizes for use with factors;
 if \code{FALSE} symbols are suppressed; if \code{TRUE} default values are used:
     \describe{
     \item{\code{pch}}{ploting symbols, a vector of plotting characters, with the default taken from \code{trellis.par.get("superpose.symbol")$pch}, typically a vector of 1s (circles).}
@@ -195,7 +195,7 @@ Two additional elements may appear in the \code{x} list, and apply to all predic
     }
 
 The \code{y} list contains \code{lab}, \code{lim}, \code{ticks}, and \code{rotate} elements
-(similar to those specified for individual predictors in the \code{x} list), along with the additional \code{type} element:
+(similar to those specified for individual predictors in the \code{x} list), along with the additional \code{type} and \code{style} elements:
     \describe{
     \item{\code{type}}{for plotting linear or generalized linear models, \code{"rescale"} (the default) plots the vertical
     axis on the link scale (e.g., the logit scale for a logit model) but labels the axis on the response
@@ -203,6 +203,8 @@ The \code{y} list contains \code{lab}, \code{lim}, \code{ticks}, and \code{rotat
     \code{"response"} plots and labels the vertical axis on the scale of the response (e.g., the probability scale for a logit model); and
     \code{"link"} plots and labels the vertical axis on the scale of the link (e.g., the logit scale for a logit model).
     For polytomous logit models, this element is either \code{"probability"} or \code{"logit"}, with the former as the default.}
+    \item{\code{style}}{for polytomous logit models, this element can take on the value \code{"lines"}
+    (the default) or \code{"stacked"} for line plots or stacked-area plots, respectively.}
     }
 
 Other elements:
@@ -218,7 +220,7 @@ Other elements:
 
     \describe{
     \item{\code{style}}{one of \code{"auto"}, \code{"bars"}, \code{"lines"}, \code{"bands"}, and \code{"none"}; the default
-    is \code{"bars"} for factors, \code{"bands"} for numeric predictors, and \code{"none"} for multiline plots; \code{"auto"} also produces \code{"bars"} for factors 
+    is \code{"bars"} for factors, \code{"bands"} for numeric predictors, and \code{"none"} for multiline plots; \code{"auto"} also produces \code{"bars"} for factors
     and \code{"bands"} for numeric predictors, even in multiline plots.}
     \item{\code{alpha}}{transparency of confidence bands; the default is 0.15.}
     \item{\code{col}}{colors; the default is taken from the line colors.}
@@ -236,7 +238,7 @@ Other elements:
     \item{\code{cex}}{size of symbols for partial residuals; the default is 1.}
     \item{\code{smooth}}{draw a loess smooth of the partial residuals; the default is \code{TRUE}.}
     \item{\code{span}}{span for the loess smooth; the default is 2/3.}
-    \item{\code{smooth.col}}{color for the loess smooth; the default is the second line color.} 
+    \item{\code{smooth.col}}{color for the loess smooth; the default is the second line color.}
     \item{\code{lty}}{line type for the loess smooth; the default is the first line type, normally 1 (a solid line).}
     \item{\code{lwd}}{line width for the loess smooth; the default is the first line width, normally 2.}
     }
@@ -246,7 +248,7 @@ Other elements:
 \item{\code{id}}{specifications for optional point identification when partial residuals are plotted.
 
   \describe{
-  \item{\code{n}}{number of points to identify; default is \code{2} if \code{id=TRUE} 
+  \item{\code{n}}{number of points to identify; default is \code{2} if \code{id=TRUE}
     and \code{0} if \code{id=FALSE}. Points are selected based on the Mahalanobis
     distances of the pairs of x-values and partial residuals from their centroid.}
   \item{\code{col}}{color for the point labels; default is the same as the color of the partial residuals.}
@@ -254,7 +256,7 @@ Other elements:
   \item{\code{labels}}{vector of point labels; the default is the names of the residual vector,
   which is typically the row names of the data frame to which the model is fit.}
   }
-  
+
 }
 
 \item{\code{lattice}}{the plots are drawn with the \pkg{\link{lattice}} package, generally by the \code{\link{xyplot}} function.  These specifications are passed as arguments to the functions that actually draw the plots.
@@ -264,15 +266,16 @@ Other elements:
   	(or, in some cases \code{\link{densityplot}}), which
   	is used to draw the effect display; if not specified, the plot will be formatted so that
   	it appears on a single page.}
-  	\item{\code{key.args}}{additional arguments that control the appearance or location of the key,
-  	or legend, on the
-  	plot.  There are many options, and they are documented by searching for "\code{key:}" in
-  	\code{\link{xyplot}}.  For example,
-  	\code{lattice=list(key.args=list(cex= .75, cex.title=.75, between.columns=0))}
-  	reduces the size of the labels and title to .75 of nominal, and reduces the extra space between columns
-  	to 0, and \code{lattice=list(key.args = list(x = 0.75, y = 0.75, corner = c(0, 0)))} moves the key
-  	onto the plot, with the origin \code{corner=c(0,0)} at the point \code{(.75, .75)}, thinking of the
-  	total plotting area as a unit square. To conserve space, by default we set \code{between.columns=0}.}
+  	\item{\code{key.args}}{a key, or legend, is added to the plot if \code{multiline=TRUE}.  This argument is a list with components that determine the the placement and other characteristics of the key.  The default if not set by the user is \code{key.args = list(space="top", columns=2, border=FALSE, fontfamily="serif", cex.title=.80, cex=0.75)}.  If there are more than 6 groups in the plot, \code{columns} is set to 3. For stacked-area plots, the default is a one-column key.
+  	\describe{
+  	\item{\code{space}}{determines the placement of the key outside the plotting area, with default \code{space="above"} for above the plot and below its title.  Setting \code{space="right"} uses space to the right of the plot for the key.}
+  	\item{\code{x, y, corner}}{used to put the key on the graph itself.  For example, \code{x=.05, y=.95, corner=c(0,1)} will locate the upper-left corner of the key at (.05, .95), thinking of the graph as a unit square.}
+  	\item{\code{columns}}{number of columns in the key.  If \code{space="top"}, columns should be 2, 3 or 4; if \code{space="right"}, set \code{columns=1}.}
+  	\item{\code{border}}{if \code{TRUE} draw a border around the key; omit the border if \code{FALSE}.}
+  	\item{\code{fontfamily}}{the default is \code{"sans"} for the sans-serif font used in the rest of the plot; the alternative is \code{"serif"} for a serif font.}
+  	\item{\code{cex, cex.title}}{the default relative size of the font for labels and the title, respectively.  To save space set these to be smaller than 1.}
+  	}
+}
     \item{\code{strip}}{a list with two elements: \code{factor.names}, which if \code{TRUE}, the default, shows conditioning
     variable names in the panel headers; and \code{values}, which if \code{TRUE}, the default unless partial residuals are plotted,
     displays conditioning variable values in the panel headers.}
@@ -328,10 +331,10 @@ plot(eff.cowles, 'sex', axes=list(y=list(lab="Prob(Volunteer)"),
 plot(eff.cowles, 'neuroticism:extraversion',
      axes=list(y=list(lab="Prob(Volunteer)",
         ticks=list(at=c(.1,.25,.5,.75,.9)))))
-                      
+
 plot(Effect(c("neuroticism", "extraversion"), mod.cowles,
-            confint=list(type="Scheffe"),
-            xlevels=list(extraversion=seq(0, 24, 6))), 
+            se=list(type="Scheffe"),
+            xlevels=list(extraversion=seq(0, 24, 6))),
      axes=list(y=list(lab="Prob(Volunteer)",
         ticks=list(at=c(.1,.25,.5,.75,.9)))))
 
@@ -345,13 +348,13 @@ plot(eff.cowles, 'neuroticism:extraversion',
 plot(eff.cowles, 'neuroticism:extraversion',
      lines=list(multiline=TRUE),
      axes=list(y=list(lab="Prob(Volunteer)")),
-     lattice=list(key.args = list(x = 0.75, y = 0.75, corner = c(0, 0))))
+     lattice=list(key.args = list(x = 0.65, y = 0.99, corner = c(0, 1))))
 
 # use probability scale in place of logit scale, all lines are black.
 plot(eff.cowles, 'neuroticism:extraversion',
      lines=list(multiline=TRUE, lty=1:8, col="black"),
      axes=list(y=list(type="response", lab="Prob(Volunteer)")),
-     lattice=list(key.args = list(x = 0.75, y = 0.75, corner = c(0, 0))),
+     lattice=list(key.args = list(x = 0.65, y = 0.99, corner = c(0, 1))),
      confint=list(style="bands"))
 
 plot(effect('sex:neuroticism:extraversion', mod.cowles,

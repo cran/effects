@@ -1,0 +1,241 @@
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{effect defaut method}
+
+\documentclass{article}
+
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+\usepackage[margin=1in]{geometry}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\code}[1]{\normalfont\texttt{\hyphenchar\font45\relax #1}}
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\tild}{\symbol{126}}
+\newcommand{\Rtilde}{\,\raisebox{-.5ex}{\code{\tild{}}}\,}
+\newcommand{\captilde}{\mbox{\protect\Rtilde}} % use in figure captions.
+\newcommand{\Rmod}[2]{\code{#1 \raisebox{-.5ex}{\tild{}} #2}}
+\newcommand{\Rmoda}[2]{\code{#1} &\code{\raisebox{-.5ex}{\tild{}} #2}}
+\newcommand{\Rmodb}[2]{\code{#1 &\raisebox{-.5ex}{\tild{}}& #2}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\betahat}{\widehat{\beta}}
+\newcommand{\bbetahat}{\widehat{\boldsymbol{\beta}}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\xbf}{\x_{\backslash{}f}}
+\newcommand{\hbf}{h_{\backslash{}f}}
+\newcommand{\xtb}{\x_{2\backslash{}f}}
+\newcommand{\xbfi}{\x_{\backslash{}f,i}}
+\newcommand{\inter}[2]{\mbox{$#1$:$#2$}}
+\newcommand{\cross}[2]{\mbox{$#1$\code{*}$#2$}}
+\newcommand{\N}{\mathrm{N}}
+\newcommand{\fn}{\textbf}
+\newcommand{\R}{\code{R}}
+\newcommand{\pkg}[1]{\code{#1}}
+\newcommand{\proglang}[1]{\code{#1}}
+\newcommand{\yx}{\widehat{y}(\x)}
+\newcommand{\lvn}[1]{\mbox{$\log(\mbox{\texttt{#1}})$}}
+
+\begin{document}
+
+\title{The Default Effect Method}
+
+\author{John Fox and Sanford Weisberg}
+
+\date{\today}
+
+\maketitle
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+tidy=FALSE,fig.width=5,fig.height=5,cache=FALSE
+)
+@
+
+
+<<echo=FALSE, results='hide', include=FALSE>>=
+#options(continue="+    ", prompt="R> ", width=76)
+options(show.signif.stars=FALSE)
+options(scipen=3)
+@
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+tidy=FALSE,fig.width=5,fig.height=5,cache=FALSE,comment=NA, prompt=TRUE
+)
+render_sweave()
+@
+
+
+<<echo=FALSE, results='hide', include=FALSE>>=
+options(continue="+    ", prompt="R> ", width=76)
+options(show.signif.stars=FALSE)
+options(scipen=3)
+@
+
+The \code{effects} package in \R{} is designed primarily to draw graphs that visualize a fitted response surface of a fitted model in problems with a linear predictor.  Many modeling paradigms that can be fit with base \R{} or contributed packages fit into this framework, including methods for linear, multivariate linear, and generalized linear models fit by the standard \code{lm} and \code{glm} functions and by the \code{svyglm} function in the \code{survey} package \citep{Lumley04}; linear models fit by generalized least squares using the \code{gls} function in the \pkg{nlme} package \citep{Pinheiro16}; multinomial regression models fit by \code{multinom} in the \pkg{nnet} package \citep{VenablesRipley02};  ordinal regression models using \code{polr} from the \pkg{MASS} package \citep{VenablesRipley02} and \code{clm} and \code{clm2} from the \pkg{ordinal} package \citep{Christensen15}; linear and generalized linear mixed models using the \code{lme} function in the \pkg{nlme} package \citep{Pinheiro16} and the \code{lmer} and \code{glmer} functions in the \pkg{lme4} package \citep{Bates15}; and latent class models fit by \code{poLCA} in the \pkg{poLCA} package \citep{Linzer11}. This is hardly an exhaustive list of fitting methods that are based on a linear predictor, and we have been asked from time to time to write functions to use \code{effects} with this other fittig methods.
+
+The default \code{Effect.default} may work with some modeling functions, as would objects of the class \code{gls} that we describe below in Section~\ref{gls}.  This will will work if your function recognizes the defaults for the arguments in the \code{sources} list described in Section~\ref{gls}.  If the defaults don't work, you will need to create your own \code{Effect} method or call \code{Effect.default} with your own value of \code{sources}.
+
+The \code{effect} package has five functions that create the information needed for drawing effects plots, \code{Effect}, \code{allEffects}, \code{effect} and \code{predictorEffect} and \code{predictorEffects}.  To add new modeling to the package only \code{Effect} needs to be written; the package will take care of all the other functions.
+
+\section{Generalized Least Squares}\label{gls}
+The \code{gls} function in the \code{nlme} package \citep{Pinheiro16} fits linear models via generalized least squares.  A call to \code{gls} creates an object of class \code{gls}.  The following function will allow usage of such objects with the \code{effects} package.
+<<eval=FALSE>>=
+Effect.gls <- function(focal.predictors, mod, ...){
+  args <- list(
+    type = "glm",
+    call = mod$call,
+    formula = formula(mod),
+    family = family(mod),
+    link = NULL,
+    coefficients = coef(mod),
+    vcov = as.matrix(vcov(mod)))
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+This function consists of a call the the \code{Effect.default} function.  The argument \code{sources} to that function contains the information needed is a list of up to five arguments:
+\begin{description}
+\item[\texttt{type}] The \code{effects} package has three basic modeling functions:  \code{type = "glm"}, the default, is used for functions with a univariate response and a linear predictor and possibly a link function.  This class includes linear models, generalized linear models, robust regression, generalized least squares fitting, linear and generalized linear mixed effects models and many others.  The other types are \code{type = "multinom"} for multinomial log-linear models as fit by the \code{multinom} function in \code{nnet} and similar, and \code{type = "polr"} for ordinal regression models, as in the \code{polr} function in the \code{MASS} package.  Examples of using these types are given later.
+\item[\code{call}] \code{Effects} uses the call to harvest additional arguments that it needs such as \code{data}, \code{subset} and \code{family}.  These are needed to compute fitted value, and to interpret the terms in the formula for the linear predictor.  The default is \code{mod\$call} for S3 objects and \code{mod@call} for S4 objects.
+\item[\code{formula}] In most cases the formula for the linear predictor is returned by \code{formula(mod)}, the default, but if this is not the case then the the value of this argument should be the value of the formula.
+\item[\code{family} and \code{link}] GLM-like models include a \code{family} specifying both an error distrubtion and a link function.  If the call \code{family(mod)} returns a family, you do not need to specify either of these values.  The \code{betareg} function, on the other hand, fixes the error distribution as a Beta distribution, but it does include a link function using a \code{link} arguement.  In this case, you must specify the link function; see the \code{betareg} example in Section~\ref{betareg} below.  If you have a family, but it is not returned by \code{family(mod)}, use the \code{family} argument to specify it.
+\item[\code{coefficients}] In many cases the coefficient estimates are returned by \code{coef(mod)}, the default, but if this is not the case then the the value of this argument should be the estimates of the coefficients in the linear predictor.
+\item[\code{vcov}] In many cases the estimated covariance matrix of the coefficient estimates is  returned by \code{vcov(mod)}, the default, but if this is not the case then the the value of this argument should be the estimates of the estimated covariance matrix of the coefficient estimates in the linear predictor.
+\end{description}
+Since the values of all the arguments in \code{sources} are default values for the \code{gls} function, there is no need to have written the \code{Default.gls} method, as the default method would work.
+
+\section{Mixed Effects with the \code{lmer} fron the \code{lme4} package}
+The \code{lme4} package \citep{Bates15} fits linear and generalized linear mixed effects models with the \code{lmer} and \code{glmer} functions, respectively.  The same \code{Effect} function can be used for both types of models.
+<<eval=FALSE>>=
+Effect.merMod <- function(focal.predictors, mod, ..., KR=FALSE){
+  if (KR && !requireNamespace("pbkrtest", quietly=TRUE)){
+    KR <- FALSE
+    warning("pbkrtest is not available, KR set to FALSE")}
+  fam <- family(mod)
+  args <- list(
+    call = mod@call,
+    coefficients = lme4::fixef(mod),
+    vcov = if (fam == "gaussian" && fam$link == "identity" && KR)
+      as.matrix(pbkrtest::vcovAdj(mod)) else as.matrix(vcov(mod)))
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+This method is somewhat more complicated because it adds an additional argument to \code{Effect} to choose the method of estimating the sample covariance matrix.  If \code{KR=TRUE}, the \code{vovAdj} function in the \code{pbkrtest} package is used to compute the sample covariance matrix.  Because this function is (painfully) slow, the default is \code{KR=FALSE}.  Because \code{lmer} is an S4 object (tested using the \code{isS4} function), the default for \code{call} is \code{mod@call}, and this argument would have been set authomatically had we not included it in the above fucntion.  The \code{coefficient} for an object created by a call to \code{lmer} or \code{glimer} are not returned by \code{coef(mod)}, so the value of \code{coefficients} is the value returned by \code{lme4::fixef(mod)}.  The \code{vcov} estimate contains its estimated variance covariance matrix of the fixed effects.
+
+The \code{formula} for a mixed-effects model in the \code{lme4} package specifies both the linear predictor in the mean function and the linear predictor(s) in the variance functions in terms with parentheses and and vertical bars such as \code{(1 + age | subject)}.  The \code{effects} code will automatically remove any terms like these.
+
+\section{Robust Linear Mixed Models}
+The \code{robustlmm} package \citep{koller16} fits linear mixed models with a robust estimation method.  As iits \code{rlmer} function closely parallels the \code{lmer} package, an object created by \code{rlmer} is easily used with \code{effects}:
+<<eval=FALSE>>=Effect.rlmerMod <- function(focal.predictors, mod, ...){
+Effect.rlmerMod <- function(focal.predictors, mod, ...){
+  args <- list(
+    coefficients = lme4::fixef(mod))
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+
+\section{Beta Regression}\label{betareg}
+The \code{betareg} function in the \code{betareg} package \citep{betareg} fits regressions with a link function but with Beta distributed errors.
+<<eval=FALSE>>=
+Effect.betareg <- function(focal.predictors, mod, ...){
+  coef <- mod$coefficients$mean
+  vco <- vcov(mod)[1:length(coef), 1:length(coef)]
+  args <- list(
+    call = mod$call,
+    formula = formula(gy_logit),
+    coefficients = coef,
+    link = mod$link$mean,
+    vcov = vco)
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+The Beta distributions require estimation of the parameters of the Beta, but these are not used by effects.  The relevant coefficients and covariance matrix are extracted by the first two lines of the function.  This method has a link function specified by the \code{link} argument, but no family, so the \code{link} argument is added to \code{sources}.c
+
+\section{Ordinal Models}
+Proportional odds logit and probit regression models fit with the \code{polr} function in the \code{MASS} package \citep{VenablesRipley02} are supported in the \code{effects} package.  The \code{ordinal} package, \citep{Christensen15} contains three functions that are very similar to \code{polr}.  The \code{clm} and \code{clm2} functions allow more link functions and a number of other generalizations.  The \code{clmm} function allows including random effects.
+
+\subsection{\code{clm}}
+<<>>=
+Effect.clm <- function(focal.predictors, mod, ...){
+  if (requireNamespace("MASS", quietly=TRUE)){
+    polr <- MASS::polr}
+  if(mod$link != "logit") stop("Effects only supports the logit link")
+  if(mod$threshold != "flexible") stop("Effects only supports the flexible threshold")
+  if(is.null(mod$Hessian)){
+    message("\nRe-fitting to get Hessian\n")
+    mod <- update(mod, Hess=TRUE)}
+  numTheta <- length(mod$Theta)
+  numBeta <- length(mod$beta)
+  or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
+  args <- list(
+    type = "polr",
+    coefficients = mod$beta,
+    vcov = as.matrix(vcov(mod)[or, or]))
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+This function first checks that the \code{MASS} package is available.  Since the \code{clm} function allows suppressing the computation of the Hessian, the function checks and computes it if needed to get the estimated covariance matix.  The \code{clm} function orders the parameters in the order (threshold parameters, linear predictor parameters), so the next few lines identify the elements of  \code{vcov} that are needed by \code{Effects}.  Since the \code{polr} function does not allow thresholds other thab \code{flexible}, we don't allow them either.  Simiarly, we have only implemented effects for the default \code{logit} link
+
+\subsection{\code{clm2}}
+<<eval=FALSE>>=
+Effect.clm2 <- function(focal.predictors, mod, ...){
+  if (requireNamespace("MASS", quietly=TRUE)){
+    polr <- MASS::polr}
+  if(is.null(mod$Hessian)){
+    message("\nRe-fitting to get Hessian\n")
+    mod <- update(mod, Hess=TRUE)}
+  if(mod$link != "logistic") stop("Effects only supports the logit link")
+  if(mod$threshold != "flexible") stop("Effects only supports the flexible threshold")
+  numTheta <- length(mod$Theta)
+  numBeta <- length(mod$beta)
+  or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
+  args <- list(
+    type = "polr",
+    formula = mod$call$location,
+    coefficients = mod$beta,
+    vcov = as.matrix(vcov(mod)[or, or]))
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+The syntax for \code{clm2} is not the same as \code{clm}, so a separate method is required
+
+\subsection{\code{clmm}}
+This function allows for random effects in an ordinal model.
+<<eval=FALSE>>=
+Effect.clmm <- function(focal.predictors, mod, ...){
+  if (requireNamespace("MASS", quietly=TRUE)){
+    polr <- MASS::polr}
+  if(is.null(mod$Hessian)){
+    message("\nRe-fitting to get Hessian\n")
+    mod <- update(mod, Hess=TRUE)}
+  if(mod$link != "logit") stop("Only the logistic link is supported by Effects")
+  if(mod$threshold != "flexible") stop("Only threshold='flexible supported by Effects")
+  numTheta <- length(mod$Theta)
+  numBeta <- length(mod$beta)
+  or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
+  skip <- length(unique(model.frame(mod)[,1])) - 1
+  vcov <- matrix(NA, nrow=numBeta + skip, ncol=numBeta + skip)
+  sel <- rownames(vcov(mod)) %in% names(mod$beta)
+  vcov[1:numBeta, 1:numBeta] <- vcov(mod)[sel, sel]
+  args <- list(
+    type = "polr",
+    formula = fixFormula(as.formula(mod$formula)),
+    coefficients = mod$beta,
+    vcov = as.matrix(vcov))
+  Effect.default(focal.predictors, mod, ..., sources=args)
+}
+@
+Complications here come from getting the right elements of \code{vcov(mod)} corresponding to the fixed effects.
+
+\section{Multinomial Models}
+
+\subsection{\code{multinom}}
+
+\subsection{Latent Class Models}
+
+
+\bibliography{defaultMethod}
+\end{document}
+
+

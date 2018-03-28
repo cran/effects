@@ -11,9 +11,9 @@ if (requireNamespace("carData") && require("effects")){
 
   # (2) focal: polynomial, constant: factor
   
-  print(plot(Effect(c("income"), mod.1, partial.residual=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("income"), mod.1, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("income"), mod.1, partial.residual=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("income"), mod.1, residual=TRUE)$fit, 
                         Effect(c("income"), mod.1, 
                                xlevels=list(income=seq(7, 81, length.out=100)))$fit)))
     stop("failed test 2 (2)")
@@ -24,9 +24,9 @@ if (requireNamespace("carData") && require("effects")){
   mod.2 <- lm(prestige ~ type*poly(income, degree=2, raw=TRUE) + 
                 poly(education, degree=2, raw=TRUE), data=Duncan)
 
-  print(plot(Effect(c("type", "income"), mod.2, partial.residual=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("type", "income"), mod.2, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("type", "income"), mod.2, partial.residual=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("type", "income"), mod.2, residuals=TRUE)$fit, 
                         Effect(c("type", "income"), mod.2, 
                                xlevels=list(income=seq(7, 81, length.out=100)))$fit)))
     stop("failed test 2 (3)")
@@ -34,9 +34,9 @@ if (requireNamespace("carData") && require("effects")){
   
   # (4) focal: polynomial, constant: factor*polynomial
   
-  print(plot(Effect(c("education"), mod.2, partial.residual=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("education"), mod.2, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("education"), mod.2, partial.residual=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("education"), mod.2, residuals=TRUE)$fit, 
                         Effect(c("education"), mod.2, 
                                xlevels=list(education=seq(7, 100, length.out=100)))$fit)))
     stop("failed test 2 (4)")  
@@ -46,9 +46,9 @@ if (requireNamespace("carData") && require("effects")){
   
   mod.3 <- lm(prestige ~ type*poly(income, degree=2) + poly(education, degree=2), data=Duncan)
   
-  print(plot(Effect(c("type", "income"), mod.3, partial.residual=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("type", "income"), mod.3, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("type", "income"), mod.3, partial.residual=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("type", "income"), mod.3, residuals=TRUE)$fit, 
                         Effect(c("type", "income"), mod.3, 
                                xlevels=list(income=seq(7, 81, length.out=100)))$fit)))
     stop("failed test 2 (6)")  
@@ -57,9 +57,9 @@ if (requireNamespace("carData") && require("effects")){
   
   mod.4 <- lm(prestige ~ type + poly(income, 2)*poly(education, 2), data=Duncan)
   
-  print(plot(Effect(c("income", "education"), mod.4, partial.residuals=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("income", "education"), mod.4, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("income", "education"), mod.4, partial.residuals=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("income", "education"), mod.4, residuals=TRUE)$fit, 
                         Effect(c("income", "education"), mod.4, 
                                xlevels=list(income=seq(7, 81, length.out=100), 
                                             education=quantile(Duncan$education, probs=seq(0.2, 0.8, by=0.2))))$fit)))
@@ -72,16 +72,16 @@ if (requireNamespace("carData") && require("effects")){
   inc <- range(Mroz$inc)
   age <- range(Mroz$age)
 
-  print(plot(Effect(c("inc"), mod.6, partial.residual=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("inc"), mod.6, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("inc"), mod.6, partial.residual=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("inc"), mod.6, residuals=TRUE)$fit, 
                         Effect(c("inc"), mod.6, 
                                xlevels=list(inc=seq(inc[1], inc[2], length.out=100)))$fit)))
     stop("failed test 2 (9-1)")  
   
-  print(plot(Effect(c("age", "hc", "wc"), mod.6, partial.residual=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("age", "hc", "wc"), mod.6, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("age", "hc", "wc"), mod.6, partial.residual=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("age", "hc", "wc"), mod.6, residuals=TRUE)$fit, 
                         Effect(c("age", "hc", "wc"), mod.6, 
                                xlevels=list(age=seq(age[1], age[2], length.out=100)))$fit)))
     stop("failed test 2 (9-2)")  
@@ -91,9 +91,9 @@ if (requireNamespace("carData") && require("effects")){
   income <- range(na.omit(Prestige)$income)
   
   mod.7 <- lm(prestige ~ income*type + education, data=Prestige)
-  print(plot(Effect(c("income", "type"), mod.7, partial.residuals=TRUE), show.fitted=TRUE))
+  print(plot(Effect(c("income", "type"), mod.7, residuals=TRUE), show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("income", "type"), mod.7, partial.residuals=TRUE)$fit, 
+  if (!isTRUE(all.equal(Effect(c("income", "type"), mod.7, residuals=TRUE)$fit, 
                         Effect(c("income", "type"), mod.7, 
                                xlevels=list(income=seq(income[1], income[2], length.out=100)))$fit)))
     stop("failed test 2 (additional-1)")  
@@ -102,16 +102,16 @@ if (requireNamespace("carData") && require("effects")){
   Mroz2$hc <- as.numeric(Mroz$hc) - 1
   Mroz2$wc <- as.numeric(Mroz$wc) - 1
   mod.8 <- lm(lwg ~ inc*age*k5 + hc*wc, data=Mroz2)
-  print(plot(Effect(c("inc", "age", "k5"), mod.8, partial.residuals=TRUE, xlevels=list(k5=0:1)), 
+  print(plot(Effect(c("inc", "age", "k5"), mod.8, residuals=TRUE, xlevels=list(k5=0:1)), 
              show.fitted=TRUE))
   
-  if (!isTRUE(all.equal(Effect(c("inc", "age", "k5"), mod.8, partial.residuals=TRUE, xlevels=list(k5=0:1))$fit, 
+  if (!isTRUE(all.equal(Effect(c("inc", "age", "k5"), mod.8, residuals=TRUE, xlevels=list(k5=0:1))$fit, 
                         Effect(c("inc", "age", "k5"), 
-                               mod.8, partial.residuals=TRUE, 
+                               mod.8, residuals=TRUE, 
                                xlevels=list(k5=0:1, inc=100, age=quantile(Mroz2$age, seq(.2, .8, by=.2))))$fit)))
     stop("failed test 2 (additional-2)")  
   
-  print(plot(Effect(c("hc", "wc"), mod.8, partial.residuals=TRUE, xlevels=list(hc=0:1, wc=0:1)), 
+  print(plot(Effect(c("hc", "wc"), mod.8, residuals=TRUE, xlevels=list(hc=0:1, wc=0:1)), 
        show.fitted=TRUE, smooth.residuals=FALSE, residuals.pch="."))
 }
 

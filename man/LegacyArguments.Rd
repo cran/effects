@@ -62,10 +62,6 @@ For \code{plots} methods:
 
 \item{\code{ci.style="bands"/"lines"/"bars"/"none"}}{\code{confint=list(style="bands"/"lines"/"bars"/"none"})}
 
-\item{\code{se=TRUE/FALSE}}{for \code{Effect}, \code{confint=list(compute=TRUE/FALSE)}}
-
-\item{\code{confidence.level={number}}}{for \code{Effect}, \code{confint=list(level={number})}}
-
 \item{\code{band.transparency={number}}}{\code{confint=list(alpha={number})}}
 
 \item{\code{band.colors={vector of colors}}}{\code{confint=list(col={vector of colors})}}
@@ -100,15 +96,17 @@ For \code{plots} methods:
 For \code{Effect} methods:
 
 \describe{
-\item{\code{se=TRUE/FALSE}}{\code{confint=list(compute=TRUE/FALSE)}}
+\item{\code{confint=TRUE/FALSE} or a list}{may be substituted for the \code{se} argument.}
 
-\item{\code{confidence.level={number}}}{\code{confint=list(level={number})}}
+\item{\code{confidence.level={number}}}{\code{se=list(level={number})}}
 
 \item{\code{given.values={named vector}}}{\code{fixed.predictors=list(given.values={named vector})}}
 
 \item{\code{typical={function}}}{\code{fixed.predictors=list(typical={function})}}
 
 \item{\code{offset={function}}}{\code{fixed.predictors=list(offset={function})}}
+
+\item{\code{partial.residuals=TRUE/FALSE}}{\code{residuals=TRUE/FALSE}}
 }
 
 }

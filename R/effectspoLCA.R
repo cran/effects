@@ -13,11 +13,21 @@ Effect.poLCA <- function(focal.predictors, mod, ...) {
   result
 }
 
-# this function makes a 'fake' multinom object or 'glm' object so 
+predictorEffects.poLCA <- function(mod, predictors = ~., ...){
+  predictorEffects(poLCA.to.fake(mod), predictors=predictors, ...)
+}
+
+predictorEffect.poLCA <- function(predictor, mod, xlevels=list(), ...){
+  predictorEffect(predictor, poLCA.to.fake(mod), xlevels=xlevels, ...)
+}
+
+# this function makes a 'fake' multinom object or 'glm' object so
 # effect.mulitnom  or effect.glm can be used.
 # effect.multinom requires at least 3 classes, so if classes=2 use
-# effect.glm   
+# effect.glm
 poLCA.to.fake <- function(mod) {
+  if (requireNamespace("nnet", quietly=TRUE)){
+    multinom <- nnet::multinom}
   dta <- eval(mod$call$data)
   form <- as.formula(eval(mod$call$formula))
   # find the missing data:
@@ -28,7 +38,7 @@ poLCA.to.fake <- function(mod) {
     dta$.class <- factor(dta$.class)
   }
   # end of missing data correction
-  formula1 <- update(form, .class ~ .)  
+  formula1 <- update(form, .class ~ .)
   if(length(mod$P) == 2L){
     mod1 <- glm(formula1, family=binomial, data=dta)
     mod1$call$data <- dta
@@ -44,12 +54,14 @@ poLCA.to.fake <- function(mod) {
     mod1$coeff.V <- mod$coeff.V
     class(mod1) <- c("fakemultinom", class(mod1))
   }
+  coef.fakemultinom <- function(mod){
+    coef <- t(mod$coeff)
+    dimnames(coef) <- list(mod$lab[-1L], mod$vcoefnames)
+    coef
+  }
+  vcov.fakemultinom <- function(mod){mod$coeff.V}
   mod1
 }
 
-coef.fakemultinom <- function(mod){
-  coef <- t(mod$coeff)
-  dimnames(coef) <- list(mod$lab[-1L], mod$vcoefnames)
-  coef
-}
-vcov.fakemultinom <- function(mod){mod$coeff.V}
+
+

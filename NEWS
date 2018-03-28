@@ -1,3 +1,17 @@
+Version 4.0-1
+ 
+ o Replaced the Effect.default method so it is easier to write new methods.
+ 
+ o Added estimability check for linear models and glims.  Fixed bugs in plot with rank deficient models.
+ 
+ o Repaired clm, clmm and clm2 methods that were broken.
+ 
+ o Fixed a bug in predictorEffects with polym use to specify multivariate polynomials.
+ 
+ o Replace confint and partial.residuals argument to Effect() with se and residuals; confint and partial.residuals now legacy arguments.
+ 
+ o Small fixes/improvements.
+
 Version 4.0-0
 
  o This is a major update of the effects package.
