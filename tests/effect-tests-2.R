@@ -101,6 +101,7 @@ if (requireNamespace("carData") && require("effects")){
   Mroz2 <- Mroz
   Mroz2$hc <- as.numeric(Mroz$hc) - 1
   Mroz2$wc <- as.numeric(Mroz$wc) - 1
+  inc <- range(Mroz2$inc)
   mod.8 <- lm(lwg ~ inc*age*k5 + hc*wc, data=Mroz2)
   print(plot(Effect(c("inc", "age", "k5"), mod.8, residuals=TRUE, xlevels=list(k5=0:1)), 
              show.fitted=TRUE))
@@ -108,7 +109,7 @@ if (requireNamespace("carData") && require("effects")){
   if (!isTRUE(all.equal(Effect(c("inc", "age", "k5"), mod.8, residuals=TRUE, xlevels=list(k5=0:1))$fit, 
                         Effect(c("inc", "age", "k5"), 
                                mod.8, residuals=TRUE, 
-                               xlevels=list(k5=0:1, inc=100, age=quantile(Mroz2$age, seq(.2, .8, by=.2))))$fit)))
+                               xlevels=list(k5=0:1, inc=seq(inc[1], inc[2], length.out=100), age=quantile(Mroz2$age, seq(.2, .8, by=.2))))$fit)))
     stop("failed test 2 (additional-2)")  
   
   print(plot(Effect(c("hc", "wc"), mod.8, residuals=TRUE, xlevels=list(hc=0:1, wc=0:1)), 

@@ -159,7 +159,7 @@ if \code{FALSE} symbols are suppressed; if \code{TRUE} default values are used:
     \item{\code{cex}}{plotting character sizes, a vector of values, with the default taken from \code{trellis.par.get("superpose.symbol")$cex}, typically a vector of 0.8s.}
     }
 }
-\item{\code{lines}}{\code{TRUE}, \code{FALSE}, or a list that controls the chacteristics of lines drawn on a plot, and also whether or not multiple lines should be drawn in the same panel in the plot; if \code{FALSE} lines are suppressed; if \code{TRUE} default values are used:
+\item{\code{lines}}{\code{TRUE}, \code{FALSE}, or a list that controls the characteristics of lines drawn on a plot, and also whether or not multiple lines should be drawn in the same panel in the plot; if \code{FALSE} lines are suppressed; if \code{TRUE} default values are used:
     \describe{
     \item{\code{multiline}}{display a multiline plot in each panel; the default is \code{TRUE} if there are no standard errors
     in the \code{"eff"} object, \code{FALSE} otherwise. For an \code{"effpoly"} object \code{multline=TRUE} causes all of the response

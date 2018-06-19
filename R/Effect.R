@@ -27,6 +27,14 @@
 # 2017-12-10: Effect.default. Effect.mer, .merMod, .lme, gls have been replaced to use the default.
 # 2018-01-22: allow given.values="equal" or given.values="default" 
 # 2018-01-25: substitute se for confint arg; make confint a legacy arg
+# 2018-05-06: allow for complete=FALSE arg in potential calls to vcov.lm() and vcov.glm.
+# 2018-05-13: allow partial residuals to be computed when the x.var is a factor.
+# 2018-06-05: Effect.default now makes sure family$ais is 
+#             set, for use with non-standard families.
+# 2018-06-05: A test has been added to Effect.default to chech if family$variance
+#             has one parameter.  If not, the function is stopped and an error is
+#             returned.
+# 2018-06-12: Fixed bug with vcov in Effect.default
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -80,51 +88,70 @@ Effect <- function(focal.predictors, mod, ...){
 # 2017-12-04 new Effect.default that actually works
 # 2017-12-07 added Effects.lme, .mer, gls that work
 
-Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
-  # set sources for type, call, coefficients and vcov
+Effect.default <- function(focal.predictors, mod, ..., sources=NULL){ 
+# get formula from sources if present else from mod
   formula <- fixFormula(
-    if(is.null(sources$formula)) formula(mod) else sources$formula)
-
+        if(is.null(sources$formula)) formula(mod) else sources$formula)
+# the next line returns the formula if focal.predictors is null
   if(is.null(focal.predictors)) return(formula)
+# get the call
+  cl <- if(is.null(sources$call)) {if(isS4(mod)) 
+        mod@call else mod$call} else sources$call
+# insert formula into the call
+  cl$formula <- formula
+# set type == 'glm' unless it is set in sources
   type <- if(is.null(sources$type)) "glm" else sources$type
-# Effect uses the link funtion and the inverse function.  This ordinarily are found in
-# family(mod)$linkfun and family(mod)$invlinkfun.  Some models, e.g., betareg, have a fixed family,
-# and so the link is specified separately, typically by an argument link
-# If neither family nor link are specified in sources do nothing
-# If family is specified use it, and ignore link
-  if(!is.null(sources$family)) family <- sources$family
-  if(!is.null(sources$link) & is.null(sources$family))
-    family <- if(is.character(sources$link)) make.link(sources$link) else sources$link
-  cl <- if(is.null(sources$call)) {if(isS4(mod)) mod@call else mod$call} else sources$call
-  coefficients <- if(is.null(sources$coefficients)) coef(mod) else sources$coefficients
-  vcov <- if(is.null(sources$vcov)) as.matrix(vcov(mod)) else sources$vcov
-  # end setting sources
-  cl$formula <- fixFormula(formula) # deletes terms with | or ||
-# suppress iterations: suggested by Nate TeGrotenhuis
+# glm family from sources if set, else set fam to NULL
+  if(!is.null(sources$family)){
+    fam <- sources$family
+    fam$aic <- function(...) NULL
+    # check to be sure the variance function in the family has one argument only,
+    # otherwise this method won't work
+    if(!is.null(fam$variance)){
+      if(length(formals(fam$variance)) > 1)
+        stop("Effect plots are not implemented for families with more than
+             one parameter in the variance function (e.g., negitave binomials).")}
+  } else {fam <- NULL}
+# get the coefficient estimates and vcov from sources if present
+  coefficients <- if(is.null(sources$coefficients)) 
+    coef(mod) else sources$coefficients
+  vcov <- if(is.null(sources$vcov)) 
+    as.matrix(vcov(mod, complete=TRUE)) else sources$vcov
+# end reading sources
+# set control parameters: suggested by Nate TeGrotenhuis
   cl$control <- switch(type,
-          glm = glm.control(epsilon=1),
+          glm = glm.control(epsilon=1, maxit=1),
           polr = list(maxit=1),
           multinom = c(maxit=1))
+  cl$method <- sources$method # NULL except forntype=="polr"
   .m <- switch(type,
-               glm=match(c("formula", "data", "contrasts", "weights", "subset",
-                "family", "control", "offset"), names(cl), 0L),
-               polr=match(c("formula", "data", "contrasts", "weights", "subset",
-                "control"), names(cl), 0L),
-               multinom=match(c("formula", "data", "contrasts", "weights", "subset",
+               glm=match(c("formula", "data", "contrasts",  "subset",
+                "control", "offset"), names(cl), 0L),
+               polr=match(c("formula", "data", "contrasts",  "subset",
+                "control", "method"), names(cl), 0L),
+               multinom=match(c("formula", "data", "contrasts",  "subset",
                 "family", "maxit", "offset"), names(cl), 0L))
   cl <- cl[c(1L, .m)]
+  if(!is.null(fam)) cl$family <- fam
   cl[[1L]] <- as.name(type)
+  if(!is.null(fam)) cl$family <- fam
+# The following eval creates on object of class glm, polr or multinom.  
+# These are crated to avoid writing an Effects method for every type of model.  
+# The only information used from this "fake" object are the coefficients and 
+# the variance-covariance matrix, and these are copied from the original 
+# object so Effects plots the right things.
   mod2 <- eval(cl)
   mod2$coefficients <- coefficients
   mod2$vcov <- vcov
   if(type == "glm"){
        mod2$weights <- as.vector(with(mod2,
-                                 prior.weights * (family$mu.eta(linear.predictors)^2 /
-                                                    family$variance(fitted.values))))}
+                        prior.weights * (family$mu.eta(linear.predictors)^2 /
+                                        family$variance(fitted.values))))}
   class(mod2) <- c("fakeeffmod", class(mod2))
-  vcov.fakeeffmod <- function(object, ...) object$vcov
-  Effect(focal.predictors, mod2, ...)  # call the glm method
+  Effect(focal.predictors, mod2, ...)  # call the glm/polr/multinom method
 }
+
+vcov.fakeeffmod <- function(object, ...) object$vcov
 
 ## This function removes terms with "|" or "||" in the formula, assumking these
 ## correspond to random effects.
@@ -198,6 +225,14 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
   }
   else stop("offset must be a function or a number")
   formula.rhs <- formula(mod)[[3]]
+  if (!missing(x.var)){
+    if (!is.numeric(x.var)) {
+      x.var.name <- x.var
+      x.var <- which(x.var == focal.predictors)
+    }
+    if (length(x.var) == 0) stop("'", x.var.name, "' is not among the focal predictors")
+    if (length(x.var) > 1) stop("x.var argument must be of length 1")
+  }
   model.components <- Analyze.model(focal.predictors, mod, xlevels, default.levels, formula.rhs,
                                     partial.residuals=partial.residuals, quantiles=quantiles, x.var=x.var, data=data, typical=typical)
   excluded.predictors <- model.components$excluded.predictors
@@ -277,7 +312,7 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
         scheffe(confidence.level, p, mod$df.residual)
       }
     }
-    V <- vcov.(mod)
+    V <- vcov.(mod, complete=FALSE)
     mmat <- mod.matrix[, !is.na(mod$coefficients)] # remove non-cols with NA coeffs
     eff.vcov <- mmat %*% V %*% t(mmat)
     rownames(eff.vcov) <- colnames(eff.vcov) <- NULL
@@ -565,7 +600,7 @@ Effect.svyglm <- function(focal.predictors, mod, fixed.predictors, ...){
   ellipses.list <- list(...)
   if ((!is.null(ellipses.list$residuals) && !isFALSE(residuals)) || 
       (!is.null(ellipses.list$partial.residuals) && !isFALSE(ellipses.list$partial.residuals))){
-    stop("partial residuals are not available for svy.glm models")
+    stop("partial residuals are not available for svyglm models")
   }
   if (missing(fixed.predictors)) fixed.predictors <- NULL
   fixed.predictors <- applyDefaults(fixed.predictors,

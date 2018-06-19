@@ -52,13 +52,13 @@
     \describe{
   	  \item{type}{the default is \code{"glm"}, which assumes the modeling method shares characteristics with a generalized linear model, including a univariate response, a linear predictor, and possibly a error family and link function.}
 
-      \item{call}{For S3 objects, the default is \code{ojbect$call}, returning the call that created the object.  This is used to harvest standard arguments like \code{data}, \code{subset}, \code{family} an d\code{weights}.}
+      \item{call}{For S3 objects, the default is \code{ojbect$call}, returning the call that created the object.  This is used to harvest standard arguments like \code{data}, \code{subset} and \code{family}.}
 
-      \item{formula}{the formula for the linear predictor, defaulting to \code{formula(object)}.  If the formula may include terms for random effects that will be ignored.}
+      \item{formula}{the formula for the linear predictor, defaulting to \code{formula(object)}.}
 
       \item{family}{if the model object includes an error family, but it is not returned by \code{family(object)}, specify the family with this argument; otherwise it can be ignored.}
 
-      \item{link}{if the model object has a link function but not a family, specify the link with this argument; otherwise it can be ignored.}
+      \item{method}{For ordinal response models only, see the \code{method} argument to \code{\link{polr}}.}
 
       \item{coefficients}{The estimates of the coefficents in the linear predictor, with default \code{coef(object)}.}
 
@@ -116,29 +116,40 @@ gm1 <- glmer(cbind(incidence, size - incidence) ~ period + (1 | herd),
 as.data.frame(predictorEffect("period", gm1))
 
 # rlmer  uses method Effect.rlmerMod
-require(robustlmm)
-fm3 <- rlmer(distance ~ age + Sex + (1 |Subject), data = Orthodont)
+require(lme4)
+fm3 <- robustlmm::rlmer(distance ~ age + Sex + (1 |Subject), data = Orthodont)
 plot(effect("age:Sex", fm3))
 plot(predictorEffects(fm3, ~ age + Sex))
+
+# betareg from the betareg package
+library(betareg)
+library(lme4)
+data("GasolineYield", package = "betareg")
+gy_logit <- betareg(yield ~ batch + temp, data = GasolineYield)
+summary(gy_logit)
+Effect("batch", gy_logit)
+predictorEffects(gy_logit)
 
 # clm in ordinal
 require(ordinal)
 require(MASS)
-mod.wvs1 <- clm(poverty ~ gender + religion + degree + country*poly(age,3),data=WVS)
-plot(Effect(c("country", "age"), mod.wvs1), lines=list(multiline=TRUE))
+mod.wvs1 <- clm(poverty ~ gender + religion + degree + country*poly(age,3),
+    data=WVS)
+plot(Effect(c("country", "age"), mod.wvs1), 
+     lines=list(multiline=TRUE), layout=c(2, 2))
 
 # clm2
 require(ordinal)
 require(MASS)
 v2 <- clm2(poverty ~ gender + religion + degree + country*poly(age,3),data=WVS)
-as.data.frame(emod2 <- Effect(c("country", "age"), v2))
+plot(emod2 <- Effect(c("country", "age"), v2))
 
 # clmm
 require(ordinal)
 require(MASS)
-mm1 <- clmm(SURENESS ~ PROD + (1|RESP) + (1|RESP:PROD), data = soup,
-            link = "logit", threshold = "flexible")
-as.data.frame(Effect("PROD", mm1))
+mm1 <- clmm(SURENESS ~ PROD + (1|RESP) + (1|RESP:PROD), 
+        data = soup, link = "logit", threshold = "flexible")
+plot(Effect("PROD", mm1),lines=list(multiline=TRUE))
 
 # poLCA
 library(poLCA)
@@ -148,14 +159,12 @@ f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
 nes2a <- poLCA(f2a,election,nclass=3,nrep=5)    # log-likelihood: -16222.32
 allEffects(nes2a)
 
-# betareg from the betareg package
-library(betareg)
-library(effects4)
-data("GasolineYield", package = "betareg")
-gy_logit <- betareg(yield ~ batch + temp, data = GasolineYield)
-summary(gy_logit)
-Effect("batch", gy_logit)
-predictorEffects(gy_logit)
+# multivariate linear model
+data(Baumann, package="carData")
+b1 <- lm(cbind(post.test.1, post.test.2, post.test.3) ~ group + 
+    pretest.1 + pretest.2, data = Baumann))
+plot(Effect("group", b1)
+
 }
 }
 

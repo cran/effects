@@ -13,8 +13,8 @@ various statistical models with linear predictors.
 \details{
 \tabular{ll}{
 Package: \tab effects\cr
-Version: \tab 4.0-1\cr
-Date: \tab 2018-03-28\cr
+Version: \tab 4.0-2\cr
+Date: \tab 2018-05-30\cr
 Depends: \tab R (>= 3.2.0), carData\cr
 Suggests: \tab pbkrtest (>= 0.4-4), nlme, MASS, poLCA, heplots, splines, ordinal, car\cr
 Imports: \tab lme4, nnet, lattice, grid, colorspace, graphics, grDevices, stats, utils\cr
@@ -38,13 +38,17 @@ See \code{?effect}, \code{?Effect}, \code{?predictorEffect}, and \code{?plot.eff
 }
 
 \author{
-John Fox <jfox@mcmaster.ca>, Sanford Weisberg, Michael Friendly, and Jangman Hong. 
-We are grateful to Robert Andersen and David Firth for various suggestions.
+John Fox, Sanford Weisberg, Michael Friendly, Jangman Hong, 
+Robert Anderson, David Firth, Steve Taylor, and the R Core Team. 
 
 Maintainer: John Fox <jfox@mcmaster.ca>
 }
 
 \references{
+   Fox, J. and S. Weisberg (2019)
+   \emph{An R Companion to Applied Regression, Third Edition}
+   Sage Publications.
+   
    Fox, J. (1987)
     Effect displays for generalized linear models.
     \emph{Sociological Methodology}
@@ -67,7 +71,7 @@ Maintainer: John Fox <jfox@mcmaster.ca>
     \bold{32:1}, 1--24, <\url{http://www.jstatsoft.org/v32/i01/}>.
     
     Fox, J. and S. Weisberg (forthcoming).
-    Visualizing Fit and Lack of Fit in Comples Regression Models:
+    Visualizing Fit and Lack of Fit in Complex Regression Models:
         Effect Plots with Partial Residuals.
     \emph{Journal of Statistical Software}.
 }

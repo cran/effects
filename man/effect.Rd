@@ -191,7 +191,7 @@ allEffects(mod, ...)
   over \code{level} element of the \code{confint} list argument and the
   \code{given.values}, \code{typical}, and \code{offset} elements of the \code{fixed.predictors}
   list argument; \code{confint} may be used in place of the \code{se} argument;
-  \code{partial.residuals} may be use din place of the \code{residuals} argument. See \code{\link{LegacyArguments}} for details.}
+  \code{partial.residuals} may be used in place of the \code{residuals} argument. See \code{\link{LegacyArguments}} for details.}
 }
 
 \details{
@@ -367,11 +367,6 @@ and Jangman Hong.}
     \code{\link{densityplot}}.}
 
 \examples{
-
-# Note: Some examples are marked "don't run" to save time in CRAN
-#       package checking; others are marked "don't test" to save
-#       time in routine package checks.
-
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,
                   data=Cowles, family=binomial)
 eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)),
@@ -379,7 +374,7 @@ eff.cowles <- allEffects(mod.cowles, xlevels=list(extraversion=seq(0, 24, 6)),
 eff.cowles
 as.data.frame(eff.cowles[[2]])
 
-
+\donttest{
 # the following are equivalent:
 eff.ne <- effect("neuroticism*extraversion", mod.cowles)
 Eff.ne <- Effect(c("neuroticism", "extraversion"), mod.cowles)
@@ -404,6 +399,7 @@ plot(eff.cowles, 'neuroticism:extraversion', lines=list(multiline=TRUE),
 plot(effect('sex:neuroticism:extraversion', mod.cowles,
             xlevels=list(extraversion=seq(0, 24, 6))),
      lines=list(multiline=TRUE))
+}
 
 # a nested model:
 
@@ -412,13 +408,15 @@ mod <- lm(log(prestige) ~ income:type + education, data=Prestige)
 plot(Effect(c("income", "type"), mod, transformation=list(link=log, inverse=exp)),
      axes=list(y=list(lab="prestige")))
 
-\donttest{
+
 if (require(nnet)){
     mod.beps <- multinom(vote ~ age + gender + economic.cond.national +
                              economic.cond.household + Blair + Hague + Kennedy +
                              Europe*political.knowledge, data=BEPS)
+    \donttest{
     plot(effect("Europe*political.knowledge", mod.beps,
                 xlevels=list(political.knowledge=0:3)))
+    }
 
     plot(Effect(c("Europe", "political.knowledge"), mod.beps,
                 xlevels=list(Europe=1:11, political.knowledge=0:3),
@@ -426,31 +424,35 @@ if (require(nnet)){
          lines=list(col=c("blue", "red", "orange")),
          axes=list(x=list(rug=FALSE), y=list(style="stacked")))
 
+    \donttest{
     plot(effect("Europe*political.knowledge", mod.beps, # equivalent
                 xlevels=list(Europe=1:11, political.knowledge=0:3),
                 fixed.predictors=list(given.values=c(gendermale=0.5))),
          lines=list(col=c("blue", "red", "orange")),
          axes=list(x=list(rug=FALSE), y=list(style="stacked")))
-}
+    }
 }
 
-\dontrun{
 if (require(MASS)){
     mod.wvs <- polr(poverty ~ gender + religion + degree + country*poly(age,3),
                     data=WVS)
+    \donttest{
     plot(effect("country*poly(age, 3)", mod.wvs))
+    }
 
     plot(Effect(c("country", "age"), mod.wvs),
          axes=list(y=list(style="stacked")))
 
+    \donttest{
     plot(effect("country*poly(age, 3)", mod.wvs),
          axes=list(y=list(style="stacked"))) # equivalent
 
     plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs))
     plot(effect("country*poly(age, 3)", latent=TRUE, mod.wvs,
          se=list(type="scheffe"))) # Scheffe-type confidence envelopes
+    }
 }
-}
+
 
 mod.pres <- lm(prestige ~ log(income, 10) + poly(education, 3) + poly(women, 2),
                data=Prestige)
@@ -461,7 +463,7 @@ plot(eff.pres[1],
              transform=list(trans=log10, inverse=function(x) 10^x),
              ticks=list(at=c(1000, 2000, 5000, 10000, 20000))
     ))))
-\dontrun{
+\donttest{
 # linear model with log-response and log-predictor
 # to illustrate transforming axes and setting tick labels
 mod.pres1 <- lm(log(prestige) ~ log(income) + poly(education, 3) + poly(women, 2),
@@ -510,7 +512,6 @@ plot(eff.trans, axes=list(
         y=list(type="response", lab="prestige")))
 }
 
-\dontrun{
 if (require(nlme)){ # for gls()
     mod.hart <- gls(fconvict ~ mconvict + tfr + partic + degrees, data=Hartnagel,
                     correlation=corARMA(p=2, q=0), method="ML")
@@ -518,19 +519,20 @@ if (require(nlme)){ # for gls()
     detach(package:nlme)
 }
 
-
 if (require(lme4)){
     data(cake, package="lme4")
     fm1 <- lmer(angle ~ recipe * temperature + (1|recipe:replicate), cake,
                 REML = FALSE)
     plot(Effect(c("recipe", "temperature"), fm1))
+    \donttest{
     plot(effect("recipe:temperature", fm1),
          axes=list(grid=TRUE)) # equivalent (plus grid)
+    }
     if (any(grepl("pbkrtest", search()))) detach(package:pbkrtest)
     detach(package:lme4)
 }
 
-
+\donttest{
 if (require(nlme) && length(find.package("lme4", quiet=TRUE)) > 0){
     data(cake, package="lme4")
     cake$rep <- with(cake, paste( as.character(recipe), as.character(replicate), sep=""))
@@ -541,7 +543,9 @@ if (require(nlme) && length(find.package("lme4", quiet=TRUE)) > 0){
          axes=list(grid=TRUE))  # equivalent (plus grid)
     }
     detach(package:nlme)
+}
 
+\donttest{
 if (require(poLCA)){
     data(election)
     f2a <- cbind(MORALG,CARESG,KNOWG,LEADG,DISHONG,INTELG,
@@ -568,7 +572,7 @@ if (require(heplots)) {
 
 # svyglm() example (adapting an example from the survey package)
 
-\dontrun{
+\donttest{
 if (require(survey)){
   data(api)
   dstrat<-svydesign(id=~1, strata=~stype, weights=~pw,
@@ -599,7 +603,6 @@ plot(Effect(c("income", "education"), mod.prestige.3, residuals=TRUE),
      partial.residuals=list(span=1))
 }
 
-\dontrun{
 #  artificial data
 
 set.seed(12345)
@@ -615,8 +618,6 @@ mod.3 <- lm(y ~ x1 + x2, data=Data)
 plot(Effect(c("x1", "x2"), mod.1, residuals=TRUE)) # correct model
 plot(Effect(c("x1", "x2"), mod.2, residuals=TRUE)) # wrong model
 plot(Effect(c("x1", "x2"), mod.3, residuals=TRUE)) # wrong model
-}
-
 }
 
 \keyword{hplot}

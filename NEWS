@@ -1,3 +1,17 @@
+Version 4.0-2
+
+ o Fixed bug with offsets in predictorEffects and a bug with variances in Effect.default.
+ 
+ o Support partial-residual plots when the predictor on the horizontal axis is a factor.
+
+ o For nonstandard models like lme, the weights argument was obtained from the call that created the object.  This argument was never used by effects, and caused an error with lme models that used weights. The weights argument is now ignored.
+ 
+ o Fixed a bug due to new complete arg in vcov.lm() and vcov.glm().
+ 
+ o lty was ignored for multiplot with factor on x-axis; now fixed (reported by Krisztian Magori).
+ 
+ o Small fixes and improvements.
+
 Version 4.0-1
  
  o Replaced the Effect.default method so it is easier to write new methods.

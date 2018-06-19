@@ -15,7 +15,7 @@ predictorEffect(predictor, mod, xlevels, ...)
 
 \method{predictorEffect}{svyglm}(predictor, mod, xlevels, ...)
 
-\method{predictorEffect}{default}(predictor, mod, ...)
+\method{predictorEffect}{default}(predictor, mod, xlevels, ...)
 
 predictorEffects(mod, predictors, ...)
 
@@ -64,7 +64,7 @@ S. Weisberg, \email{sandy@umn.edu}
 \code{\link{Effect}}, \code{\link{plot.predictoreff}}
 }
 \examples{
-mod <- lm(prestige ~ type*(education + income + women), Prestige)
+mod <- lm(prestige ~ type*(education + income) + women, Prestige)
 plot(predictorEffect("income", mod))
 plot(predictorEffects(mod, ~ education + income + women))
 

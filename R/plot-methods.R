@@ -32,6 +32,9 @@
 # 2018-01-02: Changed the default key:  see lines 240-241
 # 2018-01-02: Rewrote find.legend columns, lines 41-44
 # 2018-01-30: enlarged text in key titles
+# 2018-05-14: support plotting partial residuals against a factor on the horizontal axis in plot.lm()
+# 2018-05-29: lty was ignored for multiplot with factor on x-axis; fixed (reported by Krisztian Magori)
+# 2018-05-30: don't use hard-coded pch=19 when plotting a factor on the x-axis.
 
 # the following functions aren't exported
 
@@ -272,6 +275,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   
   if (smooth.residuals && !is.null(x$family)){
     loess.family <- if (x$family == "gaussian") "symmetric" else "gaussian"
+    average.resid <- if (loess.family == "gaussian") mean else median
   }
   
   switch(type,
@@ -317,7 +321,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   x.all <- x$x.all
   split <- c(col, row, ncol, nrow)
   if (missing(x.var)) x.var <- x$x.var
-  if (!is.null(x.var) && is.numeric(x.var)) x.var <- names(x.var)
+  if (!is.null(x.var) && is.numeric(x.var)) x.var <- colnames(x$x)[x.var] 
   x.data <- x$data
   effect <- paste(sapply(x$variables, "[[", "name"), collapse="*")
   vars <- x$variables
@@ -339,10 +343,15 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         range(c(x$lower, x$upper), na.rm=TRUE) else range(x$fit, na.rm=TRUE)
       ylim <- if (!any(is.na(ylim))) ylim else c(range[1] - .025*(range[2] - range[1]),
                                                  range[2] + .025*(range[2] - range[1]))
+      if (!is.null(partial.residuals.range)){
+        ylim[1] <- min(ylim[1], partial.residuals.range[1])
+        ylim[2] <- max(ylim[2], partial.residuals.range[2])
+      }
       tickmarks <- if (type == "response" && rescale.axis) 
         make.ticks(ylim, link=trans.link, inverse=trans.inverse, at=ticks$at, n=ticks$n)
       else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
       levs <- levels(x[,1])
+      n.lev <- length(levs)
       plot <- xyplot(eval(parse(
         text=paste("fit ~ as.numeric(", names(x)[1], ")"))),
         strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
@@ -353,7 +362,8 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
           if (has.se){
             if (ci.style == "bars"){
               larrows(x0=x[good], y0=lower[good], x1=x[good], y1=upper[good], angle=90,
-                      code=3, col=colors[.modc(2)], length=0.125*cex/1.5)
+                      code=3, col=if (partial.residuals) band.colors[1] else colors[.modc(2)], 
+                      length=0.125*cex/1.5)
             }
             else if(ci.style == "lines") {
               effect.llines(x[good], lower[good], lty=2, col=colors[.modc(2)])
@@ -364,7 +374,15 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
                           alpha=band.transparency, use.splines=FALSE)
             }}
           }
-          effect.llines(x[good], y[good], lwd=lwd, col=colors[1], lty=lines, type='b', pch=19, cex=cex, ...)
+          if (partial.residuals){
+            x.fit <- as.numeric(x.data[good, predictor])
+            partial.res <- y[x.fit] + residuals[good]
+            lpoints(jitter(x.fit, factor=0.5), partial.res, col=residuals.color, pch=residuals.pch, cex=residuals.cex)
+            if (smooth.residuals && length(partial.res) != 0) {
+              lpoints(1:n.lev, tapply(partial.res, x.fit, average.resid), pch=16, cex=residuals.cex*1.25, col=residuals.color)
+            }
+          }
+          effect.llines(x[good], y[good], lwd=lwd, col=colors[1], lty=lines, type='b', pch=symbols[1], cex=cex, ...)
           if (has.thresholds){
             panel.abline(h=thresholds, lty=3)
             panel.text(rep(current.panel.limits()$xlim[1], length(thresholds)),
@@ -448,7 +466,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
             if (ci.style == "bars"){
               larrows(x0=x[good], y0=lower[good],
                       x1=x[good], y1=upper[good],
-                      angle=90, code=3, col=eval(colors[.modc(2)]),
+                      angle=90, code=3, col=if (partial.residuals) band.colors[1] else colors[.modc(2)],
                       length=.125*cex/1.5)
             }
             else if(ci.style == "lines") {
@@ -723,6 +741,10 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
     
     ylim <- if (!any(is.na(ylim))) ylim else c(range[1] - .025*(range[2] - range[1]),
                                                range[2] + .025*(range[2] - range[1]))
+    if (!is.null(partial.residuals.range)){
+      ylim[1] <- min(ylim[1], partial.residuals.range[1])
+      ylim[2] <- max(ylim[2], partial.residuals.range[2])
+    }
     tickmarks <- if (type == "response" && rescale.axis) make.ticks(ylim, link=trans.link,
                                                                     inverse=trans.inverse, at=ticks$at, n=ticks$n)
     else make.ticks(ylim, link=I, inverse=I, at=ticks$at, n=ticks$n)
@@ -733,6 +755,10 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         x[[pred]] <- as.factor(x[[pred]])
       }
     }
+    n.lev <- length(levs)
+    x.fit <- x.data[, predictors[x.var]]
+    use <- rep(TRUE, length(residuals))
+    xx <- x[, predictors[-x.var], drop=FALSE]
     plot <- xyplot(eval(parse(
       text=paste("fit ~ as.numeric(", predictors[x.var], ") |",
                  paste(predictors[-x.var], collapse="*")))),
@@ -745,7 +771,8 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         if (has.se){
           if (ci.style == "bars"){
             larrows(x0=x[good], y0=lower[subscripts][good], x1=x[good], y1=upper[subscripts][good],
-                    angle=90, code=3, col=colors[.modc(2)], length=0.125*cex/1.5)
+                    angle=90, code=3, col=if (partial.residuals) band.colors[1] else colors[.modc(2)], 
+                    length=0.125*cex/1.5)
           }
           else if(ci.style == "lines") {
             effect.llines(x[good], lower[subscripts][good], lty=2, col=colors[.modc(2)])
@@ -756,7 +783,34 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
                         fill=band.colors[1], alpha=band.transparency, use.splines=FALSE)
           }}
         }
-        effect.llines(x[good], y[good], lwd=lwd, type='b', col=colors[1], pch=19, cex=cex, ...)
+        if (!is.null(residuals)){
+          predictors <- predictors[-x.var]
+          factors <- sapply(xx, is.factor)
+          for (predictor in predictors){
+            use <- use & if(factors[predictor]) x.all[, predictor] == xx[subscripts[1], predictor]
+            else x.all[, predictor] == xx[subscripts[1], predictor]
+          }
+          n.in.panel <- sum(use)
+          if (n.in.panel > 0){
+            fitted <- y[good][as.numeric(x.fit[use])] 
+            partial.res <- if (!rescale.axis) original.inverse(original.link(fitted) + residuals[use])
+            else fitted + residuals[use]
+            lpoints(jitter(as.numeric(x.fit[use]), 0.5), partial.res, col=residuals.color, pch=residuals.pch, cex=residuals.cex)
+            if (show.fitted) lpoints(x.fit[use], fitted, pch=16, col=residuals.color)  # REMOVE ME
+            if (smooth.residuals && n.in.panel != 0) {
+              lpoints(1:n.lev, tapply(partial.res, x.fit[use], average.resid), pch=16, cex=1.25*residuals.cex, col=residuals.color)
+            }
+            if (id.n > 0){
+              M <- cbind(trans(x.fit[use]), partial.res)
+              md <- mahalanobis(M, colMeans(M), cov(M))
+              biggest <- order(md, decreasing=TRUE)[1:id.n]
+              pos <- ifelse(x.fit[use][biggest] > mean(current.panel.limits()$xlim), 2, 4)
+              ltext(x.fit[use][biggest], partial.res[biggest], 
+                    names(partial.res)[biggest], pos=pos, col=id.col, cex=id.cex)
+            }
+          }
+        }
+        effect.llines(x[good], y[good], lwd=lwd, lty=lines, type='b', col=colors[1], pch=symbols[1], cex=cex, ...)
         if (has.thresholds){
           panel.abline(h=thresholds, lty=3)
           panel.text(rep(current.panel.limits()$xlim[1], length(thresholds)),
@@ -834,7 +888,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
           if (ci.style == "bars"){
             larrows(x0=x[good], y0=lower[subscripts][good],
                     x1=x[good], y1=upper[subscripts][good],
-                    angle=90, code=3, col=eval(colors[.modc(2)]),
+                    angle=90, code=3, col=if (partial.residuals) band.colors[1] else colors[.modc(2)],
                     length=.125*cex/1.5)
           }
           else if(ci.style == "lines") {

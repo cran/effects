@@ -1,4 +1,4 @@
-# last modified 2017-09-11 by J. Fox
+# last modified 2018-05-13 by J. Fox
 
 import(carData)
 
@@ -11,11 +11,10 @@ importFrom(grid, grid.pretty, grid.segments, unit)
 importFrom(lme4, fixef)
 importFrom(nnet, multinom)
 importFrom(graphics, plot)
-importFrom("stats", "make.link")
 importFrom(grDevices, gray, palette, rgb)
 importFrom(survey, svymean)
 importFrom(stats, as.formula, binomial, coef, coefficients, cov, delete.response, family, fitted,
-    formula, glm, glm.control, lm, lm.fit, loess.smooth, mahalanobis,
+    formula, glm, glm.control, lm, lm.fit, loess.smooth, mahalanobis, make.link, median,
     model.frame, model.matrix, model.offset,
     model.response, na.exclude, na.omit, nlm, predict, qf, qnorm, qt, quantile, residuals,
     spline, terms, update, vcov, weights, xtabs)

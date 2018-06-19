@@ -5,8 +5,10 @@
 # 2017-11-09 fixed bug in setting the class for multinom models, and possibly others
 # 2017-11-17 added methods for clm, clm2, clmm in the file effectsclmm.R
 # 2017-12-08 modified predictorEffect.default and predictorEffects.default for compatibility to Effect.default
-# 201*-01-09 fixed bug in predictorEffects.default with log() in a formula.
+# 2018-01-09 fixed bug in predictorEffects.default with log() in a formula.
 # 2018-01-24 fixed bug with minus sign in a formula predictorEffects.default
+# 2018-05-14 predictorEffect.default() calls Effect() with x.var=1
+# 2018-06-07 predictorEffects now works with offsets.
 
 predictorEffect <- function(predictor, mod, xlevels, ...){
   UseMethod("predictorEffect", mod)
@@ -18,7 +20,7 @@ predictorEffect.svyglm <- function(predictor, mod, xlevels, ...){
 }
 
 #simplified 12/10/17
-predictorEffect.default <- function(predictor, mod, ...){
+predictorEffect.default <- function(predictor, mod, xlevels, ...){
   form <- Effect.default(NULL, mod) #returns the fixed-effects formula
   all.vars <- all.vars(parse(text=form))
   # find the right effect to use
@@ -34,7 +36,8 @@ predictorEffect.default <- function(predictor, mod, ...){
   ans <- unlist(strsplit(paste(terms[tab], collapse=":"), ":"))
   ans <- unique(all.vars(parse(text=ans)))
   ans <- unique(c(predictor, ans)) # guarantees focal predictor is first
-  result <- Effect(ans, mod, ...)
+  args <- names(list(...))
+  result <- if ("x.var" %in% args) Effect(ans, mod, ...) else Effect(ans, mod, x.var=1, ...)
   class(result) <- c("predictoreff", class(result))
   result
 }
@@ -43,15 +46,26 @@ predictorEffects <- function(mod, predictors, ...){
   UseMethod("predictorEffects", mod)
 }
 
+
 # rewritten, simplified, 12/08/17, bug in formulas fixed 01/24/2018
 predictorEffects.default <- function(mod, predictors = ~ ., ...) {
-  mform <- Effect.default(NULL, mod)  # returns the fixed-effect formula for any method
+# The next function removes offset(s) from a formula, used for mform and cform
+  no.offset <- function(x, preserve = NULL) {
+    k <- 0
+    proc <- function(x) {
+      if (length(x) == 1) return(x)
+      if (x[[1]] == as.name("offset") && !((k<<-k+1) %in% preserve)) return(x[[1]])
+      replace(x, -1, lapply(x[-1], proc))
+    }
+    update(proc(x), . ~ . - offset)}
+  mform <- no.offset(Effect.default(NULL, mod))  # returns the fixed-effect formula for any method
   cform <- if(is.character(predictors)) 
     as.formula(paste("~", paste(predictors, collapse="+"))) else
       predictors
   cform <- update(as.formula(paste(". ~", 
                 paste(all.vars(formula(mform)[[3]]), collapse="+"))), 
                 cform)
+  cform <- no.offset(cform)
   mvars <- all.vars(mform[[3]])
   cvars <- all.vars(cform[[3]])
 # check that 'cvars' is a subset of 'mvars'. If so apply predictorEffect
