@@ -1,3 +1,11 @@
+Version 4.0-3
+
+ o xlevels argument now works with predictorEffects.
+ 
+ o Added cex sub-args for x and y axes (suggestion of Charles Leger) and for lattice strips.
+ 
+  modified .onAttach() so that trellis device doesn't open, suggestion of Kurt Hornik.
+
 Version 4.0-2
 
  o Fixed bug with offsets in predictorEffects and a bug with variances in Effect.default.

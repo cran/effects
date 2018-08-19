@@ -35,6 +35,8 @@
 #             has one parameter.  If not, the function is stopped and an error is
 #             returned.
 # 2018-06-12: Fixed bug with vcov in Effect.default
+# 2018-06-20: Added a check to Effect.default to handle family args that
+#             are character or an unevaluated function
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -133,8 +135,11 @@ Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
                 "family", "maxit", "offset"), names(cl), 0L))
   cl <- cl[c(1L, .m)]
   if(!is.null(fam)) cl$family <- fam
+  if (is.character(cl$family)) 
+    cl$family <- get(cl$family, mode = "function", envir = parent.frame())
+  if (is.function(cl$family)) 
+    cl$family <- family()
   cl[[1L]] <- as.name(type)
-  if(!is.null(fam)) cl$family <- fam
 # The following eval creates on object of class glm, polr or multinom.  
 # These are crated to avoid writing an Effects method for every type of model.  
 # The only information used from this "fake" object are the coefficients and 

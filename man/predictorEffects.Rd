@@ -11,11 +11,11 @@ Functions For Computing Predictor Effects
 Alternatives to the \code{Effect} and \code{allEffects} functions that use a different paradigm for conditioning in an effects display.  The user specifies one predictor, either continuous or a factor, for the horizontal axis of a plot, and the function determines the appropriate plot to display (which is drawn by \code{plot}).
 }
 \usage{
-predictorEffect(predictor, mod, xlevels, ...)
+predictorEffect(predictor, mod,  ...)
 
-\method{predictorEffect}{svyglm}(predictor, mod, xlevels, ...)
+\method{predictorEffect}{svyglm}(predictor, mod, ...)
 
-\method{predictorEffect}{default}(predictor, mod, xlevels, ...)
+\method{predictorEffect}{default}(predictor, mod, ...)
 
 predictorEffects(mod, predictors, ...)
 
@@ -27,11 +27,6 @@ predictorEffects(mod, predictors, ...)
 A model object.  Supported models include all those described on the help page for \code{\link{Effect}}.
 }
   \item{predictor}{quoted name of the focal predictor.}
-  \item{xlevels}{this argument is used to set the values for any predictor in the
-  effect that is not a factor.  For a predictor
-  effect, the default is to use 50 quantiles of the focal predictor on the x-axis
-  between the 0.01 and 0.98 quantiles. See \code{\link{Effect}} for details and for
-  how other defaults are set.}
   \item{predictors}{
 If the default \code{~ .}, a predictor effecrts plot is drawn for each predictor (not regressor) in a model.  Otherwise, this should be a one-sided formula listing the first-order predictors for which predictor effects plots should be drawn.
 }

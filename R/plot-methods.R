@@ -35,6 +35,8 @@
 # 2018-05-14: support plotting partial residuals against a factor on the horizontal axis in plot.lm()
 # 2018-05-29: lty was ignored for multiplot with factor on x-axis; fixed (reported by Krisztian Magori)
 # 2018-05-30: don't use hard-coded pch=19 when plotting a factor on the x-axis.
+# 2019-06-30: add cex sub-args for x and y axes (suggestion of Charles Leger).
+# 2019-07-04: add cex sub-arg for strips.
 
 # the following functions aren't exported
 
@@ -148,11 +150,11 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   
   if (missing(axes)) axes <- NULL
   axes <- applyDefaults(axes, defaults=list(
-    x=list(rotate=0, rug=TRUE),
-    y=list(lab=NA, lim=NA, ticks=list(at=NULL, n=5), type="rescale", rotate=0),
+    x=list(rotate=0, rug=TRUE, cex=1),
+    y=list(lab=NA, lim=NA, cex=1, ticks=list(at=NULL, n=5), type="rescale", rotate=0),
     alternating=TRUE, grid=FALSE),
     arg="axes")
-  x.args <- applyDefaults(axes$x, defaults=list(rotate=0, rug=TRUE), arg="axes$x")
+  x.args <- applyDefaults(axes$x, defaults=list(rotate=0, rug=TRUE, cex=1), arg="axes$x")
   
   if (missing(xlab)) {
     xlab.arg <- FALSE
@@ -172,8 +174,10 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   }
   if (missing(rotx)) rotx <- x.args$rotate
   if (missing(rug)) rug <- x.args$rug
+  cex.x <- x.args$cex
   x.args$rotate <- NULL
   x.args$rug <- NULL
+  x.args$cex <- NULL
   x.pred.names <- names(x.args)
   if (length(x.pred.names) > 0){
     for (pred.name in x.pred.names){
@@ -191,7 +195,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   if (length(ticks.x) == 0) ticks.x <- NA
   if (length(transform.x) == 0) transform.x <- NA
   
-  y.args <- applyDefaults(axes$y, defaults=list(lab=NA, lim=NA, ticks=list(at=NULL, n=5), type="rescale", rotate=0), arg="axes$y")
+  y.args <- applyDefaults(axes$y, defaults=list(lab=NA, lim=NA, cex=1, ticks=list(at=NULL, n=5), type="rescale", rotate=0), arg="axes$y")
   if (missing(ylab)) ylab <- y.args$lab
   if (missing(ylim)) ylim <- y.args$lim
   if (missing(ticks)) ticks <- y.args$ticks
@@ -199,6 +203,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   if (!missing(rescale.axis)) type <- if (rescale.axis) "rescale" else "response"
   type <- match.arg(type, c("rescale", "response", "link"))
   if (missing(roty)) roty <- y.args$rotate
+  cex.y <- y.args$cex
   if (missing(alternating)) alternating <- axes$alternating
   if (missing(grid)) grid <- axes$grid
   
@@ -247,7 +252,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   if (missing(lattice)) lattice <- NULL
   lattice <- applyDefaults(lattice, defaults=list(
     layout=NULL, #key.args=list(),  
-    strip=list(factor.names=TRUE, values=!partial.residuals),
+    strip=list(factor.names=TRUE, values=!partial.residuals, cex=1),
     array=list(row=1, col=1, nrow=1, ncol=1, more=FALSE),
     arg="lattice"
   ))
@@ -263,9 +268,11 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
       lattice$key.args[["between.columns"]]
     key.args <- lattice$key.args
   }
-  strip.args <- applyDefaults(lattice$strip, defaults=list(factor.names=TRUE, values=!partial.residuals), arg="lattice$strip")
+  strip.args <- applyDefaults(lattice$strip, defaults=list(factor.names=TRUE, values=!partial.residuals, cex=1), arg="lattice$strip")
   if (missing(factor.names)) factor.names <- strip.args$factor.names
   if (missing(show.strip.values)) show.strip.values <- strip.args$values
+  cex.strip <- strip.args$cex
+  height.strip <- max(1, cex.strip)
   array.args <- applyDefaults(lattice$array, defaults=list(row=1, col=1, nrow=1, ncol=1, more=FALSE), arg="lattice$array")
   row <- array.args$row
   col <- array.args$col
@@ -296,7 +303,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   thresholds <- x$thresholds
   has.thresholds <- !is.null(thresholds)
   effect.llines <- llines
-  if (is.na(ylab)){
+  if (length(ylab) == 1 && is.na(ylab)){
     ylab <- if (has.thresholds) paste(x$response, ": ", paste(x$y.levels, collapse=", "), sep="")
     else x$response
   }
@@ -354,7 +361,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
       n.lev <- length(levs)
       plot <- xyplot(eval(parse(
         text=paste("fit ~ as.numeric(", names(x)[1], ")"))),
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+        strip=strip.custom(strip.names=c(factor.names, TRUE), 
+          par.strip.text=list(cex=cex.strip)),
+        par.settings=list(layout.heights=list(strip=height.strip)),
         panel=function(x, y, lower, upper, has.se, ...){ 
           if (grid) ticksGrid(x=1:length(levs), y=tickmarks$at)
           good <- !is.na(y)
@@ -393,9 +402,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         }},
         ylim=ylim,
         ylab=ylab,
-        xlab=if (is.na(xlab)) names(x)[1] else xlab,
-        scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx),
-                    y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
+        xlab=if (length(xlab) == 1 && is.na(xlab)) names(x)[1] else xlab,
+        scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx, cex=cex.x),
+                    y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty, cex=cex.y),
                     alternating=alternating, y=roty),
         main=main,
         lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...)
@@ -454,7 +463,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
       if (is.numeric(x.var)) x.var <- predictor
       plot <- xyplot(eval(parse(
         text=paste("fit ~ trans(", x.var, ")"))),
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE)),
+        strip=strip.custom(strip.names=c(factor.names, TRUE),
+          par.strip.text=list(cex=cex.strip)),
+        par.settings=list(layout.heights=list(strip=height.strip)),
         panel=function(x, y, x.vals, rug, lower, upper, has.se, ...){ 
           if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
           good <- !is.na(y)
@@ -508,12 +519,12 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         ylim=ylim,
         xlim=suppressWarnings(trans(xlm)),
         ylab=ylab,
-        xlab=if (is.na(xlab)) names(x)[1] else xlab,
+        xlab=if (length(xlab) == 1 && is.na(xlab)) names(x)[1] else xlab,
         x.vals=x.vals, rug=rug,
         main=main,
         lower=x$lower, upper=x$upper, has.se=has.se, data=x,
-        scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
-                    x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx), alternating=alternating), ...)
+        scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty, cex=cex.y),
+                    x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx, cex=cex.x), alternating=alternating), ...)
       result <- update(plot, layout = if (is.null(layout)) c(0, prod(dim(plot)))
                        else layout)
       result$split <- split
@@ -582,7 +593,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         text=paste("fit ~ as.numeric(", predictors[x.var], ")",
                    if (n.predictors > 2) paste(" |",
                                                paste(predictors[-c(x.var, z.var)], collapse="*"))))),
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
+        strip=strip.custom(strip.names=c(factor.names, TRUE), sep=" = ",
+          par.strip.text=list(cex=cex.strip)),
+        par.settings=list(layout.heights=list(strip=height.strip)),
         panel=function(x, y, subscripts, z, lower, upper, show.se, ...){ 
           if (grid) ticksGrid(x=1:length(levs), y=tickmarks$at)
           for (i in 1:length(zvals)){
@@ -611,10 +624,10 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         },
         ylim=ylim,
         ylab=ylab,
-        xlab=if (is.na(xlab)) predictors[x.var] else xlab,
+        xlab=if (length(xlab) == 1 && is.na(xlab)) predictors[x.var] else xlab,
         z=x[,z.var],
-        scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx),
-                    y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
+        scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx, cex=cex.x),
+                    y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty, cex=cex.y),
                     alternating=alternating),
         zvals=zvals,
         main=main,
@@ -671,7 +684,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         text=paste("fit ~trans(", predictors[x.var], ")",
                    if (n.predictors > 2) paste(" |",
                                                paste(predictors[-c(x.var, z.var)], collapse="*"))))),
-        strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
+        strip=strip.custom(strip.names=c(factor.names, TRUE), sep=" = ",
+          par.strip.text=list(cex=cex.strip)),
+        par.settings=list(layout.heights=list(strip=height.strip)),
         panel=function(x, y, subscripts, x.vals, rug, z, lower, upper, show.se, ...){ 
           if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
           if (rug && is.null(residuals)) lrug(trans(x.vals))
@@ -710,7 +725,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         ylim=ylim,
         xlim=suppressWarnings(trans(xlm)),
         ylab=ylab,
-        xlab=if (is.na(xlab)) predictors[x.var] else xlab,
+        xlab=if (length(xlab) == 1 && is.na(xlab)) predictors[x.var] else xlab,
         x.vals=x.vals, rug=rug,
         z=x[,z.var],
         zvals=zvals,
@@ -720,8 +735,8 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
         lower=x$lower, upper=x$upper,
         show.se=has.se && ci.style %in% c("bars", "bands"),
         #
-        data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels),
-                            rot=roty, x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx),
+        data=x, scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty, cex=cex.y), 
+                            x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx, cex=cex.x),
                             alternating=alternating),  ...)
       result <- update(plot, layout = if (is.null(layout)) c(0, prod(dim(plot)))
                        else layout)
@@ -762,7 +777,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
     plot <- xyplot(eval(parse(
       text=paste("fit ~ as.numeric(", predictors[x.var], ") |",
                  paste(predictors[-x.var], collapse="*")))),
-      strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
+      strip=strip.custom(strip.names=c(factor.names, TRUE), sep=" = ",
+        par.strip.text=list(cex=cex.strip)),
+      par.settings=list(layout.heights=list(strip=height.strip)),
       panel=function(x, y, subscripts, lower, upper, has.se, ...){ 
         if (grid) ticksGrid(x=1:length(levs), y=tickmarks$at)
         good <- !is.na(y)
@@ -821,9 +838,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
       }},
       ylim=ylim,
       ylab=ylab,
-      xlab=if (is.na(xlab)) predictors[x.var] else xlab,
-      scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx),
-                  y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
+      xlab=if (length(xlab) == 1 && is.na(xlab)) predictors[x.var] else xlab,
+      scales=list(x=list(at=1:length(levs), labels=levs, rot=rotx, cex=cex.x),
+                  y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty, cex=cex.y),
                   alternating=alternating),
       main=main,
       lower=x$lower, upper=x$upper, has.se=has.se, data=x, ...)
@@ -877,7 +894,9 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
     plot <- xyplot(eval(parse(
       text=paste("fit ~ trans(", predictors[x.var], ") |",
                  paste(predictors[-x.var], collapse="*")))),
-      strip=function(...) strip.default(..., strip.names=c(factor.names, TRUE), sep=" = "),
+      strip=strip.custom(strip.names=c(factor.names, TRUE), sep=" = ",
+        par.strip.text=list(cex=cex.strip)),
+      par.settings=list(layout.heights=list(strip=height.strip)),
       panel=function(x, y, subscripts, x.vals, rug, lower, upper, has.se, ...){ 
         if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
         good <- !is.na(y)
@@ -939,12 +958,12 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
       ylim=ylim,
       xlim=suppressWarnings(trans(xlm)),
       ylab=ylab,
-      xlab=if (is.na(xlab)) predictors[x.var] else xlab,
+      xlab=if (length(xlab) == 1 && is.na(xlab)) predictors[x.var] else xlab,
       x.vals=x.vals, rug=rug,
       main=main,
       lower=x$lower, upper=x$upper, has.se=has.se, data=x,
-      scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty),
-                  x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx),
+      scales=list(y=list(at=tickmarks$at, labels=tickmarks$labels, rot=roty, cex=cex.y),
+                  x=list(at=tickmarks.x$at, labels=tickmarks.x$labels, rot=rotx, cex=cex.x),
                   alternating=alternating), ...)
     result <- update(plot, layout = if (is.null(layout)) c(0, prod(dim(plot))) else layout)
     result$split <- split

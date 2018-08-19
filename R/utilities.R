@@ -27,6 +27,7 @@
 # 2017-09-10: added replacement for ticksGrid()
 # 2018-05-09: fix typo in startup message
 # 2018-05-13: modified Analyze.model() to support partial-residual plots against factors.
+# 2018-08-17: modified .onAttach() so that trellis device doesn't open, suggestion of Kurt Hornik.
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -490,14 +491,14 @@ effectsTheme <- function(strip.background=list(col=gray(seq(0.95, 0.5, length=3)
 
 .onAttach <- function(libname, pkgname){
   if (!"package:lattice" %in% search()){
-    lattice::trellis.par.set(effectsTheme(), warn=FALSE)
+    lattice::lattice.options(default.theme = effectsTheme)
     packageStartupMessage("lattice theme set by effectsTheme()",
                           "\nSee ?effectsTheme for details.")
   }
   else packageStartupMessage("Use the command",
                              "\n    lattice::trellis.par.set(effectsTheme())",
                              "\n  to customize lattice options for effects plots.",
-                             "\nSee ?efffectsTheme for details.")
+                             "\nSee ?effectsTheme for details.")
 }
 
 # to handle defaults for list-style arguments

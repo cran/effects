@@ -9,18 +9,23 @@
 # 2018-01-24 fixed bug with minus sign in a formula predictorEffects.default
 # 2018-05-14 predictorEffect.default() calls Effect() with x.var=1
 # 2018-06-07 predictorEffects now works with offsets.
+# 2018-08-09 removed explicit 'xlevels' argument from predictorEffects, so the argument is correctly passed with ...
 
-predictorEffect <- function(predictor, mod, xlevels, ...){
+
+# removed xlevels argument 8/9/18
+predictorEffect <- function(predictor, mod, ...){  
   UseMethod("predictorEffect", mod)
 }
 
-predictorEffect.svyglm <- function(predictor, mod, xlevels, ...){
+# removed xlevels argument 8/9/18
+predictorEffect.svyglm <- function(predictor, mod, ...){
   mod$call <- list(mod$call, data=mod$data)
-  NextMethod(object=mod)
+  NextMethod(object=mod, ...)
 }
 
 #simplified 12/10/17
-predictorEffect.default <- function(predictor, mod, xlevels, ...){
+# removed xlevels argument 8/9/18
+predictorEffect.default <- function(predictor, mod, ...){
   form <- Effect.default(NULL, mod) #returns the fixed-effects formula
   all.vars <- all.vars(parse(text=form))
   # find the right effect to use

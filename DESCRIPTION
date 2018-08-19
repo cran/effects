@@ -1,6 +1,6 @@
 Package: effects
-Version: 4.0-2
-Date: 2018-06-14
+Version: 4.0-3
+Date: 2018-08-17
 Title: Effect Displays for Linear, Generalized Linear, and Other Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Sanford", "Weisberg", role = "aut", email = "sandy@umn.edu"),
@@ -10,7 +10,7 @@ Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaste
     person("David", "Firth", role = "ctb"),
     person("Steve", "Taylor", role = "ctb"),
     person("R Core Team", role="ctb"))
-Depends: R (>= 3.2.0), carData
+Depends: R (>= 3.5.0), carData
 Suggests: pbkrtest (>= 0.4-4), nlme, MASS, poLCA, heplots, splines,
         ordinal, car, knitr
 Imports: lme4, nnet, lattice, grid, colorspace, graphics, grDevices,
@@ -25,7 +25,7 @@ URL: https://www.r-project.org,
         https://socialsciences.mcmaster.ca/jfox/
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2018-06-18 22:30:34 UTC; jfox
+Packaged: 2018-08-19 19:00:54 UTC; jfox
 Author: John Fox [aut, cre],
   Sanford Weisberg [aut],
   Michael Friendly [aut],
@@ -36,4 +36,4 @@ Author: John Fox [aut, cre],
   R Core Team [ctb]
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
-Date/Publication: 2018-06-19 04:48:02 UTC
+Date/Publication: 2018-08-19 19:50:03 UTC
