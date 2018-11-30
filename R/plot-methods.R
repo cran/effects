@@ -35,8 +35,13 @@
 # 2018-05-14: support plotting partial residuals against a factor on the horizontal axis in plot.lm()
 # 2018-05-29: lty was ignored for multiplot with factor on x-axis; fixed (reported by Krisztian Magori)
 # 2018-05-30: don't use hard-coded pch=19 when plotting a factor on the x-axis.
-# 2019-06-30: add cex sub-args for x and y axes (suggestion of Charles Leger).
-# 2019-07-04: add cex sub-arg for strips.
+# 2018-06-30: add cex sub-args for x and y axes (suggestion of Charles Leger).
+# 2018-07-04: add cex sub-arg for strips.
+# 2018-10-09: moved transform arg from Effect to axes=list(y=list(transform=))
+# 2018-10-15: moved z.var to lines=list(z.var)
+# 2018-10-25: check number of points used for spline interpolation
+# 2018-10-25: fixed bug in plot.eff() introduced by previous modification to as.data.frame.eff().
+# 2018-11-03: fixed bug in plotting partial residuals when a factor focal predictor had empty levels.
 
 # the following functions aren't exported
 
@@ -90,6 +95,7 @@ panel.bands <- function(x, y, upper, lower, fill, col,
     lower <- lower[subscripts]
   }
   if (use.splines){
+    if (length(x) < 5) warning("spline interpolation may be unstable with only ", length(x), " points")
     up <- spline(x, upper)
     down <- spline(x, lower)
     x <- up$x
@@ -107,14 +113,17 @@ panel.bands <- function(x, y, upper, lower, fill, col,
 # modified by Michael Friendly: added lwd= argument for llines (not used elsewhere)
 # modified by Michael Friendly: added alpha.band= argument for ci.style="bands"
 
-spline.llines <- function(x, y, ...) llines(spline(x, y), ...)
+spline.llines <- function(x, y, ...) {
+  if (length(x) < 5) warning("spline interpolation may be unstable with only ", length(x), " points")
+  llines(spline(x, y), ...)
+}
 
-plot.eff <- function(x, x.var, z.var=which.min(levels), 
+plot.eff <- function(x, x.var,  
           main=paste(effect, "effect plot"),
           symbols=TRUE, lines=TRUE, axes, confint, partial.residuals, id, lattice,
           ...,
         # legacy arguments:
-          multiline, rug, xlab, ylab, colors, cex, lty, lwd, ylim, xlim, 
+          multiline, z.var, rug, xlab, ylab, colors, cex, lty, lwd, ylim, xlim, 
           factor.names, ci.style, band.transparency, band.colors, type, ticks, 
           alternating, rotx, roty, grid, layout,
           rescale.axis, transform.x, ticks.x, show.strip.values, key.args, 
@@ -129,12 +138,18 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   .modb <- function(a) .mod(a, length(band.colors))
   
   if (!is.logical(lines) && !is.list(lines)) lines <- list(lty=lines)
+  levels <- sapply(x$variables, function(z) length(as.vector(z[["levels"]])))
   lines <- applyDefaults(lines,
-                         defaults=list(multiline=is.null(x$se), lty=trellis.par.get("superpose.line")$lty,
-                                       lwd=trellis.par.get("superpose.line")$lwd[1], col=trellis.par.get("superpose.line")$col, splines=TRUE),
+              defaults=list(multiline=is.null(x$se), 
+                            z.var=which.min(levels),
+                            lty=trellis.par.get("superpose.line")$lty,
+                            lwd=trellis.par.get("superpose.line")$lwd[1], 
+                            col=trellis.par.get("superpose.line")$col, 
+                            splines=TRUE),
                          onFALSE=list(multiline=FALSE, lty=0, lwd=0, col=rgb(1, 1, 1, alpha=0), splines=FALSE),
                          arg="lines")
   if (missing(multiline)) multiline <- lines$multiline
+  if (missing(z.var)) z.var <- lines$z.var
   if (missing(lwd)) lwd <- lines$lwd
   if (missing(colors)) colors <- lines$col
   if (missing(use.splines)) use.splines <- lines$splines
@@ -151,7 +166,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   if (missing(axes)) axes <- NULL
   axes <- applyDefaults(axes, defaults=list(
     x=list(rotate=0, rug=TRUE, cex=1),
-    y=list(lab=NA, lim=NA, cex=1, ticks=list(at=NULL, n=5), type="rescale", rotate=0),
+    y=list(lab=NA, lim=NA, cex=1, ticks=list(at=NULL, n=5), type="rescale", rotate=0, transform=NULL),
     alternating=TRUE, grid=FALSE),
     arg="axes")
   x.args <- applyDefaults(axes$x, defaults=list(rotate=0, rug=TRUE, cex=1), arg="axes$x")
@@ -195,7 +210,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   if (length(ticks.x) == 0) ticks.x <- NA
   if (length(transform.x) == 0) transform.x <- NA
   
-  y.args <- applyDefaults(axes$y, defaults=list(lab=NA, lim=NA, cex=1, ticks=list(at=NULL, n=5), type="rescale", rotate=0), arg="axes$y")
+  y.args <- applyDefaults(axes$y, defaults=list(lab=NA, lim=NA, cex=1, ticks=list(at=NULL, n=5), type="rescale", rotate=0, transform=NULL), arg="axes$y")
   if (missing(ylab)) ylab <- y.args$lab
   if (missing(ylim)) ylim <- y.args$lim
   if (missing(ticks)) ticks <- y.args$ticks
@@ -204,6 +219,12 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
   type <- match.arg(type, c("rescale", "response", "link"))
   if (missing(roty)) roty <- y.args$rotate
   cex.y <- y.args$cex
+  custom <- y.args$transform
+  if(inherits(custom, "function")){
+    custom <- list(trans=I, inverse=custom)
+    type <- "response"
+  }
+#  if(!is.null(custom)) type="response" 
   if (missing(alternating)) alternating <- axes$alternating
   if (missing(grid)) grid <- axes$grid
   
@@ -284,7 +305,6 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
     loess.family <- if (x$family == "gaussian") "symmetric" else "gaussian"
     average.resid <- if (loess.family == "gaussian") mean else median
   }
-  
   switch(type,
          rescale = {
            type <- "response"
@@ -299,7 +319,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
            rescale.axis <- TRUE
          }
   )
-  levels <- sapply(x$variables, function(z) length(as.vector(z[["levels"]])))
+#  levels <- sapply(x$variables, function(z) length(as.vector(z[["levels"]])))
   thresholds <- x$thresholds
   has.thresholds <- !is.null(thresholds)
   effect.llines <- llines
@@ -313,8 +333,10 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
                               paste(threshold.labels[-length(threshold.labels)], threshold.labels[-1], sep=" - "),
                               " ", sep="")
   }
-  original.link <- trans.link <- x$transformation$link
-  original.inverse <- trans.inverse <- x$transformation$inverse
+  original.link <- trans.link <- 
+    if(!is.null(custom)) custom$trans else x$transformation$link
+  original.inverse <- trans.inverse <-
+    if(!is.null(custom)) custom$inverse else  x$transformation$inverse
   residuals <- if (partial.residuals) x$residuals else NULL
   if (!is.null(residuals) && !is.null(id.labels)) names(residuals) <- id.labels
   partial.residuals.range <- x$partial.residuals.range
@@ -326,20 +348,28 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
     trans.link <- trans.inverse <- I
   }
   x.all <- x$x.all
+  if (!is.null(x.all)){
+    for (i in 1:ncol(x.all)){
+      if (is.factor(x.all[, i]))  x.all[, i] <- droplevels(x.all[, i])
+    }
+  }
   split <- c(col, row, ncol, nrow)
   if (missing(x.var)) x.var <- x$x.var
   if (!is.null(x.var) && is.numeric(x.var)) x.var <- colnames(x$x)[x.var] 
   x.data <- x$data
+  for (i in 1:ncol(x.data)){
+    if (is.factor(x.data[, i]))  x.data[, i] <- droplevels(x.data[, i])
+  }
   effect <- paste(sapply(x$variables, "[[", "name"), collapse="*")
   vars <- x$variables
-  x <- as.data.frame(x, transform=I)
+  x <- as.data.frame(x, type="link")
   for (i in 1:length(vars)){
     if (!(vars[[i]]$is.factor)) next
     x[,i] <- factor(x[,i], levels=vars[[i]]$levels, exclude=NULL)
+    x[, i] <- droplevels(x[, i])
   }
   has.se <- !is.null(x$se)
   n.predictors <- ncol(x) - 1 - 3*has.se
-
   if (n.predictors == 1){
     predictor <- names(x)[1]
     if (is.list(xlab)) xlab <- xlab[[predictor]]
@@ -554,7 +584,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
     if (length(which.z) == 0) stop(paste("z.var = '", z.var, "' is not in the effect.", sep=""))
     z.var <- which.z
   }
-  if (x.var == z.var) z.var <- z.var + 1
+if (x.var == z.var) z.var <- z.var + 1
   ### multiline
   if (multiline){
     if (!is.null(residuals)) warning("partial residuals are not displayed in a multiline plot")
@@ -897,7 +927,7 @@ plot.eff <- function(x, x.var, z.var=which.min(levels),
       strip=strip.custom(strip.names=c(factor.names, TRUE), sep=" = ",
         par.strip.text=list(cex=cex.strip)),
       par.settings=list(layout.heights=list(strip=height.strip)),
-      panel=function(x, y, subscripts, x.vals, rug, lower, upper, has.se, ...){ 
+      panel=function(x, y, subscripts, x.vals, rug, lower, upper, has.se, ...){
         if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
         good <- !is.na(y)
         if(!all(!good)){

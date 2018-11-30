@@ -1,5 +1,5 @@
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Partial Residuals}
+%\VignetteIndexEntry{Effect Displays with Partial Residuals}
 
 \documentclass{article}
 
@@ -39,7 +39,7 @@ Using Contrived Regression Data}
 
 \author{John Fox and Sanford Weisberg}
 
-\date{2017-09-13}
+\date{2017-11-22}
 
 \maketitle
 
@@ -57,7 +57,7 @@ options(show.signif.stars=FALSE)
 options(scipen=3)
 @
 
-The examples developed in this vignette are meant to supplement \citet{FoxWeisberg17}.
+The examples developed in this vignette are meant to supplement \citet{FoxWeisberg18}.
 
 \section{Basic Setup}
 We will analyze contrived data generated according to the following setup:
@@ -189,7 +189,7 @@ plot(Effect(c("x1", "x2"), mod.2, partial.residuals = TRUE),
     axes=list(x=list(rotate=45)),
     lattice=list(layout=c(4, 1)))
 @
-The predictor effect plots for  $x_2$ and $x_3$, and to a much lesser extent, for $x_1$, in the incorrect model in Figure~\ref{fig-contrived-2a} show apparent nonlinearity as a consequence of the unmodelled interaction and the correlations among the predictors. A similar phenomenon was noted in our analysis of the Canadian occupational prestige data in \citet[Section~4.2]{FoxWeisberg17}, where the unmodelled interaction between \code{type} and \code{income} induced nonlinearity in the partial relationship of \code{prestige} to \code{income}. The omitted interaction is clear in the effect plot for $\{x_2, x_3\}$, but also, to a lesser extent, contaminates the effect plot for $\{x_1,x_2\}$, which corresponds to an interaction that does not enter the model generating the data. These artifacts become more prominent if we increase the predictor correlations, say to $\rho = 0.9$ (as we invite the reader to do).
+The predictor effect plots for  $x_2$ and $x_3$, and to a much lesser extent, for $x_1$, in the incorrect model in Figure~\ref{fig-contrived-2a} show apparent nonlinearity as a consequence of the unmodelled interaction and the correlations among the predictors. A similar phenomenon was noted in our analysis of the Canadian occupational prestige data in \citet[Section~4.2]{FoxWeisberg18}, where the unmodelled interaction between \code{type} and \code{income} induced nonlinearity in the partial relationship of \code{prestige} to \code{income}. The omitted interaction is clear in the effect plot for $\{x_2, x_3\}$, but also, to a lesser extent, contaminates the effect plot for $\{x_1,x_2\}$, which corresponds to an interaction that does not enter the model generating the data. These artifacts become more prominent if we increase the predictor correlations, say to $\rho = 0.9$ (as we invite the reader to do).
 
 \begin{figure}[tbp]
   \caption{Predictor effect displays with partial residuals for the individual predictors $x_1$, $x_2$, and $x_3$ in the incorrect model $y \captilde x_1 + x_2 + x_3$ fit to data generated with the mean function $\E(y|\x) = x_1 + x_2x_3$, with moderately correlated predictors.\label{fig-contrived-2a}}
@@ -250,7 +250,7 @@ Neither of these graphs corresponds to a term in the model generating the data n
 
 \section{Simultaneous Unmodelled Nonlinearity and Interaction}
 
-This last example also appears in \citet[Section~4.3]{FoxWeisberg17}. We consider a true model that combines nonlinearity and interaction, $\E(y|\x) = x_1^2 + x_2 x_3$; the predictors are moderately correlated, with $\rho = 0.5$. We then fit the incorrect working model $y \Rtilde x_1 + x_2 + x_3$ to the data, producing the predictor effect displays with partial residuals in Figure~\ref{fig-contrived-4a}, for the predictors $x_1$, $x_2$, and $x_3$, which appear additively in the working model, and the term effect displays in Figure~\ref{fig-contrived-4b} for $\{x_2, x_3 \}$ and $\{x_1, x_2 \}$, corresponding respectively to the incorrectly excluded \inter{x_2}{x_3} term and the correctly excluded \inter{x_1}{x_2} interaction. 
+This last example also appears in \citet[Section~4.3]{FoxWeisberg18}. We consider a true model that combines nonlinearity and interaction, $\E(y|\x) = x_1^2 + x_2 x_3$; the predictors are moderately correlated, with $\rho = 0.5$. We then fit the incorrect working model $y \Rtilde x_1 + x_2 + x_3$ to the data, producing the predictor effect displays with partial residuals in Figure~\ref{fig-contrived-4a}, for the predictors $x_1$, $x_2$, and $x_3$, which appear additively in the working model, and the term effect displays in Figure~\ref{fig-contrived-4b} for $\{x_2, x_3 \}$ and $\{x_1, x_2 \}$, corresponding respectively to the incorrectly excluded \inter{x_2}{x_3} term and the correctly excluded \inter{x_1}{x_2} interaction. 
 
 <<>>=
 set.seed(682626)

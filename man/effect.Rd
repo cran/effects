@@ -8,10 +8,6 @@
 \alias{Effect.svyglm}
 \alias{allEffects}
 \alias{allEffects.default}
-\alias{as.data.frame.eff}
-\alias{as.data.frame.effpoly}
-\alias{as.data.frame.efflatent}
-\alias{vcov.eff}
 
 \title{Functions For Constructing Effect Displays}
 \description{
@@ -31,7 +27,7 @@
   \code{effect}, and will succeed with some models for which \code{effect} fails.  The \code{effect} function
   works by constructing a call to \code{Effect}.
 
-  The \code{Effect} and \code{effect} functions can also be used with many other models; see \code{\link{Effect.default}} and a vignette for this package.
+  The \code{Effect} and \code{effect} functions can also be used with many other models; see \code{\link{Effect.default}} and the \href{../doc/adding-Effect-methods.pdf}{Defining Effect Methods for Other Models} vignette.
 
   \code{allEffects} identifies all of the high-order terms in a model and returns
   a list of \code{"eff"} or \code{"effpoly"} objects (i.e., an object of type \code{"efflist"}).
@@ -50,13 +46,11 @@ Effect(focal.predictors, mod, ...)
 
 \method{Effect}{lm}(focal.predictors, mod, xlevels=list(),
     fixed.predictors, vcov. = vcov, se=TRUE,
-    transformation = list(link = family(mod)$linkfun,
-        inverse = family(mod)$linkinv),
     residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
     x.var=NULL,  ...,
     #legacy arguments:
     given.values, typical, offset, confint, confidence.level,
-    partial.residuals)
+    partial.residuals, transformation)
 
 \method{Effect}{multinom}(focal.predictors, mod,
     xlevels=list(), fixed.predictors,
@@ -75,15 +69,6 @@ Effect(focal.predictors, mod, ...)
 allEffects(mod, ...)
 
 \method{allEffects}{default}(mod, ...)
-
-\method{as.data.frame}{eff}(x, row.names=NULL, optional=TRUE,
-    transform=x$transformation$inverse, ...)
-
-\method{as.data.frame}{effpoly}(x, row.names=NULL, optional=TRUE, ...)
-
-\method{as.data.frame}{efflatent}(x, row.names=NULL, optional=TRUE, ...)
-
-\method{vcov}{eff}(object, ...)
 }
 
 \arguments{
@@ -156,19 +141,10 @@ allEffects(mod, ...)
     whether to compute confidence limits with specified coverage at each point for an effect or to compute limits
     for a Scheffe-type confidence envelope. For \code{mer}, \code{merMod}, and \code{lme} objects, the
     normal distribution is used to get confidence limits.}
-  \item{transformation}{a two-element list with elements \code{link} and
-    \code{inverse}. For a generalized linear model, these are by default
-    the link function and inverse-link (mean) function. For a linear model,
-    these default to \code{NULL}. If \code{NULL}, the identity (or inhibit) function,
-    \code{\link{I}}, is used; this effect can also be achieved by setting the
-    argument to \code{NULL}. The inverse-link may be used to transform effects
-    when they are printed or plotted; the link may be used in positioning
-    axis labels (see below). If the link is not given, an attempt will be
-    made to approximate it from the inverse-link.}
   \item{residuals}{if \code{TRUE}, residuals for a linear or generalized linear model
     will be computed and saved; if \code{FALSE}
     (the default), residuals are suppressed. If residuals are saved, partial residuals are computed when
-    the effect is plotted: see \code{\link{plot.eff}}. This argument may also be used for mixed-effects and some other models.}
+    the effect is plotted: see \code{\link{plot.eff}} and the vignette \href{../doc/partial-residuals.pdf}{Effect Displays with Partial Residuals}. This argument may also be used for mixed-effects and some other models.}
   \item{quantiles}{quantiles at which to evaluate numeric focal predictors \emph{not} on the
     horizontal axis, used only when partial residuals are displayed; superceded if the \code{xlevels} argument
     gives specific values for a predictor.}
@@ -182,12 +158,8 @@ allEffects(mod, ...)
   	(the default) effects are computed as individual-level probabilities
   	and logits.}
   \item{x}{an object of class \code{"eff"}, \code{"effpoly"}, or \code{"efflatent"}.}
-  \item{transform}{a transformation to be applied to the effects and confidence limits,
-    by default taken from the inverse link function saved in the \code{"eff"} object.}
-  \item{row.names, optional}{not used.}
-  \item{object}{an object of class \code{"eff"} for which the covariance matrix of the effects is desired.}
   \item{...}{arguments to be passed down.}
-  \item{confint, confidence.level, given.values, typical, offset, partial.residuals}{legacy arguments retained for backwards compatability; if present, these arguments take precedence
+  \item{confint, confidence.level, given.values, typical, offset, partial.residuals, transformation}{legacy arguments retained for backwards compatability; if present, these arguments take precedence
   over \code{level} element of the \code{confint} list argument and the
   \code{given.values}, \code{typical}, and \code{offset} elements of the \code{fixed.predictors}
   list argument; \code{confint} may be used in place of the \code{se} argument;
@@ -214,11 +186,6 @@ allEffects(mod, ...)
   compute the effect corresponding to the absent term \code{A:B:C}, which absorbs the constant, the
   \code{A}, \code{B}, and \code{C} main effects, and the three two-way interactions. In either of these
   cases, a warning is printed.
-
-  The \code{as.data.frame} methods convert effect objects to data frames to facilitate the construction
-  of custom displays. In the case of \code{"eff"} objects, the \code{se} element in the data frame is always
-  on the scale of the linear predictor, and the transformation used for the fit and confidence limits is saved in
-  a \code{"transformation"} attribute.
 
   See \code{\link{predictorEffects}} for an alternative paradigm for getting effects.
 }
@@ -268,6 +235,7 @@ allEffects(mod, ...)
   \item{family}{for a \code{"glm"} model, the name of the distributional family of the model;
     for an \code{"lm"} model, this is \code{"gaussian"}; otherwise \code{NULL}. The \code{family} controls
     how partial residuals are smoothed in plots.}
+  \item{link}{the value returned by \code{family(mod)}.  Down-stream methods may need the link, inverse link and derivative functions.}
 
   \code{allEffects} returns an \code{"efflist"} object, a list of \code{"eff"} or \code{"effpoly"} objects
   corresponding to the high-order terms of the model.
@@ -332,15 +300,16 @@ and of class \code{"effpoly"} with more than 2 categories.
   	\bold{36}, 225--255.
 
   	Fox, J. and J. Hong (2009).
-    Effect displays in R for multinomial and proportional-odds logit models:
+    Effect displays in R for multinomial and proportional-odds logit models:?
     	    Extensions to the effects package.
     \emph{Journal of Statistical Software}
     \bold{32:1}, 1--24, <\url{http://www.jstatsoft.org/v32/i01/}>.
 
-    Fox, J. and S. Weisberg (forthcoming).
-    Visualizing Fit and Lack of Fit in Complex Regression Models:
-        Effect Plots with Partial Residuals.
-    \emph{Journal of Statistical Software}.
+    Fox, J. and S. Weisberg (2018).
+    Visualizing Fit and Lack of Fit in Complex Regression Models
+        with Predictor Effect Plots with Partial Residuals.
+    \emph{Journal of Statistical Software}
+    \bold{87:9}, 1--27, <\url{http://www.jstatsoft.org/v87/i09/}>
 
     Hastie, T. J. (1992).
     Generalized additive models.
@@ -364,7 +333,7 @@ and Jangman Hong.}
     \code{\link{print.effpoly}}, \code{\link{summary.effpoly}}, \code{\link{plot.effpoly}},
     \code{\link{print.efflist}}, \code{\link{summary.efflist}},
     \code{\link{plot.efflist}}, \code{\link{xyplot}},
-    \code{\link{densityplot}}.}
+    \code{\link{densityplot}}, and the \href{../doc/partial-residuals.pdf}{Effect Displays with Partial Residuals} and \href{../doc/adding-Effect-methods.pdf}{Defining Effect Methods for Other Models} vignettes.}
 
 \examples{
 mod.cowles <- glm(volunteer ~ sex + neuroticism*extraversion,

@@ -29,7 +29,7 @@
 # 2018-01-25: substitute se for confint arg; make confint a legacy arg
 # 2018-05-06: allow for complete=FALSE arg in potential calls to vcov.lm() and vcov.glm.
 # 2018-05-13: allow partial residuals to be computed when the x.var is a factor.
-# 2018-06-05: Effect.default now makes sure family$ais is 
+# 2018-06-05: Effect.default now makes sure family$aic is 
 #             set, for use with non-standard families.
 # 2018-06-05: A test has been added to Effect.default to chech if family$variance
 #             has one parameter.  If not, the function is stopped and an error is
@@ -37,6 +37,9 @@
 # 2018-06-12: Fixed bug with vcov in Effect.default
 # 2018-06-20: Added a check to Effect.default to handle family args that
 #             are character or an unevaluated function
+# 2018-10-01: Avoid warnings when testing given.values == "equal" or "default".
+# 2018-10-08: transformation argument changed to legacy
+# 2018-10-08: new returned value 'link' = family(mod) 
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -187,13 +190,16 @@ fixFormula <- function (term)
 
 Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
         vcov. = vcov, se=TRUE,
-        transformation = list(link = family(mod)$linkfun, inverse = family(mod)$linkinv),
         residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
         x.var=NULL,  ...,
         #legacy arguments:
-        given.values, typical, offset, confint, confidence.level, partial.residuals){
+        given.values, typical, offset, confint, confidence.level, 
+        partial.residuals, transformation){ 
   if (!missing(partial.residuals)) residuals <- partial.residuals
   partial.residuals <- residuals
+  if (missing(transformation)) 
+    transformation <- list(link = family(mod)$linkfun, 
+                           inverse = family(mod)$linkinv)
   if (missing(fixed.predictors)) fixed.predictors <- NULL
   fixed.predictors <- applyDefaults(fixed.predictors,
                                     list(given.values=NULL, typical=mean,
@@ -202,8 +208,8 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
   if (missing(given.values)) given.values <- fixed.predictors$given.values
 # new 1/22/18 to allow for automatical equal weighting of factor levels
   if(!is.null(given.values)){
-   if (given.values == "default") given.values <- NULL
-   if (given.values == "equal") given.values <- .set.given.equal(mod)}
+   if (given.values[1] == "default") given.values <- NULL
+   if (given.values[1] == "equal") given.values <- .set.given.equal(mod)}
 # end new code
   if (missing(typical)) typical <- fixed.predictors$typical
   if (missing(offset)) offset <- fixed.predictors$offset
@@ -335,6 +341,8 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
   }
   result$transformation <- transformation
   result$family <- family(mod)$family
+# 2018-10-08 result$family kept to work with legacy code  
+  result$link <- family(mod) 
   class(result) <- "eff"
   result
 }
@@ -351,8 +359,8 @@ Effect.multinom <- function(focal.predictors, mod,
   if (missing(given.values)) given.values <- fixed.predictors$given.values
   # new 1/22/18 to allow for automatical equal weighting of factor levels
   if(!is.null(given.values)){
-    if (given.values == "default") given.values <- NULL
-    if (given.values == "equal") given.values <- .set.given.equal(mod)}
+    if (given.values[1] == "default") given.values <- NULL
+    if (given.values[1] == "equal") given.values <- .set.given.equal(mod)}
   # end new code
   # end new code
   if (missing(typical)) typical <- fixed.predictors$typical
@@ -490,8 +498,8 @@ Effect.polr <- function(focal.predictors, mod,
   # new 1/22/18 to allow for automatical equal weighting of factor levels
   # new 1/22/18 to allow for automatical equal weighting of factor levels
   if(!is.null(given.values)){
-    if (given.values == "default") given.values <- NULL
-    if (given.values == "equal") given.values <- .set.given.equal(mod)}
+    if (given.values[1] == "default") given.values <- NULL
+    if (given.values[1] == "equal") given.values <- .set.given.equal(mod)}
   # end new code
   if (missing(typical)) typical <- fixed.predictors$typical
   if (!missing(confint)) se <- confint

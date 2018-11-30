@@ -21,10 +21,14 @@ list-style arguments
 \details{
 Here is the correspondence between the old and new arguments.
 
-For \code{plots} methods:
+For \code{plot} methods:
 
 \describe{
 \item{\code{multiline=TRUE/FALSE}}{\code{lines=list(multiline=TRUE/FALSE)}}
+
+\item{\code{type=c("rescale", "link", "response")}}{For models with a link function, \code{"link"} plots in linear predictor scale, \code{"response"} plots in the response scale, and the default \code{"rescale"} plots in linear predictor scale but labels tick-marks in response scale.}
+
+\item{\code{z.var=which.min(levels)}}{\code{lines=list(z.var=which.min(levels))} relevant only when \code{lines=list(multiline=TRUE)}}
 
 \item{\code{colors={vector of colors}}}{\code{lines=list(col={vector of colors})}}
 
@@ -107,9 +111,10 @@ For \code{Effect} methods:
 \item{\code{offset={function}}}{\code{fixed.predictors=list(offset={function})}}
 
 \item{\code{partial.residuals=TRUE/FALSE}}{\code{residuals=TRUE/FALSE}}
-}
 
-}
+\item{\code{transformation}}{This argument to \code{Effect} is not needed to compute effects.  It can now be set directly with the \code{plot} method with the argument \code{axes = list(y = list(transformation=specification))}.}
+
+}}
 
 \author{John Fox \email{jfox@mcmaster.ca}}
 

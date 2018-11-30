@@ -28,6 +28,9 @@
 # 2018-05-09: fix typo in startup message
 # 2018-05-13: modified Analyze.model() to support partial-residual plots against factors.
 # 2018-08-17: modified .onAttach() so that trellis device doesn't open, suggestion of Kurt Hornik.
+# 2018-10-06: modified as.data.frame, adding a 'type' argument and deleting the 'transformation' argument, using the mu.eta function from the defining family
+# 2018-10-19:  added as.data.frame.efflist
+# 2018-10-25: as.data.frame.eff() fixed so that deletion of the transformation argument doesn't break plot.eff(). J. Fox
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -144,8 +147,13 @@ matrix.to.df <- function(matrix, colclasses){
 }
 
 # the following function is a modification of code contributed by Steve Taylor
+# as.data.frame rewritten, 2018-10-06
+# fixed 2018-10-25 so that plot.eff() isn't broken by the rewrite
 
-as.data.frame.eff <- function(x, row.names=NULL, optional=TRUE, transform=x$transformation$inverse, ...){
+as.data.frame.eff <- function(x, row.names=NULL, optional=TRUE, type=c("response", "link"), ...){ 
+  type <- match.arg(type)
+  linkinv <- if (is.null(x$link$linkinv)) I else x$link$linkinv
+  linkmu.eta <- if(is.null(x$link$mu.eta)) function(x) NA else x$link$mu.eta
   xx <- x$x
   for (var in names(xx)){
     if (is.factor(xx[[var]])){
@@ -153,10 +161,28 @@ as.data.frame.eff <- function(x, row.names=NULL, optional=TRUE, transform=x$tran
     }
   }
   x$x <- xx
-  result <- if (is.null(x$se)) data.frame(x$x, fit=transform(x$fit))
-  else data.frame(x$x, fit=transform(x$fit), se=x$se, lower=transform(x$lower), upper=transform(x$upper))
-  attr(result, "transformation") <- transform
-  result
+  result <- switch(type, 
+                   response= { if (is.null(x$se)) 
+                     data.frame(x$x, fit=transform(x$fit))
+                     else 
+                       data.frame(x$x, 
+                                  fit=linkinv(x$fit),
+                                  se = linkmu.eta(x$fit) * x$se,
+                                  lower=linkinv(x$lower), 
+                                  upper=linkinv(x$upper))},
+                   link = { if (is.null(x$se)) 
+                     data.frame(x$x, fit=x$fit)
+                     else 
+                       data.frame(x$x, fit=x$fit, 
+                                  se=x$se, 
+                                  lower=x$lower, 
+                                  upper= x$upper)})
+  attr(result, "type") <- type
+  result 
+}
+
+as.data.frame.efflist <- function(x, row.names=NULL, optional=TRUE, type, ...){
+  lapply(x, as.data.frame, type)
 }
 
 as.data.frame.effpoly <- function(x, row.names=NULL, optional=TRUE, ...){

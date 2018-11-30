@@ -1,4 +1,4 @@
-# last modified 2018-07-04 by J. Fox
+# last modified 2018-10-06 by J. Fox
 
 import(carData)
 
@@ -18,11 +18,12 @@ importFrom(stats, as.formula, binomial, coef, coefficients, cov, delete.response
     model.frame, model.matrix, model.offset,
     model.response, na.exclude, na.omit, nlm, predict, qf, qnorm, qt, quantile, residuals,
     spline, terms, update, vcov, weights, xtabs)
-importFrom(utils, menu)
+importFrom(utils, menu, browseURL)
 
 export(effect, allEffects, Effect, effectsTheme)
 export(predictorEffect, predictorEffects)
 export(Effect.default, effect.default, allEffects.default)
+export(effectsHexsticker)
 S3method(plot, predictoreff)
 S3method(plot, predictorefflist)
 S3method(predictorEffects, default)
@@ -45,8 +46,10 @@ S3method(Effect, polr)
 S3method(Effect, poLCA)
 S3method(Effect, mlm)
 S3method(Effect, svyglm)
-S3method(Effect, rlmerMod)
 S3method(Effect, betareg)
+export(Effect.lm,Effect.merMod,Effect.lme,Effect.clm2,Effect.clm,Effect.clmm,
+       Effect.rlmerMod,Effect.gls,Effect.multinom,Effect.polr,Effect.poLCA,
+       Effect.mlm,Effect.svyglm,Effect.betareg)
 
 S3method(print, eff)
 S3method(print, efflist)
@@ -59,6 +62,7 @@ S3method(summary, efflist)
 S3method(summary, mlm.efflist)
 S3method(summary, predictorefflist)
 S3method(as.data.frame, eff)
+S3method(as.data.frame, efflist)
 S3method(as.data.frame, effpoly)
 S3method(as.data.frame, efflatent)
 S3method(plot, eff)

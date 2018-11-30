@@ -1,4 +1,3 @@
-# last update:  2017-07-16
 # 2017-08-14 fixed bug in plot.predictoreff on passing 'multiline' to lines list
 # 2017-08-30 for compatibility with other effect plots, default
 #            is now multiline=FALSE
@@ -10,22 +9,25 @@
 # 2018-05-14 predictorEffect.default() calls Effect() with x.var=1
 # 2018-06-07 predictorEffects now works with offsets.
 # 2018-08-09 removed explicit 'xlevels' argument from predictorEffects, so the argument is correctly passed with ...
+# 2018-10-19: changed class of predictorefflist to c("predictorefflist", "efflist", "list")
+# 2018-11-19: added xlevels argument with default 5 to be applied to conditioning predictors and
+#             focal.levels argument with default 50 to be applied to focal predictor. J. Fox
 
 
 # removed xlevels argument 8/9/18
-predictorEffect <- function(predictor, mod, ...){  
+predictorEffect <- function(predictor, mod, focal.levels=50, xlevels=5, ...){  
   UseMethod("predictorEffect", mod)
 }
 
 # removed xlevels argument 8/9/18
-predictorEffect.svyglm <- function(predictor, mod, ...){
+predictorEffect.svyglm <- function(predictor, mod, focal.levels=50, xlevels=5, ...){
   mod$call <- list(mod$call, data=mod$data)
   NextMethod(object=mod, ...)
 }
 
 #simplified 12/10/17
 # removed xlevels argument 8/9/18
-predictorEffect.default <- function(predictor, mod, ...){
+predictorEffect.default <- function(predictor, mod, focal.levels=50, xlevels=5, ...){
   form <- Effect.default(NULL, mod) #returns the fixed-effects formula
   all.vars <- all.vars(parse(text=form))
   # find the right effect to use
@@ -34,6 +36,16 @@ predictorEffect.default <- function(predictor, mod, ...){
   predictors <- all.vars(parse(text=terms))
   sel <- which(predictors == predictor)
   if(length(sel) != 1) stop("First argument must be the quoted name of one predictor in the formula")
+  
+  if (is.numeric(xlevels)){
+    if (length(xlevels) > 1 || round(xlevels != xlevels)) stop("xlevels must be a single whole number or a list")
+    xlevs <- list()
+    for (pred in predictors[-sel]){
+      xlevs[[pred]] <- xlevels
+    }
+    xlevels <- xlevs
+  }
+  xlevels[[predictor]] <- focal.levels
   # create correspondence table
   decode <- function(name) all.vars(parse(text=unlist(strsplit(name, ":"))))
   tab <- rep(FALSE, length(terms))
@@ -42,18 +54,18 @@ predictorEffect.default <- function(predictor, mod, ...){
   ans <- unique(all.vars(parse(text=ans)))
   ans <- unique(c(predictor, ans)) # guarantees focal predictor is first
   args <- names(list(...))
-  result <- if ("x.var" %in% args) Effect(ans, mod, ...) else Effect(ans, mod, x.var=1, ...)
+  result <- if ("x.var" %in% args) Effect(ans, mod, xlevels=xlevels, ...) else Effect(ans, mod, x.var=1, xlevels=xlevels, ...)
   class(result) <- c("predictoreff", class(result))
   result
 }
 
-predictorEffects <- function(mod, predictors, ...){
+predictorEffects <- function(mod, predictors, focal.levels=50, xlevels=5, ...){
   UseMethod("predictorEffects", mod)
 }
 
 
 # rewritten, simplified, 12/08/17, bug in formulas fixed 01/24/2018
-predictorEffects.default <- function(mod, predictors = ~ ., ...) {
+predictorEffects.default <- function(mod, predictors = ~ ., focal.levels=50, xlevels=5, ...) {
 # The next function removes offset(s) from a formula, used for mform and cform
   no.offset <- function(x, preserve = NULL) {
     k <- 0
@@ -73,13 +85,35 @@ predictorEffects.default <- function(mod, predictors = ~ ., ...) {
   cform <- no.offset(cform)
   mvars <- all.vars(mform[[3]])
   cvars <- all.vars(cform[[3]])
-# check that 'cvars' is a subset of 'mvars'. If so apply predictorEffect
-  if(!all(cvars %in% mvars))
-    stop("argument 'predictors' not a subset of the predictors in the formula") else {
-    result <- list()
-    for(p in cvars) result[[p]] <- predictorEffect(p, mod, ...)
+  if (is.list(focal.levels)){
+    for(cvar in cvars){
+      if (!is.null(focal.levels[[cvar]])) next
+      focal.levels[[cvar]] <- 50
     }
-  class(result) <- c("predictorefflist", "list")
+  } else{
+    if (!is.vector(focal.levels) || !is.numeric(focal.levels) || length(focal.levels) > 1 || round(focal.levels) != focal.levels)
+      stop("focal.levels must be a length 1 positive\nwhole-number numeric vector or a list")
+  }
+  if (is.list(xlevels)){
+    for(mvar in mvars){
+      if (!is.null(xlevels[[mvar]])) next
+      xlevels[[mvar]] <- 5
+    }
+  } else{
+    if (!is.vector(xlevels) || !is.numeric(xlevels) || length(xlevels) > 1 || round(xlevels) != xlevels)
+      stop("xlevels must be a length 1 positive\nwhole-number numeric vector or a list")
+  }
+# check that 'cvars' is a subset of 'mvars'. If so apply predictorEffect
+  if(!all(cvars %in% mvars)){
+    stop("argument 'predictors' not a subset of the predictors in the formula") 
+  } else {
+    result <- list()
+    for(p in cvars){
+      flevs <- if (is.numeric(focal.levels)) focal.levels else focal.levels[[p]]
+      result[[p]] <- predictorEffect(p, mod, focal.levels=flevs, xlevels=xlevels, ...)
+    }
+  }
+  class(result) <- c("predictorefflist", "efflist", "list")
   result
 }
 

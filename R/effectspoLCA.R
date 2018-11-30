@@ -1,5 +1,6 @@
 # 2013-07-31:  extend effects to poLCA objects.  S. Weisberg
 # 2013-10-15: removed effect.poLCA. J. Fox
+# 2018-11-19: added focal.levels argument to predictorEffect() and predictorEffects() methods. J. Fox
 
 #The next two functions should be exported to the namespace
 
@@ -13,16 +14,16 @@ Effect.poLCA <- function(focal.predictors, mod, ...) {
   result
 }
 
-predictorEffects.poLCA <- function(mod, predictors = ~., ...){
-  predictorEffects(poLCA.to.fake(mod), predictors=predictors, ...)
+predictorEffects.poLCA <- function(mod, predictors = ~.,focal.levels=50, xlevels=5,  ...){
+  predictorEffects(poLCA.to.fake(mod), predictors=predictors, focal.levels=focal.levels, xlevels=xlevels, ...)
 }
 
-predictorEffect.poLCA <- function(predictor, mod, xlevels=list(), ...){
-  predictorEffect(predictor, poLCA.to.fake(mod), xlevels=xlevels, ...)
+predictorEffect.poLCA <- function(predictor, mod, focal.levels=50, xlevels=5, ...){
+  predictorEffect(predictor, poLCA.to.fake(mod), focal.levels=focal.levels, xlevels=xlevels, ...)
 }
 
 # this function makes a 'fake' multinom object or 'glm' object so
-# effect.mulitnom  or effect.glm can be used.
+# effect.multinom  or effect.glm can be used.
 # effect.multinom requires at least 3 classes, so if classes=2 use
 # effect.glm
 poLCA.to.fake <- function(mod) {

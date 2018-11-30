@@ -1,10 +1,34 @@
+Version 4.1-0
+
+ o Fixed a bug in Effect.gls to ignore the 'weights' argument on the call to gls.
+ 
+ o Added predictor effects graphics gallery vignette.
+ 
+ o predictorEffect() and predictorEffects() have new xlevels and focal.levels arguments.
+
+ o Removed the transform argument from as.data.frame.eff(), and added type argument.  Made the transformation argument to Effect() a legacy argument and added transform as sub-argument to axes=list(y=list(transform=...)) in plot.eff(). 
+ 
+ o Rearanged man files.
+ 
+ o Extend use of cex sub-args for x and y axes and lattice strips to plot.effpoly().
+ 
+ o Avoid warnings when testing given.values == "default" or "equal".
+ 
+ o Modified plot.effpoly() so that multiline plots don't show confidence limits by default, and so that confidence bars for a factor are staggered.
+ 
+ o Added effectsHexsticker().
+ 
+ o Fixed bug in plotting partial residuals when a factor focal predictor had empty levels.
+ 
+ o Small fixes and improvements.
+
 Version 4.0-3
 
  o xlevels argument now works with predictorEffects.
  
  o Added cex sub-args for x and y axes (suggestion of Charles Leger) and for lattice strips.
  
-  modified .onAttach() so that trellis device doesn't open, suggestion of Kurt Hornik.
+ o modified .onAttach() so that trellis device doesn't open, suggestion of Kurt Hornik.
 
 Version 4.0-2
 
