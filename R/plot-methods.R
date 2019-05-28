@@ -42,6 +42,7 @@
 # 2018-10-25: check number of points used for spline interpolation
 # 2018-10-25: fixed bug in plot.eff() introduced by previous modification to as.data.frame.eff().
 # 2018-11-03: fixed bug in plotting partial residuals when a factor focal predictor had empty levels.
+# 2019-02-13: made sure lty not ignored.
 
 # the following functions aren't exported
 
@@ -353,7 +354,7 @@ plot.eff <- function(x, x.var,
       if (is.factor(x.all[, i]))  x.all[, i] <- droplevels(x.all[, i])
     }
   }
-  split <- c(col, row, ncol, nrow)
+   split <- c(col, row, ncol, nrow)
   if (missing(x.var)) x.var <- x$x.var
   if (!is.null(x.var) && is.numeric(x.var)) x.var <- colnames(x$x)[x.var] 
   x.data <- x$data
@@ -501,7 +502,7 @@ plot.eff <- function(x, x.var,
           good <- !is.na(y)
           if(!all(!good)){
           axis.length <- diff(range(x))
-          effect.llines(x[good], y[good], lwd=lwd, col=colors[1], ...)
+          effect.llines(x[good], y[good], lwd=lwd, col=colors[1], lty=lines,  ...)
           if (rug && is.null(residuals)) lrug(trans(x.vals))
           if (has.se){
             if (ci.style == "bars"){
@@ -931,7 +932,7 @@ if (x.var == z.var) z.var <- z.var + 1
         if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
         good <- !is.na(y)
         if(!all(!good)){
-        effect.llines(x[good], y[good], lwd=lwd, col=colors[1], ...)
+        effect.llines(x[good], y[good], lwd=lwd, col=colors[1], lty=lines, ...)
         if (rug && is.null(residuals)) lrug(trans(x.vals))
         if (has.se){
           if (ci.style == "bars"){

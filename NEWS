@@ -1,3 +1,13 @@
+Version 4.1-1
+
+ o Accommodate character and logical predictors.
+ 
+ o Make sure that lty argument to plot() is not ignored.
+ 
+ o Change behavior of default levels argument to predictorEffect.default() and predictorEffects.default() when residuals=TRUE to match that of Effect.lm().
+ 
+ o Fix to Effect.default() to make fake glm fit more robust and fixed bug in .set.given.equal() in tests for model class.
+
 Version 4.1-0
 
  o Fixed a bug in Effect.gls to ignore the 'weights' argument on the call to gls.

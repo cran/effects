@@ -79,7 +79,7 @@ allEffects(mod, ...)
   \item{focal.predictors}{a character vector of one or more predictors in the model in any order.}
   \item{mod}{an object of the appropriate class.  If no method exists for that class, \code{Effect.default} will be called. }
   \item{xlevels}{this argument is used to set the number of levels for any
-    focal predictor that is not a factor.  If \code{xlevels=NULL}, then
+    focal predictor that is not a factor (where character and logical predictors are treated as factors).  If \code{xlevels=NULL}, then
     each numeric predictor is represented by five values equally spaced over
     its range and then rounded to 'nice' numbers.  If \code{xlevels=n}
     is an integer, then each numeric predictor is represented by \code{n} equally
@@ -98,7 +98,7 @@ allEffects(mod, ...)
 
     \describe{
 
-      \item{given.values}{\code{given.values="default"} specifies averaging over levels of a non-focal factor using the default that weights levels of the factor by sample size.  \code{given.values="equal"} uses unweighted averages over factor levels for non-focal factors.  For finer control, the user can also provide a named numeric vector of weights for particular columns of the model matrix that correspond to regressors for the factor.  For example, for a factor \code{X} with three levels \code{a}, \code{b} and \code{c}, the regressors generated using the default parameterization for a factor will be named \code{Xb} and \code{Xc} as the regressor for level \code{a} is usually excluded.  The specification \code{given.values=c(Xb=1/2, Xc=1/4)} would average over the levels of \code{X} with weight 1/2 for level \code{b}, 1/4 for \code{c}, and weight 1 = 1/2 - 1/4 = 1/4 for the baseline level \code{a}.  Setting \code{given.values=c(Xb=1)} will fix \code{X} and level \code{b}.
+      \item{given.values}{\code{given.values="default"} specifies averaging over levels of a non-focal factor using the default that weights levels of the factor by sample size.  \code{given.values="equal"} uses unweighted averages over factor levels for non-focal factors.  For finer control, the user can also provide a named numeric vector of weights for particular columns of the model matrix that correspond to regressors for the factor. Character and logical predictors are treated as factors. For example, for a factor \code{X} with three levels \code{a}, \code{b} and \code{c}, the regressors generated using the default parameterization for a factor will be named \code{Xb} and \code{Xc} as the regressor for level \code{a} is usually excluded.  The specification \code{given.values=c(Xb=1/2, Xc=1/4)} would average over the levels of \code{X} with weight 1/2 for level \code{b}, 1/4 for \code{c}, and weight 1 = 1/2 - 1/4 = 1/4 for the baseline level \code{a}.  Setting \code{given.values=c(Xb=1)} will fix \code{X} and level \code{b}.
 }
 
   	  \item{typical}{a function to be applied to the columns of the model matrix
@@ -256,8 +256,7 @@ and of class \code{"effpoly"} with more than 2 categories.
   Factors cannot have colons in level names (e.g., \code{"level:A"}); the \code{effect} function will confuse the
   colons with interactions; rename levels to remove or replace the colons (e.g., \code{"level.A"}).
 
-  The functions in the \pkg{effects} package work properly with predictors that are numeric or factors;
-  consequently, e.g., convert logical predictors to factors, and dates to numeric.
+  The functions in the \pkg{effects} package work properly with predictors that are numeric variables, factors, character variables, or logical variables; consequently, e.g., convert dates to numeric. Character predictors and logical predictors are treated as factors, the latter with "levels" \code{"FALSE"} and \code{"TRUE"}.
 
   Empty cells in crossed-factors are now permitted for \code{"lm"}, \code{"glm"}, and \code{"multinom"} models.
   For \code{"multinom"} models with two or more crossed factors with an empty cell, stacked area plots
@@ -543,7 +542,7 @@ if (require(heplots)) {
 
 \donttest{
 if (require(survey)){
-  data(api)
+  data("api")
   dstrat<-svydesign(id=~1, strata=~stype, weights=~pw,
     data=apistrat, fpc=~fpc)
   mod <- svyglm(sch.wide ~ ell + meals + mobility, design=dstrat,

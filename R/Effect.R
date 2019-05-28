@@ -40,6 +40,8 @@
 # 2018-10-01: Avoid warnings when testing given.values == "equal" or "default".
 # 2018-10-08: transformation argument changed to legacy
 # 2018-10-08: new returned value 'link' = family(mod) 
+# 2019-04-20: made Effect.default() more robust in fitting fake glm by setting epsilon=Inf.
+# 2019-04-20: fixed bug in .set.given.equal() in tests for model class.
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -53,11 +55,11 @@
   out <- NULL
   for (f in factors){
     form <- as.formula(paste( "~", f, collapse=""))
-    .m0 <- if(inherits(class(m), "glm")) 
-              {update(m, form, control=glm.control(epsilon=1))} else {
-    if(inherits(class(m), "polr"))
+    .m0 <- if(inherits(m, "glm")) 
+              {update(m, form, control=glm.control(epsilon=Inf, maxit=1))} else {
+    if(inherits(m, "polr"))
               {update(m, form, control=list(maxit=1))} else {
-    if(inherits(class(m), "multinom"))    
+    if(inherits(m, "multinom"))    
               {update(m, form, maxit=0, trace=FALSE)} else
         update(m, form)}}
     names <- colnames(model.matrix(.m0))[-1]
@@ -125,7 +127,7 @@ Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
 # end reading sources
 # set control parameters: suggested by Nate TeGrotenhuis
   cl$control <- switch(type,
-          glm = glm.control(epsilon=1, maxit=1),
+          glm = glm.control(epsilon=Inf, maxit=1),
           polr = list(maxit=1),
           multinom = c(maxit=1))
   cl$method <- sources$method # NULL except forntype=="polr"

@@ -1,9 +1,10 @@
 Package: effects
-Version: 4.1-0
-Date: 2018-11-30
+Version: 4.1-1
+Date: 2019-05-20
 Title: Effect Displays for Linear, Generalized Linear, and Other Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Sanford", "Weisberg", role = "aut", email = "sandy@umn.edu"),
+		person("Brad", "Price", role = "aut", email = "brad.price@mail.wvu.edu"),
     person("Michael", "Friendly", role = "aut", email = "friendly@yorku.ca"),
     person("Jangman", "Hong", role = "aut"),
     person("Robert", "Andersen", role = "ctb"),
@@ -24,10 +25,9 @@ License: GPL (>= 2)
 URL: https://www.r-project.org,
         https://socialsciences.mcmaster.ca/jfox/
 VignetteBuilder: knitr
-NeedsCompilation: no
-Packaged: 2018-11-30 21:29:16 UTC; johnfox
 Author: John Fox [aut, cre],
   Sanford Weisberg [aut],
+  Brad Price [aut],
   Michael Friendly [aut],
   Jangman Hong [aut],
   Robert Andersen [ctb],
@@ -36,4 +36,9 @@ Author: John Fox [aut, cre],
   R Core Team [ctb]
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
-Date/Publication: 2018-11-30 23:20:03 UTC
+Repository/R-Forge/Project: effects
+Repository/R-Forge/Revision: 378
+Repository/R-Forge/DateTimeStamp: 2019-05-27 15:31:15
+Date/Publication: 2019-05-28 17:00:05 UTC
+NeedsCompilation: no
+Packaged: 2019-05-27 15:53:38 UTC; rforge

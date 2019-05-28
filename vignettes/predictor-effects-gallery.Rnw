@@ -71,7 +71,7 @@
 
 \author{John Fox and Sanford Weisberg}
 
-\date{2018-11-22}
+\date{2018-12-19}
 
 \maketitle
 
@@ -80,6 +80,8 @@
 \begin{abstract}
 Predictor effect displays visualize the response surface of complex regression models by averaging and conditioning, producing a sequence of 2D line graphs, one graph or set of graphs for each predictor in the regression problem \citep{fw19, fw19b}.  In this vignette, we give examples of effect plots produced by the \pkg{effects} package, and in the process systematically illustrate the optional arguments to functions in the package, which can be used to customize predictor effect plots.
 \end{abstract}
+
+\centerline{\includegraphics[width=1.25in]{../inst/doc/effects-hex.pdf}}
 
 <<setopts,echo=FALSE>>=
 library("knitr")

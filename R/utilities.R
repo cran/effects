@@ -29,8 +29,9 @@
 # 2018-05-13: modified Analyze.model() to support partial-residual plots against factors.
 # 2018-08-17: modified .onAttach() so that trellis device doesn't open, suggestion of Kurt Hornik.
 # 2018-10-06: modified as.data.frame, adding a 'type' argument and deleting the 'transformation' argument, using the mu.eta function from the defining family
-# 2018-10-19:  added as.data.frame.efflist
+# 2018-10-19: added as.data.frame.efflist
 # 2018-10-25: as.data.frame.eff() fixed so that deletion of the transformation argument doesn't break plot.eff(). J. Fox
+# 2018-12-19: accommodate character and logical predictors. J. Fox
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -264,15 +265,22 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
   factor.cols <- rep(FALSE, length(cnames))
   names(factor.cols) <- cnames
   for (name in all.predictors){
-    if (is.factor.predictor(name, mod)) factor.cols[grep(paste("^", name, sep=""), cnames)] <- TRUE
+    if (is.factor.predictor(name, mod)) {
+      factor.cols[grep(paste("^", name, sep=""), cnames)] <- TRUE
+    }
   }
   factor.cols[grep(":", cnames)] <- FALSE   
   X <- na.omit(expand.model.frame(mod, all.predictors))
+  for (name in all.predictors){
+    if (is.factor.predictor(name, mod) && is.null(xlevels[[name]])) {
+      xlevels[[name]] <- levels(X[, name]) # accomodate logical predictor
+    }
+  }
   bad <- sapply(X[, all.predictors, drop=FALSE], function(x) !(is.factor(x) || is.numeric(x)))
   if (any(bad)){
-    message <- if (sum(bad) == 1) paste("the following predictor isn't a factor or numeric:", 
+    message <- if (sum(bad) == 1) paste("the following predictor isn't a factor, logical, character, or numeric:", 
                                         all.predictors[bad])
-    else paste("the following predictors aren't factors or numeric:", 
+    else paste("the following predictors aren't factors, logical, character, or numeric:", 
                paste(all.predictors[bad], collapse=", "))
     stop(message)
   }
@@ -303,7 +311,8 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
             xlevels[[name]]}
     }
     else factor.levels[[name]] <- levels
-    x[[name]] <- list(name=name, is.factor=fac, levels=levels)
+#    x[[name]] <- list(name=name, is.factor=fac, levels=levels)
+    x[[name]] <- list(name=name, is.factor=is.factor(X[, name]), levels=levels)
   }
   if (partial.residuals){
     numeric.predictors <- sapply(focal.predictors, function(predictor) is.numeric.predictor(predictor, mod))
@@ -493,8 +502,12 @@ eff.latent <- function(X0, b, V, se){
 
 # determine class of a predictor
 
+# is.factor.predictor <- function(predictor, model) {
+#   !is.null(model$xlevels[[predictor]])
+# }
+
 is.factor.predictor <- function(predictor, model) {
-  !is.null(model$xlevels[[predictor]])
+  predictor %in% names(attr(model.matrix(model), "contrasts"))
 }
 
 is.numeric.predictor <- function(predictor, model) {
@@ -575,4 +588,18 @@ nice <- function (x, direction = c("round", "down", "up"), lead.digits = 1) {
 ticksGrid <- function(x, y, col=reference.line$col){
   reference.line <- trellis.par.get("reference.line")
   panel.abline(h=y, v=x, col=col, lty=reference.line$lty)
+}
+
+
+# for character and logical predictors
+
+is.factor <- function(x) inherits(x, "factor") || ((is.character(x) || is.logical(x)) && is.vector(x)) 
+
+levels.character <- function(x) {
+  levs <- unique(x)
+  sort(levs[!is.na(levs)])
+}
+
+levels.logical <- function(x) {
+  c("FALSE", "TRUE")
 }

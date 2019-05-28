@@ -53,7 +53,7 @@ If the default \code{~ .}, a predictor effect plot is drawn for each predictor (
   or it may be a list with elements named for the predictors giving the number of values or a vector of values to which each
   conditioning predictor is to be set, as explained in the help for \code{\link{Effect}}. If the
   focal predictor is included in the \code{xlevels} list, it is disregarded; if any conditioning predictor
-  is omitted from the list, its number of values is set to 5. 
+  is omitted from the list, its number of values is set to 5. The default behavior of \code{xlevels} is different when \code{residuals=TRUE}; in that case, it behaves as in \code{\link{Effect.lm}}, and is effectively set by default to the 0.2, 0.4, 0.6, and 0.8 quantiles of conditioning predictors.
   
   The \code{xlevels} argument works similarly for \code{predictorEffect} and \code{predictorEffects}.}
   \item{\dots}{

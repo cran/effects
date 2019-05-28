@@ -28,8 +28,15 @@ bibentry(bibtype = "Article",
   number       = "9",
   pages        = "1--27",
   doi          = "10.18637/jss.v087.i09",
+  url = "https://www.jstatsoft.org/v087/i09",
+  
+    textVersion  =
+  paste("John Fox, Sanford Weisberg (2018).",
+        "Visualizing Fit and Lack of Fit in Complex Regression Models with Predictor Effect Plots and Partial Residuals.",
+        "Journal of Statistical Software, 87(9), 1-27.",
+        "URL https://www.jstatsoft.org/v087/i09."),
 
-  header       = "To cite effects in publications use:"
+  header       = "For predictor effects or partial residuals also cite:"
 )
 
 
