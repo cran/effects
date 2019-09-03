@@ -1,6 +1,6 @@
 Package: effects
-Version: 4.1-1
-Date: 2019-05-20
+Version: 4.1-2
+Date: 2019-08-30
 Title: Effect Displays for Linear, Generalized Linear, and Other Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Sanford", "Weisberg", role = "aut", email = "sandy@umn.edu"),
@@ -37,8 +37,8 @@ Author: John Fox [aut, cre],
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
 Repository/R-Forge/Project: effects
-Repository/R-Forge/Revision: 378
-Repository/R-Forge/DateTimeStamp: 2019-05-27 15:31:15
-Date/Publication: 2019-05-28 17:00:05 UTC
+Repository/R-Forge/Revision: 385
+Repository/R-Forge/DateTimeStamp: 2019-08-30 17:33:03
+Date/Publication: 2019-09-03 17:20:08 UTC
 NeedsCompilation: no
-Packaged: 2019-05-27 15:53:38 UTC; rforge
+Packaged: 2019-08-30 17:51:15 UTC; rforge

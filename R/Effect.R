@@ -42,6 +42,7 @@
 # 2018-10-08: new returned value 'link' = family(mod) 
 # 2019-04-20: made Effect.default() more robust in fitting fake glm by setting epsilon=Inf.
 # 2019-04-20: fixed bug in .set.given.equal() in tests for model class.
+# 2019-07-05: clm, clm2 and clmm were not passing threshholds to the fake polr object, now corrected.
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -122,6 +123,8 @@ Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
 # get the coefficient estimates and vcov from sources if present
   coefficients <- if(is.null(sources$coefficients)) 
     coef(mod) else sources$coefficients
+# added 7/5/2019, next line, for models that use polr (e.g, clm, clm2)
+  zeta <- if(is.null(sources$zeta)) NULL else sources$zeta
   vcov <- if(is.null(sources$vcov)) 
     as.matrix(vcov(mod, complete=TRUE)) else sources$vcov
 # end reading sources
@@ -130,7 +133,7 @@ Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
           glm = glm.control(epsilon=Inf, maxit=1),
           polr = list(maxit=1),
           multinom = c(maxit=1))
-  cl$method <- sources$method # NULL except forntype=="polr"
+  cl$method <- sources$method # NULL except for type=="polr"
   .m <- switch(type,
                glm=match(c("formula", "data", "contrasts",  "subset",
                 "control", "offset"), names(cl), 0L),
@@ -153,6 +156,7 @@ Effect.default <- function(focal.predictors, mod, ..., sources=NULL){
   mod2 <- eval(cl)
   mod2$coefficients <- coefficients
   mod2$vcov <- vcov
+  if(!is.null(zeta)) mod2$zeta <- zeta # added 7/5/2019
   if(type == "glm"){
        mod2$weights <- as.vector(with(mod2,
                         prior.weights * (family$mu.eta(linear.predictors)^2 /

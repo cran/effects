@@ -98,7 +98,7 @@ The default \code{Effect.default} may work with some modeling functions, as woul
 The \code{effect} package has five functions that create the information needed for drawing effects plots, \code{Effect}, \code{allEffects}, \code{effect} and \code{predictorEffect} and \code{predictorEffects}.  To add new modeling to the package only a new \code{Effect} needs to be written; the package will take care of all the other functions.
 
 \section{Using \code{effects} with Other Modeling Methods, with Generalized Least Squares in the \pkg{nlme} package as an Example}\label{gls}
-Applying \code{effects} to other than \code{lm} and \code{glm} objects may require writing an method for the \code{Effect} generic function for that type of model object.  For example, the \code{gls} function in the \code{nlme} package \citep{nlme} fits linear models via generalized least squares.  A call to \code{gls} creates an object of class \code{gls}.  The following method of \code{Effect} for \code{gls} objects finds the information needed to draw effects plots from \code{gls} objects:
+Applying \code{effects} to other than \code{lm} and \code{glm} objects may require writing an method for the \code{Effect} generic function for that type of model object.  For example, the \code{gls} function in the \code{nlme} package \citep{nlme} fits linear models via generalized least squares.  A call to \code{gls} creates an object of class \code{gls}.  The following function \code{Effect.gls} provides a method for \code{gls} objects by finding the information needed to draw effects plots from \code{gls} objects:
 
 <<eval=FALSE>>=
 Effect.gls <- function(focal.predictors, mod, ...){
@@ -115,11 +115,15 @@ Effect.gls <- function(focal.predictors, mod, ...){
   Effect.default(focal.predictors, mod, ..., sources=args)
 }
 @
-This function simply harvests the needed information into a variable \code{sources}, and then passes to the result to the default \code{Effect} method.  The  three required arguments to the method are: \code{focal.predictors} and \code{mod} that match the first two arguments of \code{Effect.default}, and  \code{...} that matches all other arguments.  The list \code{sources} has up to 6 named elements and is created in the function:
-\begin{description}
-\item[\texttt{type}] The \code{effects} package has three basic modeling functions:  \code{type = "glm"}, the default, is used for functions with a univariate response and a linear predictor and possibly a link function.  This class includes linear models, generalized linear models, robust regression, generalized least squares fitting, linear and generalized linear mixed effects models, and many others. The \code{type = "polr"} is used for ordinal regression models, as in the \code{polr} function in the \code{MASS} package, and similar methods described below in Section~\ref{polr}.  The The \code{type = "multinom"} for multinomial log-linear models as fit by the \code{multinom} function in \code{nnet}, and to polytomous latent class models created with the \code{poLCA} function in the \pkg{poLCA} package.
+The \code{Effect.gls} function has three required arguments, \code{focal.predictors} and \code{mod} that match the first two arguments of \code{Effect.default}, and  \code{...} that matches any other arguments you would like to pass to \code{Effect.default}; see \code{help(Effect)} for a list of these arguments.
 
-\item[\code{call}] The \code{Effect.default} method uses the call to harvest additional arguments that it needs.  For \code{type="glm"}, these arguments are \code{formula}, \code{data}, \code{contrasts},  \code{subset},
+The body of the function simply harvests the needed information from the \code{mod} object, and stores them in a list of named elements called \code{sources}.  The \code{sources} list is then passed as a named argument to the default \code{Effect} method.
+
+The named elements in \code{sources} include:
+\begin{description}
+\item[\texttt{type}] The \code{effects} package has three basic modeling functions:  \code{type = "glm"}, the default, is used for functions with a univariate response and a linear predictor and possibly a link function.  This class includes linear models, generalized linear models, robust regression, generalized least squares fitting, linear and generalized linear mixed effects models, and many others. The \code{type = "polr"} is used for ordinal regression models, as in the \code{polr} function in the \code{MASS} package, and similar methods described below in Section~\ref{polr}.  The The \code{type = "multinom"} for multinomial log-linear models as fit by the \code{multinom} function in \code{nnet}, and to polytomous latent class models created with the \code{poLCA} function in the \pkg{poLCA} package.  The default is \code{type = "glm"}.
+
+\item[\code{call}] The \code{Effect.default} method may use the call to set additional arguments that it needs.  For \code{type="glm"}, for example, these arguments are \code{formula}, \code{data}, \code{contrasts},  \code{subset},
 \code{family}, \code{weights}, and \code{offset}, although only the \code{formula} argument is required.  The \code{gls} function includes an optional \code{weights} argument that is used differently from the \code{weights} argument for a generalized linear model and is not needed for computing effects or predictor effects plots.  In the function shown above the call is modified by setting \code{weights=NULL}.  
 
 The default for \code{call} is \code{mod\$call} for S3 objects and \code{mod@call} for S4 objects.
@@ -127,10 +131,11 @@ The default for \code{call} is \code{mod\$call} for S3 objects and \code{mod@cal
 \item[\code{formula}] In most cases the formula for the linear predictor is returned by \code{formula(mod)}, the default, but if this is not the case the value of this argument should be the value of the formula for fixed effects.
 \item[\code{family}] The default is \code{family=NULL}.  This argument is required for GLM-like models that include a \code{family} that specifies both an error distribution and a link function only if \code{family=family(mod)} is not appropriate.  See the \code{betareg} example in Section~\ref{betareg} below for an example that includes a user-selected link function, but a fixed error distribution.
 \item[\code{coefficients}] In many cases the (fixed-effect) coefficient estimates are returned by \code{coef(mod)}, the default, but if this is not the case then the value of this argument should be the estimates of the coefficients in the linear predictor. The functions in the \pkg{effects} package do not use estimates of random effects.
+\item[\code{zeta}] Ordinal regression models return both a set of regression coefficients and also a set of \emph{threshholds}.  In the \code{polr} function the regression coefficients and the threshholds are stored in separate vectors, but in other ordinal regression programs, such as \code{clm} in the \code{ordinal} package they are stored as a single vector.  See Section~\ref{polr} for an example of the use of this argument for specifying the values of the threshholds.  
 \item[\code{vcov}] In many cases the estimated covariance matrix of the (fixed-effect) coefficient estimates is  returned by \code{vcov(mod)}, the default, but if this is not the case then the value of this argument should be the estimated covariance matrix of the (fixed-effect) coefficient estimates in the linear predictor.
 \item[method] This argument is used only for methods that use effects graphics based on the \code{polr} function, where the argument \code{method} is the name of a link function; see \code{help(polr)} for a list of the accepted links, and see Section~\ref{clm} below for an example.
 \end{description}
-The only non-default argument in \code{sources} is the modification of the \code{call} to omit weights in the call to \code{gls}.  Without this change, there is no need to have written the \code{Effect.gls} method, as the default method would have worked. 
+The only non-default argument in \code{sources} in \code{Effect.gls} is the modification of the \code{call} to omit weights in the call to \code{gls}.  Had this change not been needed, there would be no need to have written the \code{Effect.gls} method, as the default method would have worked. 
 
 <<fig.height=4,fig.width=8>>=
 library(effects)
@@ -145,7 +150,7 @@ The \code{lme} function in the \pkg{nlme} package \citep{nlme} fits linear mixed
 <<>>=
 print(Effect.lme)
 @
-The \code{formula}, \code{coefficients} and \code{vcov} arguments are set to non-default values.  The other arguments are automatically set to default values.  
+The \code{formula}, \code{coefficients} and \code{vcov} arguments are set to non-default values.  The other arguments are automatically set to default values, with \code{call} set explicitly and other arguments set implicitly.  
 
 <<>>=
 data(Orthodont, package="nlme")
@@ -199,7 +204,7 @@ print(Effect.betareg)
 @
 Beta regression has a response $y \in [0,1]$, with the connection between the mean $\mu$ of the Beta and a set for predictors $\x$ through a link function $\x'\bbeta = g(\mu)$.  The variance function for the beta is $\mathrm{var}(y) = \mu(1-\mu)/(1+\phi)$, for a precision parameter $\phi$ estimated by \code{betareg}.
 
-The call to \code{betareg} does not have a family argument, although it does have a link stored in \code{mod\$link\$mean}.  For use with \code{Effect.default}, the method above creates a family from the binomial family generator.  It then adjusts this family by changing from binomial variance to the variance for the beta distribution. Since the \code{glm} function expects a variance that is a function of only one parameter, we fix the value of the precision $\phi$ at its estimator from the \code{betareg} fit, as shown in the method.  We need to replace the \code{initialize} method in the family to one appropriate for $y \in [0,1]$.  %Finally, although the \code{aic} function is not used for computing effects, it is accessed by the call to \code{glm}.  The \code{aic} function for the binomial depends on named parameters not present in the beta regression, and so we substitute a dummy function for binomial version.
+The call to \code{betareg} does not have a family argument, although it does have a link stored in \code{mod\$link\$mean}.  For use with \code{Effect.default}, the method above creates a family from the binomial family generator.  It then adjusts this family by changing from binomial variance to the variance for the beta distribution. Since the \code{glm} function expects a variance that is a function of only one parameter, we fix the value of the precision $\phi$ at its estimator from the \code{betareg} fit.  We need to replace the \code{initialize} method in the family to one appropriate for $y \in [0,1]$.  %Finally, although the \code{aic} function is not used for computing effects, it is accessed by the call to \code{glm}.  The \code{aic} function for the binomial depends on named parameters not present in the beta regression, and so we substitute a dummy function for binomial version.
 
 <<echo=FALSE,results='hide', include=FALSE>>=
 require(lme4)
@@ -221,7 +226,7 @@ Proportional odds logit and probit regression models fit with the \code{polr} fu
 print(Effect.clm)
 @
 
-This method first checks that the \code{MASS} package is available.  Since the \code{clm} function allows suppressing the computation of the Hessian, the function checks and computes it if needed to get the estimated covariance matrix.  The \code{clm} function orders the parameters in the order (threshold parameters, linear predictor parameters), so the next few lines identify the elements of  \code{vcov} that are needed by \code{Effects}.  Since the \code{polr} function does not allow thresholds other than \code{flexible}, we don't allow them either. The \code{polr} argument \code{method} is equivalent to the \code{clm} argument \code{link}, except that the \code{clm} link \code{"logit"} is equivalen to the \code{polr} method \code{"logit"logistic"}.  
+This method first checks that the \code{MASS} package is available.  The \code{clm} function orders the parameters in the order (threshold parameters, linear predictor parameters), so the next few lines identify the elements of  \code{vcov} that are needed by \code{Effects}.  Since the \code{polr} function does not allow thresholds other than \code{flexible}, we don't allow them either. The \code{zeta} argument supplies the estimated threshholds, which are called \code{zeta} in \code{polr}, and \code{Alpha} in \code{clm}. The \code{polr} argument \code{method} is equivalent to the \code{clm} argument \code{link}, except that the \code{clm} link \code{"logit"} is equivalent to the \code{polr} method \code{"logistic"}.  
 
 <<echo=FALSE,results='hide', include=FALSE>>=
 require(ordinal)

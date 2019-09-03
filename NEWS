@@ -1,5 +1,13 @@
-Version 4.1-1
+Version 4.1-2
 
+ o Effect methods for clm, clm2, and clmm models were not correctly passing the estimated theshholds to polr for computing effects (error reported by Stefan Th. Gries).  
+ 
+ o Updated "Defining Effects Methods ..." vignette to reflect revisions to Effect.clm, Effect.clm2 and Effect.clmm.
+ 
+ o Make sure that Effect() and plot() methods work correctly with character and logical predictors (following bug report by Julian Gaviria Lopez).
+
+Version 4.1-1
+ 
  o Accommodate character and logical predictors.
  
  o Make sure that lty argument to plot() is not ignored.
