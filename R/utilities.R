@@ -34,6 +34,7 @@
 # 2018-12-19: accommodate character and logical predictors. J. Fox
 # 2019-08-27: correctly handle logical or character predictor with residuals
 # 2019-08-30: further fixes to character and logical predictors
+# 2019-10-24: add color options (e.g., for colorblind palette, suggestion of ) to effectsTheme(). J. Fox
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -519,14 +520,44 @@ is.numeric.predictor <- function(predictor, model) {
 
 # custom lattice theme
 
-effectsTheme <- function(strip.background=list(col=gray(seq(0.95, 0.5, length=3))),
-                         strip.shingle=list(col="black"), clip=list(strip="off"),
-                         superpose.line=list(lwd=c(2, rep(1, 6)))){
-  
-  current <- sapply(c("strip.background", "strip.shingle", "clip", "superpose.line"),
-                    trellis.par.get)
-  result <- list(strip.background=strip.background, strip.shingle=strip.shingle, clip=clip,
-                 superpose.line=superpose.line)
+# effectsTheme <- function(strip.background=list(col=gray(seq(0.95, 0.5, length=3))),
+#                          strip.shingle=list(col="black"), clip=list(strip="off"),
+#                          superpose.line=list(lwd=c(2, rep(1, 6)))){
+#   
+#   current <- sapply(c("strip.background", "strip.shingle", "clip", "superpose.line"),
+#                     trellis.par.get)
+#   result <- list(strip.background=strip.background, strip.shingle=strip.shingle, clip=clip,
+#                  superpose.line=superpose.line)
+#   attr(result, "current") <- current
+#   result
+# }
+
+effectsTheme <- function (strip.background = list(col = gray(seq(0.95, 0.5, length = 3))), 
+                          strip.shingle = list(col = "black"), clip = list(strip = "off"), 
+                          superpose.line = list(lwd = c(2, rep(1, 6))), col){
+  car.palette <- c("blue", "magenta", "cyan", "orange", "gray", "green3", "red")
+  colorblind.palette <- rgb(red = c(230, 86, 0, 240, 0, 213, 204),
+                            green = c(159, 180, 158, 228, 114, 94, 121),
+                            blue  = c(0, 233, 115, 66, 178, 0, 167),
+                            names = c("orange", "sky.blue", "bluish.green", "yellow", 
+                                      "blue", "vermillion", "reddish.purple"),
+                            maxColorValue = 255)
+  # colorblind palette from https://jfly.uni-koeln.de/color/ (ignoring "black")
+  current <- sapply(c("strip.background", "strip.shingle", 
+                      "clip", "superpose.line"), lattice::trellis.par.get)
+  if (!missing(col)){
+    superpose.line$col <- if (col[1] == "colorblind"){
+      colorblind.palette
+    } else if (col[1] == "car") {
+      car.palette
+    } else if (col[1] == "R") {
+      palette()[-1]
+    } else {
+      col
+    }
+  }
+  result <- list(strip.background = strip.background, strip.shingle = strip.shingle, 
+                 clip = clip, superpose.line = superpose.line)
   attr(result, "current") <- current
   result
 }

@@ -1,3 +1,9 @@
+Version 4.1-3
+
+ o Handle xlevels=n argument correctly in Effect() (fixing bug reported by Gerrit Eichner).
+ 
+ o Add col argument to effectsTheme(), mostly to accommodate colorblind-friendly palette (suggestion of Sercan Kahveci).
+
 Version 4.1-2
 
  o Effect methods for clm, clm2, and clmm models were not correctly passing the estimated theshholds to polr for computing effects (error reported by Stefan Th. Gries).  

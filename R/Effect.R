@@ -43,6 +43,7 @@
 # 2019-04-20: made Effect.default() more robust in fitting fake glm by setting epsilon=Inf.
 # 2019-04-20: fixed bug in .set.given.equal() in tests for model class.
 # 2019-07-05: clm, clm2 and clmm were not passing threshholds to the fake polr object, now corrected.
+# 2019-09-04: handle xlevels=n argument correctly
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -201,6 +202,19 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
         #legacy arguments:
         given.values, typical, offset, confint, confidence.level, 
         partial.residuals, transformation){ 
+  
+  if (is.numeric(xlevels)){
+    if (length(xlevels) > 1 || round(xlevels != xlevels)) stop("xlevels must be a single whole number or a list")
+    form <- Effect.default(NULL, mod) #returns the fixed-effects formula
+    terms <- attr(terms(form), "term.labels")
+    predictors <- all.vars(parse(text=terms))
+    xlevs <- list()
+    for (pred in predictors){
+      xlevs[[pred]] <- xlevels
+    }
+    xlevels <- xlevs
+  }
+  
   if (!missing(partial.residuals)) residuals <- partial.residuals
   partial.residuals <- residuals
   if (missing(transformation)) 
@@ -358,6 +372,19 @@ Effect.multinom <- function(focal.predictors, mod,
                             vcov. = vcov, se=TRUE, ...,
                             #legacy arguments:
                             confint, confidence.level, given.values, typical){
+  
+  if (is.numeric(xlevels)){
+    if (length(xlevels) > 1 || round(xlevels != xlevels)) stop("xlevels must be a single whole number or a list")
+    form <- Effect.default(NULL, mod) #returns the fixed-effects formula
+    terms <- attr(terms(form), "term.labels")
+    predictors <- all.vars(parse(text=terms))
+    xlevs <- list()
+    for (pred in predictors){
+      xlevs[[pred]] <- xlevels
+    }
+    xlevels <- xlevs
+  }
+  
   if (missing(fixed.predictors)) fixed.predictors <- NULL
   fixed.predictors <- applyDefaults(fixed.predictors,
                                     list(given.values=NULL, typical=mean),
@@ -496,6 +523,19 @@ Effect.polr <- function(focal.predictors, mod,
                         vcov.=vcov, se=TRUE, latent=FALSE, ...,
                         #legacy arguments:
                         confint, confidence.level, given.values, typical){
+  
+  if (is.numeric(xlevels)){
+    if (length(xlevels) > 1 || round(xlevels != xlevels)) stop("xlevels must be a single whole number or a list")
+    form <- Effect.default(NULL, mod) #returns the fixed-effects formula
+    terms <- attr(terms(form), "term.labels")
+    predictors <- all.vars(parse(text=terms))
+    xlevs <- list()
+    for (pred in predictors){
+      xlevs[[pred]] <- xlevels
+    }
+    xlevels <- xlevs
+  }
+  
   if (missing(fixed.predictors)) fixed.predictors <- NULL
   fixed.predictors <- applyDefaults(fixed.predictors,
                                     list(given.values=NULL, typical=mean),
