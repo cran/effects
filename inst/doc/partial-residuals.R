@@ -1,15 +1,15 @@
-## ----include=FALSE-------------------------------------------------------
+## ----include=FALSE--------------------------------------------------------
 library(knitr)
 opts_chunk$set(
 tidy=FALSE,fig.width=5,fig.height=5,cache=FALSE
 )
 
-## ----echo=FALSE, results='hide', include=FALSE---------------------------
+## ----echo=FALSE, results='hide', include=FALSE----------------------------
 #options(continue="+    ", prompt="R> ", width=76)
 options(show.signif.stars=FALSE)
 options(scipen=3)
 
-## ------------------------------------------------------------------------
+## -------------------------------------------------------------------------
 mvrunif <- function(n, R, min = 0, max = 1){
     # method (but not code) from E. Schumann,
     # "Generating Correlated Uniform Variates"
@@ -47,7 +47,7 @@ R <- function(offdiag = 0, m = 3){
     R
 }
 
-## ------------------------------------------------------------------------
+## -------------------------------------------------------------------------
 set.seed(682626)
 Data.1 <- gendata(R = R(0), model = expression(x1 + x2 * x3))
 round(cor(Data.1), 2)
@@ -72,7 +72,7 @@ plot(Effect(c("x1", "x2"), mod.1, partial.residuals = TRUE),
     axes=list(x=list(rotate=45)),
     lattice=list(layout=c(4, 1)))
 
-## ------------------------------------------------------------------------
+## -------------------------------------------------------------------------
 set.seed(682626)
 Data.2 <- gendata(R = R(0.5), model = expression(x1 + x2 * x3))
 mod.2 <- lm(y ~ x1 + x2 + x3, data = Data.2)
@@ -95,7 +95,7 @@ plot(Effect(c("x1", "x2"), mod.2, partial.residuals = TRUE),
     axes=list(x=list(rotate=45)),
     lattice=list(layout=c(4, 1)))
 
-## ------------------------------------------------------------------------
+## -------------------------------------------------------------------------
 set.seed(682626)
 Data.3 <- gendata(R = R(0.5), model = expression(x1^2 + x2 + x3))
 mod.3 <- lm(y ~ x1 + x2 + x3, data = Data.3)
@@ -118,7 +118,7 @@ plot(Effect(c("x1", "x2"), mod.3, partial.residuals = TRUE),
     axes=list(x=list(rotate=45)),
     lattice=list(layout=c(4, 1)))
 
-## ------------------------------------------------------------------------
+## -------------------------------------------------------------------------
 set.seed(682626)
 Data.4 <- gendata(R = R(0.5), model = expression(x1^2 + x2 * x3))
 mod.4 <- lm(y ~ x1 + x2 + x3, data = Data.4)

@@ -35,6 +35,7 @@
 # 2019-08-27: correctly handle logical or character predictor with residuals
 # 2019-08-30: further fixes to character and logical predictors
 # 2019-10-24: add color options (e.g., for colorblind palette, suggestion of ) to effectsTheme(). J. Fox
+# 2019-11-14: change class(x) == "y" to inherits(x, "y")
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -250,7 +251,7 @@ vcov.eff <- function(object, ...) object$vcov
 
 Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, formula.rhs, 
                           partial.residuals=FALSE, quantiles, x.var=NULL, data=NULL, typical=mean){
-  if ((!is.null(mod$nan.action)) && class(mod$na.action) == "exclude") 
+  if ((!is.null(mod$nan.action)) && inherits(mod$na.action, "exclude"))
     class(mod$na.action) <- "omit"
   all.predictors <- all.vars(formula.rhs)
   check.vars <- !(focal.predictors %in% all.predictors)

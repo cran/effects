@@ -1,15 +1,15 @@
-## ----setopts,echo=FALSE--------------------------------------------------
+## ----setopts,echo=FALSE-------------------------------------------------------
 library("knitr")
 opts_chunk$set(fig.width=5,fig.height=5,tidy=TRUE,
                out.width="0.8\\textwidth",echo=TRUE)
 options(prompt=" ")
 
-## ----echo=FALSE, results='hide', include=FALSE---------------------------
+## ----echo=FALSE, results='hide', include=FALSE--------------------------------
 #options(continue="+    ", prompt="R> ", width=76)
 options(show.signif.stars=FALSE)
 options(scipen=3)
 
-## ----include=FALSE-------------------------------------------------------
+## ----include=FALSE------------------------------------------------------------
 library(knitr)
 opts_chunk$set(
 tidy=FALSE,fig.width=5,fig.height=5,cache=FALSE,comment=NA, prompt=TRUE
