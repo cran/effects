@@ -7,11 +7,11 @@ citEntry(entry = "Book",
   year         = "2019",
   publisher    = "Sage",
   address      = "Thousand Oaks CA",
-  url          = "http://tinyurl.com/carbook",
+  url          = "https://socialsciences.mcmaster.ca/jfox/Books/Companion/index.html",
   textVersion =  paste("John Fox and Sanford Weisberg (2019).",
         "An R Companion to Applied Regression, 3rd Edition.",
         "Thousand Oaks, CA",
-        "<http://tinyurl.com/carbook>"
+        "<https://socialsciences.mcmaster.ca/jfox/Books/Companion/index.html>"
         ))
         
 bibentry(bibtype = "Article",
@@ -28,13 +28,13 @@ bibentry(bibtype = "Article",
   number       = "9",
   pages        = "1--27",
   doi          = "10.18637/jss.v087.i09",
-  url = "https://www.jstatsoft.org/v087/i09",
+  url = "https://www.jstatsoft.org/article/view/v087i09",
   
     textVersion  =
   paste("John Fox, Sanford Weisberg (2018).",
         "Visualizing Fit and Lack of Fit in Complex Regression Models with Predictor Effect Plots and Partial Residuals.",
         "Journal of Statistical Software, 87(9), 1-27.",
-        "URL https://www.jstatsoft.org/v087/i09."),
+        "URL https://www.jstatsoft.org/article/view/v087i09."),
 
   header       = "For predictor effects or partial residuals also cite:"
 )
@@ -48,13 +48,13 @@ citEntry(entry = "Article",
   volume       = "8",
   number       = "15",
   pages        = "1--27",
-  url          = "http://www.jstatsoft.org/v08/i15/",
+  url          = "https://www.jstatsoft.org/article/view/v008i15",
 
   textVersion  =
   paste("John Fox (2003).",
         "Effect Displays in R for Generalised Linear Models.",
         "Journal of Statistical Software, 8(15), 1-27.",
-        "URL http://www.jstatsoft.org/v08/i15/."),
+        "URL https://www.jstatsoft.org/article/view/v008i15."),
   header = "For generalized linear models also cite:"
 )
 
@@ -67,13 +67,13 @@ citEntry(entry = "Article",
   volume       = "32",
   number       = "1",
   pages        = "1--24",
-  url          = "http://www.jstatsoft.org/v32/i01/",
+  url          = "https://www.jstatsoft.org/article/view/v032i01",
 
   textVersion  =
   paste("John Fox, Jangman Hong (2009).",
         "Effect Displays in R for Multinomial and Proportional-Odds Logit Models: Extensions to the effects Package.",
         "Journal of Statistical Software, 32(1), 1-24.",
-        "URL http://www.jstatsoft.org/v32/i01/."),
+        "URL https://www.jstatsoft.org/article/view/v032i01."),
 
   header = "For usage in multinomial and proportional-odds logit models also cite:"
 )

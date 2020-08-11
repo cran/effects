@@ -1,4 +1,4 @@
-# last modified 2018-10-06 by J. Fox
+# last modified 2020-7-22 by S. Weisberg
 
 import(carData)
 
@@ -13,6 +13,7 @@ importFrom(nnet, multinom)
 importFrom(graphics, plot)
 importFrom(grDevices, gray, palette, rgb)
 importFrom(survey, svymean)
+importFrom(insight, find_formula,get_parameters,get_varcov)
 importFrom(stats, as.formula, binomial, coef, coefficients, cov, delete.response, family, fitted,
     formula, glm, glm.control, lm, lm.fit, loess.smooth, mahalanobis, make.link, median,
     model.frame, model.matrix, model.offset,
@@ -24,6 +25,7 @@ export(effect, allEffects, Effect, effectsTheme)
 export(predictorEffect, predictorEffects)
 export(Effect.default, effect.default, allEffects.default)
 export(effectsHexsticker)
+export(effCoef)
 S3method(plot, predictoreff)
 S3method(plot, predictorefflist)
 S3method(predictorEffects, default)
@@ -31,25 +33,29 @@ S3method(predictorEffects, poLCA)
 S3method(predictorEffect, default)
 S3method(predictorEffect, svyglm)
 S3method(predictorEffect, poLCA)
+S3method(effCoef, default)
 
 S3method(Effect, default)
 S3method(Effect, lm)
-S3method(Effect, merMod)
-S3method(Effect, lme)
-S3method(Effect, clm2)
-S3method(Effect, clm)
-S3method(Effect, clmm)
-S3method(Effect, rlmerMod)
-S3method(Effect, gls)
-S3method(Effect, multinom)
-S3method(Effect, polr)
 S3method(Effect, poLCA)
 S3method(Effect, mlm)
 S3method(Effect, svyglm)
-S3method(Effect, betareg)
-export(Effect.lm,Effect.merMod,Effect.lme,Effect.clm2,Effect.clm,Effect.clmm,
-       Effect.rlmerMod,Effect.gls,Effect.multinom,Effect.polr,Effect.poLCA,
-       Effect.mlm,Effect.svyglm,Effect.betareg)
+S3method(Effect, multinom)
+S3method(Effect, polr)
+
+export(Effect,Effect.default,predictorEffect.default,predictorEffects.default)
+S3method(effSources,betareg)
+S3method(effSources,clm)
+S3method(effSources,clm2) 
+S3method(effSources,clmm)
+S3method(effSources,default) 
+S3method(effSources,glmmPQL)
+S3method(effSources,gls)
+S3method(effSources,rlmerMod)
+export(effSources,effSources.default)
+#,effSources.gls,effSources.glmmPQL,
+#       effSources.rlmerMod,effSources.clm,effSources.clm2,
+#       effSources.clmm,effSources.betareg)
 
 S3method(print, eff)
 S3method(print, efflist)

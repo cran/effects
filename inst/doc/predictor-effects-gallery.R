@@ -197,8 +197,8 @@ plot(predictorEffects(gm3, ~ s + d),
      lattice=list(layout=c(1, 5)))
 
 ## ----fig38,include=TRUE,fig.width=9,fig.height=5,fig.show='hide'--------------
-plot(predictorEffects(gm3, ~ s + d, xlevels=list(d=c(5, 40, 80),
-                                                 s=c(0.1, 0.5, 0.9))),
+plot(predictorEffects(gm3, ~ s + d, 
+                      xlevels=list(d=c(5, 40, 80), s=c(0.1, 0.5, 0.9))),
      axes=list(grid=TRUE,
                x=list(rug=FALSE),
                y=list(type="response", lab="Blowdown probability")),

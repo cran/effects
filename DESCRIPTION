@@ -1,6 +1,6 @@
 Package: effects
-Version: 4.1-4
-Date: 2019-11-14
+Version: 4.2-0
+Date: 2020-07-21
 Title: Effect Displays for Linear, Generalized Linear, and Other Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Sanford", "Weisberg", role = "aut", email = "sandy@umn.edu"),
@@ -13,9 +13,9 @@ Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaste
     person("R Core Team", role="ctb"))
 Depends: R (>= 3.5.0), carData
 Suggests: pbkrtest (>= 0.4-4), nlme, MASS, poLCA, heplots, splines,
-        ordinal, car, knitr, betareg, alr4
+        ordinal, car, knitr, betareg, alr4, robustlmm
 Imports: lme4, nnet, lattice, grid, colorspace, graphics, grDevices,
-        stats, survey, utils, estimability
+        stats, survey, utils, estimability, insight
 LazyLoad: yes
 LazyData: yes
 Description: 
@@ -37,8 +37,8 @@ Author: John Fox [aut, cre],
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
 Repository/R-Forge/Project: effects
-Repository/R-Forge/Revision: 388
-Repository/R-Forge/DateTimeStamp: 2019-11-14 23:01:47
-Date/Publication: 2019-11-15 22:30:02 UTC
+Repository/R-Forge/Revision: 411
+Repository/R-Forge/DateTimeStamp: 2020-08-10 17:07:39
+Date/Publication: 2020-08-11 04:50:06 UTC
 NeedsCompilation: no
-Packaged: 2019-11-14 23:11:18 UTC; rforge
+Packaged: 2020-08-10 17:32:39 UTC; rforge

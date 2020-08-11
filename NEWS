@@ -1,3 +1,19 @@
+Version 4.2-0
+
+ o Adding the use of the insight package to get formulas.
+ 
+ o Added Effect.glmmPQL() for fitting generalized linear mixed models using the glmmPQL() function in the MASS package for penalized quasi-likelihood estimation.
+ 
+ o Don't ignore lines lty sub-argument to plot.effpoly() (fixing a bug reported by Laura Adamovicz).
+ 
+ o One-column matrix predictors trigger a warning and correction (following problem reported by Carla Hendricks).
+ 
+ o Added regression tests for classes of model objects supported. Tests must be enabled in the effects sources at tests/regression-tests.R.
+ 
+ o Rewrite of defining effect method vignette.
+ 
+ o Minor changes to predictor effects gallery vignette.
+
 Version 4.1-4
 
  o Change class(x) == "y" to inherits(x, "y") in code.

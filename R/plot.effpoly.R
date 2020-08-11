@@ -19,6 +19,7 @@
 # 2018-07-08: add cex sub-arg for strips.
 # 2018-10-05: modified plot.effpoly() so that multiline plots don't show confidence limits 
 #             by default, and so that confidence bars for a factor are staggered.
+# 2020-06-01: plot.effpoly() no longer ignores lty.
 
 plot.effpoly <- function(x, x.var=which.max(levels), 
                          main=paste(effect, "effect plot"),
@@ -39,6 +40,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
               arg="lines")
   if (missing(multiline)) multiline <- lines$multiline
   if (missing(lwd)) lwd <- lines$lwd
+  if (missing(lty)) lty <- lines$lty
   if (missing(use.splines)) use.splines <- lines$splines
   lines.col <- lines$col
   lines <- if (missing(lty)) lines$lty else lty
@@ -264,7 +266,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
             panel=function(x, y, subscripts, x.vals, rug, ... ){
               if (grid) ticksGrid(x=1:length(levs), y=tickmarks$at)
               good <- !is.na(y)
-              effect.llines(x[good], y[good], lwd=lwd, type="b", pch=19, col=colors[1], cex=cex, ...)
+              effect.llines(x[good], y[good], lwd=lwd, lty=lty, type="b", pch=19, col=colors[1], cex=cex, ...)
               subs <- subscripts+as.numeric(rownames(Data)[1])-1		
             },
             
@@ -337,7 +339,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
             if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
             if (rug) lrug(trans(x.vals))
             good <- !is.na(y)
-            effect.llines(x[good], y[good], lwd=lwd, col=colors[1], ...)
+            effect.llines(x[good], y[good], lwd=lwd, lty=lty, col=colors[1], ...)
             subs <- subscripts+as.numeric(rownames(Data)[1])-1	
           },
           ylab=ylab,
@@ -665,7 +667,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
           panel=function(x, y, subscripts, x.vals, rug, lower, upper, ... ){
             if (grid) ticksGrid(x=1:length(levs), y=tickmarks$at)
             good <- !is.na(y)
-            effect.llines(x[good], y[good], lwd=lwd, type="b", pch=19, col=colors[1], cex=cex, ...)
+            effect.llines(x[good], y[good], lwd=lwd, lty=lty, type="b", pch=19, col=colors[1], cex=cex, ...)
             subs <- subscripts+as.numeric(rownames(Data)[1])-1		
             if (ci.style == "bars"){
               larrows(x0=x[good], y0=lower[subs][good], 
@@ -753,7 +755,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
           if (grid) ticksGrid(x=tickmarks.x$at, y=tickmarks$at)
           if (rug) lrug(trans(x.vals))
           good <- !is.na(y)
-          effect.llines(x[good], y[good], lwd=lwd, col=colors[1], ...)
+          effect.llines(x[good], y[good], lwd=lwd, lty=lty, col=colors[1], ...)
           subs <- subscripts+as.numeric(rownames(Data)[1])-1	
           if (ci.style == "bars"){
             larrows(x0=x[good], y0=lower[subs][good], 

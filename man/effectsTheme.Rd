@@ -4,7 +4,7 @@
 \title{Set the lattice Theme for Effect Plots}
 
 \description{
-Set the \pkg{lattice} theme (see \code{\link[lattice]{trellis.device}}) appropriately for effect plots. This function is invoked
+Set the \pkg{lattice} theme (see \code{\link{trellis.device}}) appropriately for effect plots. This function is invoked
 automatically when the \pkg{effects} package is loaded \emph{if} the \pkg{lattice} package hasn't previously been loaded. A typical
 call is \code{lattice::trellis.par.set(effectsTheme())}.
 }
@@ -32,13 +32,13 @@ effectsTheme(strip.background = list(col = gray(seq(0.95, 0.5, length = 3))),
 }
 
 \value{
-a list suitable as an argument for \code{\link[lattice]{trellis.par.set}}; current values of modified parameters are
+a list suitable as an argument for \code{\link{trellis.par.set}}; current values of modified parameters are
 supplied as an attribute.
 }
 
 \author{John Fox \email{jfox@mcmaster.ca}}
 
-\seealso{\code{\link[lattice]{trellis.device}}, \code{\link[lattice]{trellis.par.set}}}
+\seealso{\code{\link{trellis.device}}, \code{\link{trellis.par.set}}}
 
 \examples{
 \dontrun{

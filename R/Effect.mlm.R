@@ -17,7 +17,7 @@ Effect.mlm <- function(focal.predictors, mod, response, ...) {
     mod.1 <- update(mod, as.formula(paste(response, " ~ .")))
     result <- Effect(focal.predictors, mod.1,  ...)
   }
-  else {
+  else { 
     result <- as.list(NULL)
     for (resp in response) {
       mod.1 <- update(mod, as.formula(paste(resp, " ~ .")))

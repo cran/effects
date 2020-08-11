@@ -9,7 +9,7 @@ allEffects.poLCA <- function(mod, ...){
 }
 
 Effect.poLCA <- function(focal.predictors, mod, ...) {
-  result <- Effect(focal.predictors, poLCA.to.fake(mod), ...)
+  result <- Effect(focal.predictors, poLCA.to.fake(mod), ..., sources=list(type="multinom"))
   result$formula <- as.formula(formula(mod))
   result
 }
@@ -26,7 +26,7 @@ predictorEffect.poLCA <- function(predictor, mod, focal.levels=50, xlevels=5, ..
 # effect.multinom  or effect.glm can be used.
 # effect.multinom requires at least 3 classes, so if classes=2 use
 # effect.glm
-poLCA.to.fake <- function(mod) {
+poLCA.to.fake <- function(mod) { 
   if (requireNamespace("nnet", quietly=TRUE)){
     multinom <- nnet::multinom}
   dta <- eval(mod$call$data)

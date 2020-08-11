@@ -275,6 +275,21 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
   }
   factor.cols[grep(":", cnames)] <- FALSE   
   X <- na.omit(expand.model.frame(mod, all.predictors))
+  
+  which.matrices <- sapply(X, function(x) is.matrix(x) && ncol(x) == 1)
+  if (any(which.matrices)){
+    nms <- names(which.matrices[which.matrices])
+    msg <- if (length(nms) > 1){
+      paste("the predictors", paste(nms, collapse=", "), "are one-column matrices that were converted to vectors")
+    } else {
+      paste("the predictor", nms, "is a one-column matrix that was converted to a vector")
+    }
+    warning(msg)
+    for (nm in nms){
+      X[, nm] <- as.vector(X[, nm])
+    }
+  }
+  
   for (name in all.predictors){
     if (is.factor.predictor(name, mod) && is.null(xlevels[[name]])) {
       xlevels[[name]] <- levels(X[, name]) # accomodate logical predictor

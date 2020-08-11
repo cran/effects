@@ -71,7 +71,7 @@
 
 \author{John Fox and Sanford Weisberg}
 
-\date{2018-12-19}
+\date{2018-12-19, minor revisions 2020-02-08}
 
 \maketitle
 
@@ -101,7 +101,7 @@ strOptions(strict.width="cut")
 @
 
 \section{Introduction}\label{sec:intro}
-Predictor effect plots \citep{fw19b} provide graphical summaries for fitted regression models with linear predictors, including linear models, generalized linear models, linear and generalized linear mixed models, and many others.  These graphs are an alternative to tables of fitted coefficients, which can be much harder to interpret than effect plots. Predictor effect plots are implemented in \R{} in the \pkg{effects} package, documented in \citet{fw19}.  This vignette provides many examples of variations on the graphical displays that can be obtained with the \pkg{effects} package.  Many of the details, and more complete descriptions of the data sets used as examples, are provided in the references cited at the end of the vignette.
+Predictor effect plots \citep{fw19b} provide graphical summaries for fitted regression models with linear predictors, including linear models, generalized linear models, linear and generalized linear mixed models, and many others.  These graphs are an alternative to tables of fitted coefficients, which can be much harder to interpret than predictor effect plots. Predictor effect plots are implemented in \R{} in the \pkg{effects} package, documented in \citet{fw19}.  This vignette provides many examples of variations on the graphical displays that can be obtained with the \pkg{effects} package.  Many of the details, and more complete descriptions of the data sets used as examples, are provided in the references cited at the end of the vignette.
 
 
 
@@ -156,7 +156,7 @@ brief(e1.lm1$model.matrix)
 @
 The focal predictor \vn{education} was evaluated by default at 50 points covering the observed range of values of \vn{education}. We use the \fn{brief} function in the \pkg{car} package to show only a few of the 50 rows of the matrix. For each value of \vn{education} the remaining regressors have the same fixed values for each fitted value.  The fixed value for \lvn{income} is the logarithm of the sample mean \vn{income}, the fixed values for the regressors for \vn{women} are computed at the mean of \vn{women} in the data, and the fixed values for the regressors for \vn{type} effectively take a weighted average of the fitted values at the three levels of \vn{type}, with weights proportional to the number of cases in each level of the factor. Differences in the fitted values are due to \vn{education} alone because all the other predictors, and their corresponding regressors, are fixed.  Thus the output gives the partial effect of \vn{education} with all other predictors fixed.
 
-The computed fitted values can be viewed by printing the \class{eff} object returned by \fn{predictorEffect}, by summarizing the object, or by converting it to a data frame. To make the printouts more compact, we recompute the predictor effect of \vn{education} are fewer values of the focal predictor by specifying the \code{focal.levels} argument (see Section~\ref{sec-focal.levels-xlevels}):
+The computed fitted values can be viewed by printing the \class{eff} object returned by \fn{predictorEffect}, by summarizing the object, or by converting it to a data frame. To make the printouts more compact, we recompute the predictor effect of \vn{education} with fewer values of the focal predictor by specifying the \code{focal.levels} argument (see Section~\ref{sec-focal.levels-xlevels}):
 <<>>=
 e1a.lm1 <- predictorEffect("education", lm1, focal.levels=5)
 e1a.lm1
@@ -222,7 +222,7 @@ Suppose that you select a \emph{focal predictor} for which you want to draw a pr
 
 \end{enumerate}
 
-\noindent For simplicity, let's assume for the moment that all of the fixed predictors are numeric. The predictors in the fixed group are all evaluated at typical values, usually their means, effectively averaging out the influence of these predictors on the fitted value.  Fitted values are computed for all combinations of levels of the focal predictor and the predictors in the conditioning group, with each numeric predictor in the conditioning group replaced by a few discrete values spanning the range of the predictor, for example, replacing years of \vn{education} by a discrete variable with the values 8, 12, and 16 years.
+\noindent For simplicity, let's assume for the moment that all of the fixed predictors are numeric. The predictors in the fixed group are all evaluated at \emph{typical values}, usually their means, effectively averaging out the influence of these predictors on the fitted value.  Fitted values are computed for all combinations of levels of the focal predictor and the predictors in the conditioning group, with each numeric predictor in the conditioning group replaced by a few discrete values spanning the range of the predictor, for example, replacing years of \vn{education} by a discrete variable with the values 8, 12, and 16 years.
 
 Suppose that we fit a model with \R{} formula
 \begin{equation}
@@ -250,7 +250,7 @@ The predictor \vn{x1} does not interact with any of the other predictors, so its
 
 \subsection{The \fn{Effect} Function}\label{sec:Effect}
 
-Until recently, the primary function in \pkg{effects} for computing and displaying effects was the \fn{Effect} function.\footnote{The \pkg{effects} package also includes the older \fn{allEffects} function, which computes effects for each high-order term in a model with a linear predictor. As we explain in \citet{fw19b}, we prefer predictor effects to high-order term effects, and so, although its use is similar to \fn{predictorEffects}, we won't describe \fn{allEffects} in this vignette. There is also an older \fn{effect} function (with a lowercase ``\code{e}''), which is a less flexible version of \fn{Effect}, and which calls \fn{Effect} to perform computations; \fn{effect} is retained only for backwards comparability.}  Whereas the \fn{predictorEffect} function automatically determines the conditioning group and the fixed group of predictors, the \fn{Effect} function puts that burden on the user. The \fn{Effect} function doesn't between between a focal predictor and conditioning predictors, but rather only between varying (that is, focal \emph{and} conditioning) and fixed predictors.
+Until recently, the primary function in \pkg{effects} for computing and displaying effects was the \fn{Effect} function.\footnote{The \pkg{effects} package also includes the older \fn{allEffects} function, which computes effects for each high-order term in a model with a linear predictor. As we explain in \citet{fw19b}, we prefer predictor effects to high-order term effects, and so, although its use is similar to \fn{predictorEffects}, we won't describe \fn{allEffects} in this vignette. There is also an older \fn{effect} function (with a lowercase ``\code{e}''), which is a less flexible version of \fn{Effect}, and which calls \fn{Effect} to perform computations; \fn{effect} is retained only for backwards comparability.}  Whereas the \fn{predictorEffect} function automatically determines the conditioning group and the fixed group of predictors, the \fn{Effect} function puts that burden on the user. The \fn{Effect} function doesn't distinguish between between a focal predictor and conditioning predictors, but rather only between varying (that is, focal \emph{and} conditioning) and fixed predictors.
 
 Each call to \fn{predictorEffect} is equivalent to a specific call to the \fn{Effect} function as follows.  Suppose that \vn{m} is the fitted model produced by the formula in (\ref{eq1}); then, except for the ways in which the default levels for predictors are determined:
 \begin{description}
@@ -269,7 +269,7 @@ The \fn{predictorEffect} function determines the correct call to \fn{Effect} bas
 
 \subsection{The \fn{predictorEffects} Function}
 
-This function, whose name ends with the plural ``\code{plots}", computes the values needed for one or more predictor effect plots, and by default for \emph{all} of the predictors in the model.  For example, the following command produces all of the predictor effect plots for the model we fit to the \code{Prestige} data:
+This function, whose name ends with the plural ``\code{effects}", computes the values needed for one or more predictor effect plots, and by default for \emph{all} of the predictors in the model.  For example, the following command produces all of the predictor effect plots for the model we fit to the \code{Prestige} data:
 <<fig14,include=TRUE,fig.width=7,fig.height=8,fig.show='hide'>>=
 eall.lm1 <- predictorEffects(lm1)
 plot(eall.lm1)
@@ -321,7 +321,7 @@ plot(e3.lm1, lines=list(multiline=FALSE)) # the default
 The numeric conditioning predictor \vn{income} is evaluated by default at five
 equally spaced values, when are then rounded to ``nice" numbers.  
 
-In this example, using the three values of 5000, 15000, 25000 for the conditioning predictor \vn{income} produces a simpler graph:
+Using the three values of 5000, 15000, 25000 for the conditioning predictor \vn{income} in this example produces a simpler graph:
 <<fig22a,include=TRUE,fig.width=5,fig.height=4.5,fig.show='hide'>>=
 e3.lm1 <- predictorEffect("type", lm1,
                           xlevels=list(income=c(5000, 15000, 25000)))
@@ -338,7 +338,7 @@ plot(e3.lm1,
 
 \noindent
 The argument \ar{xlevels} is a list of sub-arguments that control how numeric predictors are discretized when used in the conditioning group.  For example, \code{xlevels=list(x1=c(2, 4, 7), x2=6)} would use the values 2, 4, and 7 for the levels of the predictor  \code{x1}, use 6
-equally spaced values for the predictor \code{x2}, and use the default of 5 values for any other numeric conditioning predictors.  Numeric predictors in the \emph{fixed} group are not affected by the \ar{xlevels} argument. We use the \ar{layout} sub-argument of the \ar{lattice} argument to arrange the panels of the second graph in 3 columns and 1 row (see Section~\ref{sec:layout}).  See \code{help("plot.eff")} for information on the \ar{quantiles} argument, which provides an alternative method of setting \ar{xlevels} when partial residuals are displayed, as discussed in Section~\ref{sec:res}.
+equally spaced values for the predictor \code{x2}, and use the default of 5 values for any other numeric conditioning predictors.  Numeric predictors in the \emph{fixed} group are not affected by the \ar{xlevels} argument. We use the \ar{layout} sub-argument of the \ar{lattice} argument group to arrange the panels of the second graph in 3 columns and 1 row (see Section~\ref{sec:layout}).  See \code{help("plot.eff")} for information on the \ar{quantiles} argument, which provides an alternative method of setting \ar{xlevels} when partial residuals are displayed, as discussed in Section~\ref{sec:res}.
 
 The points at which a numeric focal predictor is evaluated is controlled by the \ar{focal.levels} argument. The default of \vn{focal.levels=50} is recommended for drawing graphs, but if the goal is to produce a table of fitted values a smaller value such as \code{focal.levels=5} produces more compact output. The focal predictor can also be set to a vector of particular values, as in \code{focal.levels=c(30, 50, 70)}. Used with the \code{predictorEffects} function, the \ar{focal.levels} argument can be set separately for each focal predictor, similarly to the \ar{xlevels} argument; see \code{help("predictorEffects")}.    
 
@@ -348,7 +348,7 @@ Predictors in the fixed group are replaced by ``typical" values of the predictor
 
 \subsubsection{Factor Predictors}\label{sec:facpred}
 
-For a fixed factor, imagine computing the fitted values evaluating the factor at each of its levels.  The fitted value that is used is the weighed average of these within-level fitted values, with weights proportional to the number of observations at each level of the factor. This is the default approach, and is an appropriate notion of ``typical" if the data at hand are viewed as a random sample from a population, and so the sample fraction at each level estimates the population fraction.
+Imagine computing the fitted values evaluating a fixed factor at each of its levels.  The fitted value that is used in the predictor effects plot is a weighed average of these within-level fitted values, with weights proportional to the number of observations at each level of the factor. This is the default approach, and is an appropriate notion of ``typical" for a factor if the data at hand are viewed as a random sample from a population, and so the sample fraction at each level estimates the population fraction.
 
 A second approach is to average the level-specific fitted values with equal weights at each level. This may be  appropriate, for example, in designed experiments in which the levels of a factor are assigned by an investigator.  The latter method is invoked by setting \code{fixed.predictors= list(given.values="equal")}.
 
@@ -356,13 +356,13 @@ You can construct other weighting schemes for averaging over the levels of a fac
 
 \subsubsection{Numeric Predictors}
 
-For numeric predictors in the fixed group, the default method of selecting a typical value is to apply the \fn{mean} function to the sample values of each predictor.  The specification \code{fixed.predictors= list(typical=median)} would instead use the \fn{median} function; in general, \ar{typical} can be any function that takes a numeric vector as its argument and returns a single number.
+For a numeric predictor in the fixed group the default method of selecting a typical value is to apply the \fn{mean} function to the data for the predictor.  The specification \code{fixed.predictors= list(typical=median)} would instead use the \fn{median} function; in general, \ar{typical} can be any function that takes a numeric vector as its argument and returns a single number.
 
 Other sub-arguments to \ar{fixed.predictors} apply to the use of offsets, and to the \pkg{survey} package; see the help page for the \fn{Effect} function.
 
 \subsection{\ar{se} and \ar{vcov.}: Standard Errors and Confidence Intervals}\label{sec:se}
 
-Standard errors and confidence intervals for fitted values are computed by default.  The default corresponds to setting the argument \code{se=list(compute=TRUE, type="pointwise", level=.95)}.  Setting \code{se=FALSE} omits standard errors, \ar{type="scheffe"} uses wider Scheff\'{e} intervals that adjust for simultaneous inference, and \code{level=.8}, for example, produces 80\% intervals.
+Standard errors and confidence intervals for fitted values are computed by default, which corresponds to setting the argument \code{se=list(compute=TRUE, type="pointwise", level=.95)}.  Setting \code{se=FALSE} omits standard errors, \ar{type="scheffe"} uses wider Scheff\'{e} intervals that adjust for simultaneous inference, and \code{level=.8}, for example, produces 80\% intervals.
 
 Standard errors are based by default on the ``usual" sample covariance matrix of the estimated regression coefficients. You can replace the default coefficient covariance matrix with some other estimate, such as one obtained from the bootstrap or a sandwich coefficient covariance matrix estimator, by setting the  \ar{vcov.}~argument either to a function that returns a coefficient covariance matrix, such as \fn{hccm} in the \pkg{car} package for linear models, or to a matrix of the correct size; for example:
 <<fig23,include=TRUE,fig.width=5,fig.height=4,fig.show='hide'>>=
@@ -383,9 +383,9 @@ The argument \ar{residuals=TRUE} computes and saves residuals, providing the bas
 
 \section{Arguments for Plotting Predictor Effects}\label{sec:plot}
 
-The arguments described in Section~\ref{sec:peopts} are for the \fn{predictorEffect} function or the \fn{Effect} function.  Those arguments modify the computations that are performed, such as methods for averaging and fixing predictors, and for computing standard errors.  Arguments to the \fn{plot} methods for the predictor effect and effect objects produced by the \fn{predictorEffect} and \fn{Effect} functions  are described in this section, and these change the appearance of an effect plot or modify the quantities that are plotted. These optional arguments are described in more detail in \code{help("plot.eff")}.
+The arguments described in Section~\ref{sec:peopts} are for the \fn{predictorEffect} function or the \fn{Effect} function.  Those arguments modify the computations that are performed, such as methods for averaging and fixing predictors, and for computing standard errors.  Arguments to the \fn{plot} methods for the predictor effect and effect objects produced by the \fn{predictorEffect} and \fn{Effect} functions  are described in this section, and these change the appearance of a predictor effect plot or modify the quantities that are plotted. These optional arguments are described in more detail in \code{help("plot.eff")}.
 
-In 2018, we reorganized the \fn{plot} method for effect objects by combining arguments into five major groups of related sub-arguments, with the goal of simplifying the specification of effect plots.  For example, the \ar{lines} argument group is a list of sub-arguments for determining line type, color, and width, whether or not multiple lines should be drawn on the same graph, and whether plotted lines should be smoothed.  The defaults for these sub-arguments are the choices we generally find the most useful, but they will not be the best choices in all circumstances.  The cost of reorganizing the arguments in this manner is the necessity of specifying arguments as lists, some of whose elements are themselves lists, requiring the user to make sure that parentheses specifying the possibly nested lists properly balanced.
+In 2018, we reorganized the \fn{plot} method for effect objects by combining arguments into five major groups of related sub-arguments, with the goal of simplifying the specification of effect plots.  For example, the \ar{lines} argument group is a list of sub-arguments for determining line type, color, and width, whether or not multiple lines should be drawn on the same graph, and whether plotted lines should be smoothed.  The defaults for these sub-arguments are the choices we generally find the most useful, but they will not be the best choices in all circumstances.  The cost of reorganizing the arguments in this manner is the necessity of specifying arguments as lists, some of whose elements are themselves lists, requiring the user to make sure that parentheses specifying the possibly nested lists are properly balanced.
 
 In addition to the five argument groups that we describe below, the \fn{plot} method for effect objects accepts the arguments \ar{main} for the main title of the graph and \ar{id} for identifying points in effect plots that include residuals, as discussed in Section~\ref{sec:res}.
 
@@ -445,7 +445,7 @@ We use the top-level argument \code{main="Transformed Plot"} to set the title of
 
 The \ar{x} sub-argument is itself a list with three elements: The sub-arguments \code{rotate} and \ar{rug} set the rotation angle for the tick labels and suppress the rug plot, respectively.  The additional sub-argument is a list called \ar{income}, the name of the focal predictor.  If you were drawing many predictor effect plots you would supply one list named for each of the focal predictors.  All of the sub-arguments for \ar{income} are displayed in the example code above.  The sub-argument \code{transform=list(trans=log, inverse=exp)} specifies how to transform the $x$-axis.  The \code{ticks} and \code{lim} sub-arguments set the tick marks and range for the horizontal axis.
 
-This is admittedly a \emph{complex command}, but it allows you to fine-tune the graph to look the way you want.  In specifying nested argument lists, you may encounter problems getting the parentheses in the right places. Be careful, indent your code to clarify the structure of the command, and be patient!
+This is admittedly a complex command, but it allows you to fine-tune the graph to look the way you want.  In specifying nested argument lists, you may encounter problems getting the parentheses in the right places. Be careful, indent your code to clarify the structure of the command, and be patient!
 
 \subsubsection{\ar{y}: Vertical Axis Specification for Linear Models}
 
@@ -472,7 +472,7 @@ plot(predictorEffects(lm2, ~ education),
 \includegraphics[width=.33\textwidth]{figure/fig33-3.pdf}
 
 \noindent
-The first plot is the default, with a log-response.  In the second plot, the \ar{transform} sub-argument specifies the transformation of the response and its inverse, and the sub-argument \code{type="rescale"} changes the tick marks on the vertical axis to arithmetic scale.  In the third version, with \code{transform=exp, lab="prestige"}, the vertical axis now is in arithmetic scale, not log scale, although that may not be completely obvious in the example because $\log(x)$ is nearly linear over the range of approximately 35 to 65 for fitted \vn{prestige} in this graph: Look closely to see that the axis ticks marks in the second graph are unequally spaced, while those in the third graph are equally spaced and the plotted line in the latter is slightly curved.  The help page \code{?plot.eff} provides a somewhat more detailed explanation of these options.
+The first plot is the default, with a log-response.  In the second plot, the \ar{transform} sub-argument specifies the transformation of the response and its inverse, and the sub-argument \code{type="rescale"} changes the tick marks on the vertical axis to arithmetic scale.  In the third version, with \code{transform=exp, lab="prestige"}, the vertical axis now is in arithmetic scale, not log scale, although that may not be completely obvious in the example because $\log(x)$ is nearly linear: Look closely to see that the axis ticks marks in the second graph are unequally spaced, while those in the third graph are equally spaced and the plotted line in the latter is slightly curved.  The help page \code{?plot.eff} provides a somewhat more detailed explanation of these options.
 
 As a second example we will reconstruct Figure~7.10 in \citet[Sec.~7.2]{fw19}.  In that section, we fit a linear mixed-effects model to data from the \code{Blackmore}  data frame in the \pkg{carData} package. \code{Blackmore} includes longitudinal data on amount of exercise for girls hospitalized for eating disorders and for similar control subjects who were not hospitalized. We transformed the response variable in the model, hours of \vn{exercise}, using a transformation in a modified Box-Cox power family that allows zero or negative responses, explained briefly by \citet[Sec.~3.4]{fw19} and more thoroughly by \citet{HawkinsWeisberg2017}. The fitted model is
 <<>>=
@@ -520,7 +520,7 @@ The response scale is now in hours per week, and we see that hours of exercise i
 Transforming the vertical axis for generalized linear models also uses the \ar{y} sub-argument to the \ar{axes} argument. You typically do not need to specify the \ar{transform} sub-argument because \fn{plot} obtains the right functions from the regression model's \ar{family} component.  The \ar{type} sub-argument has the same three possible values as for linear models, but their interpretation is somewhat different:
 \begin{enumerate}
 
-\item Effect plots in \code{type="link"}, in which the horizontal axis of each plot is a predictor and the vertical axis is in the scale of the linear predictor.  For logistic regression, for example, the vertical axis is in log-odds (logit) scale.  For Poisson regression with the log-link, the vertical axis is in log-mean (log-count) scale.
+\item Predictor effect plots in \code{type="link"} scale have a predictor on the horizontal axis  and the vertical axis is in the scale of the linear predictor.  For logistic regression, for example, the vertical axis is in log-odds (logit) scale.  For Poisson regression with the log-link, the vertical axis is in log-mean (log-count) scale.
 
 \item Predictor effect plots in \code{type="response"} or mean scale are obtained by ``untransforming" the $y$ axis using the inverse of the link function.  For the log-link, this corresponds to transforming the $y$ axis and plotting $\exp(y)$.  For logistic regression, $y = \log[p/(1-p)]$ and, solving for $p$, $p=\exp(y)/[1+\exp(y)] = 1/[1 + \exp(-y)]$, so the plot in mean scale uses $1/[1+\exp(-y)]$ on the vertical axis.
 
@@ -573,7 +573,7 @@ plot(e1.gm1, main="type='response'",
 \noindent
 The first two graphs show the same plot, but in the first the tick-marks on the vertical axis are unequally spaced and are in probability scale, while in the second the tick-marks are equally spaced and are in log-odds scale.  In the third graph, the vertical axis has been transformed to probability scale, and the corresponding tick-marks are now equally spaced.
 
-The plot for species would be easier to understand if the levels of the factor were ordered according to the estimated log-odds of blowdown.  First, we need to recover the fitted values in link scale, which are log-odds of blowdown for a logistic model.  The fitted log-odds are stored in \code{as.data.frame(e1.gm1)\$fit} using the \code{e1.gm1} object previously computed:
+The predictor effects plot for species would be easier to understand if the levels of the factor were ordered according to the estimated log-odds of blowdown.  First, we need to recover the fitted values in link scale, which are log-odds of blowdown for a logistic model.  The fitted log-odds are stored in \code{as.data.frame(e1.gm1)\$fit} using the \code{e1.gm1} object previously computed:
 
 <<fig36,include=TRUE,fig.width=5.5,fig.height=4.5,fig.show='hide'>>=
 or <- order(as.data.frame(e1.gm1)$fit) # order smallest to largest
@@ -617,8 +617,8 @@ The predictor effect plot for \vn{s} conditions on the level of \vn{d}, and disp
 
 Setting \code{multiline=TRUE} superimposes the lines for all the conditioning values in a single graph. In the example below, we reduce the number of levels of the conditioning variable for each predictor effect plot to three explicit values each to produce simpler graphs, although this is not required. The \ar{xlevels} argument changes the number of levels for the conditioning predictors, but does not affect the number of levels for the focal predictor.  This latter quantity could be changed with the \ar{focal.levels} argument, but the default value of 50 evaluations is appropriate for graphing effects. 
 <<fig38,include=TRUE,fig.width=9,fig.height=5,fig.show='hide'>>=
-plot(predictorEffects(gm3, ~ s + d, xlevels=list(d=c(5, 40, 80),
-                                                 s=c(0.1, 0.5, 0.9))),
+plot(predictorEffects(gm3, ~ s + d, 
+                      xlevels=list(d=c(5, 40, 80), s=c(0.1, 0.5, 0.9))),
      axes=list(grid=TRUE,
                x=list(rug=FALSE),
                y=list(type="response", lab="Blowdown probability")),
@@ -733,7 +733,7 @@ The sub-argument \code{space="right"} moves the key to the right of the graph, o
 
 \subsubsection{\ar{layout}: Controlling Panel Placement}\label{sec:layout}
 
-The \ar{layout} sub-argument to the \ar{lattice} argument allows a user to customize the layout of multiple panels in an effect plot; for example:
+The \ar{layout} sub-argument to the \ar{lattice} argument allows a user to customize the layout of multiple panels in a predictor effect plot; for example:
 <<fig313,include=TRUE,fig.width=13,fig.height=5.5,fig.show='hide'>>=
 plot(predictorEffects(gm3, ~ s + d, xlevels=list(s=6, d=6)),
      axes=list(x=list(rug=FALSE, rotate=90), 

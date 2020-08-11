@@ -6,54 +6,39 @@
 #              deleting it from sources$call.
 # 11/30/2018: fixed bug in Effect.merMod() specifying fam$family explicitly.
 # 7/5/2019:  clm clm2 and clmm were not passing the estimated threshholds to polr
+# 3/22/2020:  added Effect.glmmPQL (from MASS package)
+# 4/27/2020:  require 'insight' package for find_formula and get_coefficients
+#             so formula and coefficients are generally not needed
+# 2020-06-13: fix typo (omitted ') in an error message
+# 2020-06-23: All the Effect.* methods previously in this file have been removed
+#             and replaced by effSources.* methods.  
 
-# new lme method
-Effect.lme <- function(focal.predictors, mod, ...){
-  args <- list(
-    call = mod$call,
-    formula = mod$call$fixed,
-    coefficients = mod$coefficients$fixed,
-    vcov = mod$varFixed)
-  Effect.default(focal.predictors, mod, ..., sources=args)
+effSources <- function(mod){
+  UseMethod("effSources", mod)
 }
 
-# new gls method
-Effect.gls <- function(focal.predictors, mod, ...){
+effSources.default <- function(mod){NULL}
+
+# lme, nlme package - default works
+
+# gls, nlme package
+effSources.gls <- function(mod){
   cl <- mod$call
   cl$weights <- NULL
-  args <- list(
-    call = cl,
-    formula = formula(mod),
-    coefficients = coef(mod),
-    vcov = as.matrix(vcov(mod)))
-  Effect.default(focal.predictors, mod, ..., sources=args)
+  list(call = cl)
 }
 
-# new merMod
-Effect.merMod <- function(focal.predictors, mod, ..., KR=FALSE){
-  if (KR && !requireNamespace("pbkrtest", quietly=TRUE)){
-    KR <- FALSE
-    warning("pbkrtest is not available, KR set to FALSE")}
-  fam <- family(mod)
-  args <- list(
-    call = mod@call,
-    coefficients = lme4::fixef(mod),
-    family=fam,
-    vcov = if (fam$family == "gaussian" && fam$link == "identity" && KR)
-      as.matrix(pbkrtest::vcovAdj(mod)) else as.matrix(vcov(mod)))
-  Effect.default(focal.predictors, mod, ..., sources=args)
-}
+# glmmPQL method 3/22/2020
+effSources.glmmPQL <- function(mod) {list(family = mod$family)}
 
-# rlmer in robustlmm package
-Effect.rlmerMod <- function(focal.predictors, mod, ...){
-  args <- list(
-    coefficients = lme4::fixef(mod),
-    family=family(mod))
-  Effect.default(focal.predictors, mod, ..., sources=args)
-}
+# lme4 -- handled via an Effect method to allow for KR argument
+# effSources.merMod <- function(mod){NULL}
 
-# clm in the ordinal package
-Effect.clm <- function(focal.predictors, mod, ...){
+# rlmer in robustlmm package, not really needed
+effSources.rlmerMod <- function(mod){NULL}
+
+# clm in the ordinal package. clm is not supported by insight package
+effSources.clm <- function(mod){
   if (requireNamespace("MASS", quietly=TRUE)){
     polr <- MASS::polr} else stop("MASS package is required")
   polr.methods <- c("logistic", "probit", "loglog", 
@@ -67,17 +52,16 @@ Effect.clm <- function(focal.predictors, mod, ...){
   numTheta <- length(mod$Theta)
   numBeta <- length(mod$beta)
   or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
-  args <- list(
+  list(
     type = "polr",
     coefficients = mod$beta,
     zeta = mod$alpha,  
     method=method,
     vcov = as.matrix(vcov(mod)[or, or]))
-  Effect.default(focal.predictors, mod, ..., sources=args)
 }
 
-# clm2
-Effect.clm2 <- function(focal.predictors, mod, ...){
+# clm2, this is supported by insight package
+effSources.clm2 <- function(mod){
   if (requireNamespace("MASS", quietly=TRUE)){
       polr <- MASS::polr}
   polr.methods <- c("logistic", "probit", "loglog", 
@@ -93,18 +77,17 @@ Effect.clm2 <- function(focal.predictors, mod, ...){
   numTheta <- length(mod$Theta)
   numBeta <- length(mod$beta)
   or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
-  args <- list(
+  list(
     type = "polr",
     formula = mod$call$location,
-    coefficients = mod$beta,
+    coefficients = mod$beta,  
     zeta = mod$Theta,
     method=method,
     vcov = as.matrix(vcov(mod)[or, or]))
-  Effect.default(focal.predictors, mod, ..., sources=args)
 }
 
 #clmm in ordinal package
-Effect.clmm <- function(focal.predictors, mod, ...){ 
+effSources.clmm <- function(mod){ 
   if (requireNamespace("MASS", quietly=TRUE)){
     polr <- MASS::polr}
   else stop("The MASS package must be installed")
@@ -118,40 +101,40 @@ Effect.clmm <- function(focal.predictors, mod, ...){
     message("\nRe-fitting to get Hessian\n")
     mod <- update(mod, Hess=TRUE)}
   if(mod$threshold != "flexible") 
-    stop("Only threshold='flexible supported by Effects")
+    stop("Only threshold='flexible' is supported by effects")
   numTheta <- length(mod$Theta)
   numBeta <- length(mod$beta)
   or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
   Vcov <- as.matrix(vcov(mod)[or, or])
-  args <- list(
+  list(
     type = "polr",
-    formula = formula(mod),
+    formula = insight::find_formula(mod)$conditional,
     coefficients = mod$beta,
     zeta=mod$alpha,
     method=method,
     vcov = as.matrix(Vcov))
-  Effect.default(focal.predictors, mod, ..., sources=args)
 }
 
 # betareg from the betareg package
-Effect.betareg <- function(focal.predictors, mod, ...){
+effSources.betareg <- function(mod){
   coef <- mod$coefficients$mean
   vco <- vcov(mod)[1:length(coef), 1:length(coef)]
 # betareg uses beta errors with mean link given in mod$link$mean.  
 # Construct a family based on the binomial() family
   fam <- binomial(link=mod$link$mean)
-# adjust the varince function to account for beta variance
+# adjust the variance function to account for beta variance
   fam$variance <- function(mu){
     f0 <- function(mu, eta) (1-mu)*mu/(1+eta)
     do.call("f0", list(mu, mod$coefficient$precision))}
 # adjust initialize
   fam$initialize <- expression({mustart <- y})
+# collect arguments
   args <- list(
     call = mod$call,
     formula = formula(mod),
     family=fam,
     coefficients = coef,
     vcov = vco)
-  Effect.default(focal.predictors, mod, ..., sources=args)
+  args
 }
 
