@@ -61,7 +61,7 @@ plot(eall.lm1)
 
 ## ----eval=FALSE---------------------------------------------------------------
 #  plot(predictorEffects(lm1, ~ women))
-#  plot(predictorEffects(lm1)[[3]])
+#  plot(predictorEffects(lm1)[[2]])
 #  plot(predictorEffect("women", lm1))
 
 ## ----fig21a,include=TRUE,fig.width=5,fig.height=4.5,fig.show='hide'-----------

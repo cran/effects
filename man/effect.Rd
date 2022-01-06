@@ -17,7 +17,7 @@
 \description{
   \code{Effect} and \code{effect} construct an \code{"eff"} object for a term (usually a high-order term) in a regression that models a response as a linear function of main effects and interactions of factors and covariates. These models include, among others, linear models (fit by \code{\link{lm}} and \code{\link{gls}}), and generalized linear models (fit by \code{\link{glm}}), for which an \code{"eff"} object is created, and multinomial and proportional-odds logit models (fit respectively by \code{\link{multinom}} and \code{\link{polr}}), for which an \code{"effpoly"} object is created. The computed effect absorbs the lower-order terms marginal to the term in question, and averages over other terms in the model.  For multivariate linear models (of class \code{"mlm"}, fit by \code{\link{lm}}), the functions construct a list of \code{"eff"} objects, separately for the various response variables in the model. 
 
-\code{effect} builds the required object by specifying explicity a focal term like \code{"a:b"} for an \code{a} by \code{b} interaction.  \code{Effect} in contrast specifies the predictors in  a term, for example \code{c("a", "b")}, rather than the term itself.  \code{Effect} is consequently more flexible and robust than \code{effect}, and will succeed with some models for which \code{effect} fails.  The \code{effect} function works by constructing a call to \code{Effect} and continues to be included in \pkg{effects} so older code that uses it will not break.
+\code{effect} builds the required object by specifying explicitly a focal term like \code{"a:b"} for an \code{a} by \code{b} interaction.  \code{Effect} in contrast specifies the predictors in  a term, for example \code{c("a", "b")}, rather than the term itself.  \code{Effect} is consequently more flexible and robust than \code{effect}, and will succeed with some models for which \code{effect} fails.  The \code{effect} function works by constructing a call to \code{Effect} and continues to be included in \pkg{effects} so older code that uses it will not break.
 
 The \code{Effect} and \code{effect} functions can also be used with many other models; see \code{\link{Effect.default}} and the \href{../doc/methods-supported-by-effects.pdf}{Regression Models Supported by the effects Package} vignette.
 
@@ -105,7 +105,7 @@ For example, for a factor \code{X} with three levels \code{a}, \code{b} and \cod
   }
 }
 
-  \item{vcov.}{A function or the name of a function that returns the estimated variance-covariance matrix of the estimated coefficients.  This will ordinarily be the default, \code{\link{vcov}}, which will result in the function call \code{vcov(mod)} to get the variance-covariance matrix. You can use any function that takes the model object as its first argument and returns an estimated sample covariance matrix, such as the \code{\link[car]{hccm}} function in the \pkg{car} package, which returns a heteroscedasticity corrected covariance matrix for a linear model.}
+  \item{vcov.}{Effect methods generally use the matrix returned by \code{vcov(mod)} to compute standard errors and confidence bounds.  Alternatively, the user may specify the name of a function that returns a matrix of the same dimension and structure as the matrix returned by \code{vcov(mod)}.  For example, \code{vcov. = hccm} uses the \code{\link[car]{hccm}} function from the \pkg{car} package to use a heteroscedasticity corrected covariance matrix for a linear model in place of the standard covariance estimate. This argument can be set to equal matrix of the same size and structure as the matrix returned by \code{vcov(mod)}. For example, using \code{vcov. = vcov(Boot(mod))} uses \code{\link[car]{Boot}} from the \pkg{car} package to get a bootstrap estimate of the covariance matrix for linear, generalized linear, and possibly other modeling frameworks.}
   
   \item{se}{\code{TRUE} (the default), \code{FALSE}, or a list with any or all of the following elements, controlling whether and how standard errors and confidence limits are computed for the effects: 
   \describe{
@@ -120,7 +120,7 @@ For example, for a factor \code{X} with three levels \code{a}, \code{b} and \cod
 
   \item{residuals}{if \code{TRUE}, residuals for a linear or generalized linear model will be computed and saved; if \code{FALSE} (the default), residuals are suppressed. If residuals are saved, partial residuals are computed when the effect is plotted: see \code{\link{plot.eff}} and the vignette \href{../doc/partial-residuals.pdf}{Effect Displays with Partial Residuals}. This argument may also be used for mixed-effects and some other models.}
   
-  \item{quantiles}{quantiles at which to evaluate numeric focal predictors \emph{not} on the horizontal axis, used only when partial residuals are displayed; superceded if the \code{xlevels} argument gives specific values for a predictor.}
+  \item{quantiles}{quantiles at which to evaluate numeric focal predictors \emph{not} on the horizontal axis, used only when partial residuals are displayed; superseded if the \code{xlevels} argument gives specific values for a predictor.}
     
   \item{x.var}{the (quoted) name or index of the numeric predictor to define the horizontal axis of an effect plot for a linear or generalized linear model; the default is \code{NULL}, in which case the first numeric predictor in the effect will be used \emph{if} partial residuals are to be computed. This argument is intended to be used when \code{residuals} is \code{TRUE}; otherwise, the variable on the horizontal axis can be chosen when the effect object is plotted: see \code{\link{plot.eff}}.}
   
@@ -134,7 +134,7 @@ For example, for a factor \code{X} with three levels \code{a}, \code{b} and \cod
     
   \item{...}{arguments to be passed down.}
   
-  \item{confint, confidence.level, given.values, typical, offset, partial.residuals, transformation}{legacy arguments retained for backwards compatability; if present, these arguments take precedence over the \code{level} element of the \code{confint} list argument and the \code{given.values}, \code{typical}, and \code{offset} elements of the \code{fixed.predictors} list argument; \code{confint} may be used in place of the \code{se} argument; \code{partial.residuals} may be used in place of the \code{residuals} argument. See \code{\link{LegacyArguments}} for details.}
+  \item{confint, confidence.level, given.values, typical, offset, partial.residuals, transformation}{legacy arguments retained for backwards compatibility; if present, these arguments take precedence over the \code{level} element of the \code{confint} list argument and the \code{given.values}, \code{typical}, and \code{offset} elements of the \code{fixed.predictors} list argument; \code{confint} may be used in place of the \code{se} argument; \code{partial.residuals} may be used in place of the \code{residuals} argument. See \code{\link{LegacyArguments}} for details.}
 }
 
 \details{
@@ -161,7 +161,7 @@ Plotting methods for effect objects call the \code{\link{xyplot}} (or in some ca
   
   \item{variables}{a list with information about each predictor, including its name, whether it is a factor, and its levels or values.}
   
-  \item{fit}{(for \code{"eff"} objects) a one-column matrix of fitted values, representing the effect on the scale of the linear predictor; this is a ravelled table, representing all combinations of predictor values.}
+  \item{fit}{(for \code{"eff"} objects) a one-column matrix of fitted values, representing the effect on the scale of the linear predictor; this is a raveled table, representing all combinations of predictor values.}
   
   \item{prob}{(for \code{"effpoly"} objects) a matrix giving fitted probabilities for the effect for the various levels of the the response (columns) and combinations of the focal predictors (rows).}
   
@@ -232,7 +232,7 @@ The functions in the \pkg{effects} package work properly with predictors that ar
     Fox, J. (2003)
     Effect displays in R for generalised linear models.
     \emph{Journal of Statistical Software}
-    \bold{8:15}, 1--27, <\url{https://www.jstatsoft.org/article/view/v008i15}>.
+    \bold{8:15}, 1--27, \doi{10.18637/jss.v008.i15}.
 
   	Fox, J. and R. Andersen (2006).
    	Effect displays for multinomial and proportional-odds logit models.
@@ -243,7 +243,7 @@ The functions in the \pkg{effects} package work properly with predictors that ar
     Effect displays in R for multinomial and proportional-odds logit models:?
     	    Extensions to the effects package.
     \emph{Journal of Statistical Software}
-    \bold{32:1}, 1--24, <\url{https://www.jstatsoft.org/article/view/v032i01}>.
+    \bold{32:1}, 1--24, \doi{10.18637/jss.v032.i01}.
     
     Fox, J. and S. Weisberg (2019).  \emph{An R Companion to Applied Regression, third edition},
     Thousand Oaks: Sage.
@@ -252,7 +252,7 @@ The functions in the \pkg{effects} package work properly with predictors that ar
     Visualizing Fit and Lack of Fit in Complex Regression Models
         with Predictor Effect Plots with Partial Residuals.
     \emph{Journal of Statistical Software}
-    \bold{87:9}, 1--27, <\url{https://www.jstatsoft.org/article/view/v087i09}>
+    \bold{87:9}, 1--27, \doi{10.18637/jss.v087.i09}.
 
     Hastie, T. J. (1992).
     Generalized additive models.

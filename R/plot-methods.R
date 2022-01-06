@@ -44,6 +44,7 @@
 # 2018-11-03: fixed bug in plotting partial residuals when a factor focal predictor had empty levels.
 # 2019-02-13: made sure lty not ignored.
 # 2019-08-27: correctly handle character or logical predictor
+# 2020-11-11: fixed bug in plot.eff when x.var is set for multiline plot.
 
 # the following functions aren't exported
 
@@ -586,7 +587,12 @@ plot.eff <- function(x, x.var,
     if (length(which.z) == 0) stop(paste("z.var = '", z.var, "' is not in the effect.", sep=""))
     z.var <- which.z
   }
-if (x.var == z.var) z.var <- z.var + 1
+  if (x.var == z.var){ # z.var <- z.var + 1
+    levels.not.x <- levels
+    levels.not.x[x.var] <- Inf
+    z.var <- which.min(levels.not.x)
+  } 
+  
   ### multiline
   if (multiline){
     if (!is.null(residuals)) warning("partial residuals are not displayed in a multiline plot")

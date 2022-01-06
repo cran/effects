@@ -293,7 +293,7 @@ plot(predictorEffects(lm1, ~ type + education))
 Similarly, the commands
 <<eval=FALSE>>=
 plot(predictorEffects(lm1, ~ women))
-plot(predictorEffects(lm1)[[3]])
+plot(predictorEffects(lm1)[[2]])
 plot(predictorEffect("women", lm1))
 @
 all produce the same graph, the predictor effect plot for \vn{women}.
