@@ -23,14 +23,16 @@ options(show.signif.stars=FALSE)
 options(scipen=3)
 
 ## ----fig.height=4,fig.width=8---------------------------------------------
-library(effects)
+library("effects")
+Prestige$type <- factor(Prestige$type, c("bc", "wc", "prof")) # reorder levels
 g1 <- lm(prestige ~ education + type + education:type, data = Prestige)
+  # equivalent to lm(prestige ~ education*type, data = Prestige)
 plot(predictorEffects(g1), lines=list(multiline=TRUE))
 
 ## -------------------------------------------------------------------------
 data(Orthodont, package="nlme")
-g2 <- lme4::lmer(distance ~ age + Sex + (1 |Subject), data = Orthodont)
-g2
+g2 <- lme4::lmer(distance ~ age + Sex + (1 | Subject), data = Orthodont)
+summary(g2)
 
 ## ----fig.height=4,fig.width=8---------------------------------------------
 plot(predictorEffects(g2))

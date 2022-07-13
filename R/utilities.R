@@ -36,6 +36,7 @@
 # 2019-08-30: further fixes to character and logical predictors
 # 2019-10-24: add color options (e.g., for colorblind palette, suggestion of ) to effectsTheme(). J. Fox
 # 2019-11-14: change class(x) == "y" to inherits(x, "y")
+# 2022-02-18: insure that levels of focal predictor in returned objects are in proper order (bug reported by Christoph Scherber, didn't affect plots or tables).
 
 has.intercept <- function(model, ...) any(names(coefficients(model))=="(Intercept)")
 
@@ -376,6 +377,15 @@ Analyze.model <- function(focal.predictors, mod, xlevels, default.levels=NULL, f
   colclasses[colclasses == "matrix"] <- "numeric"
   colclasses[colclasses == "array"] <- "numeric"
   predict.data <-  matrix.to.df(predict.data, colclasses=colclasses)
+  for (i in 1:length(x)){
+    if (x[[i]]$is.factor){
+      predict.data[[x[[i]]$name]] <- if (is.ordered(predict.data[[x[[i]]$name]])){
+        ordered(predict.data[[x[[i]]$name]], levels=x[[i]]$levels)
+      } else {
+        factor(predict.data[[x[[i]]$name]], levels=x[[i]]$levels)
+      }
+    }
+  }
   list(predict.data=predict.data, 
        factor.levels=factor.levels, 
        factor.cols=factor.cols, focal.predictors=focal.predictors, n.focal=n.focal,

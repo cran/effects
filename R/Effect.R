@@ -49,6 +49,8 @@
 # 2020-06-23: Added effSources to gather sources for new regression methods.  
 #             Old mechanism of using Effect.method will still work
 # 2020-12-02: Allow cov. to be a matrix, not just a function.
+# 2022-01-29: Added warning or note about unestimable effects.
+# 2022-02-16: Make computation of residual df more robust.
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -141,7 +143,7 @@ Effect.default <- function(focal.predictors, mod, ..., sources){
     if(!is.null(fam$variance)){
       if(length(formals(fam$variance)) > 1)
         stop("Effect plots are not implemented for families with more than
-             one parameter in the variance function (e.g., negitave binomials).")}
+             one parameter in the variance function (e.g., negative binomial).")}
   }
   cl$family <- fam
 # get the coefficient estimates and vcov from sources if present
@@ -325,11 +327,21 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
                                    excluded.predictors, typical, given.values, 
                                    apply.typical.to.factors) 
 # 11/3/2017.  Check to see if the model is full rank
-  # Compute a basis for the null space, using estimibility package
+  # Compute a basis for the null space, using estimability package
   null.basis <- estimability::nonest.basis(mod)  # returns basis for null space
   # check to see if each row of mod.matrix is estimable
   is.estimable <- estimability::is.estble(mod.matrix, null.basis) # TRUE if effect is estimable else FALSE
-  # substitute 0 for NA in coef vector and compute effects
+  if (!any(is.estimable)) {
+    warning("none of the values of the ",
+                               paste(focal.predictors, collapse="*"),
+                               " effect are estimable")
+  } else if ((n.not.estimable <- sum(!is.estimable)) > 0) {
+    message("Note:\n  ", n.not.estimable,
+            if (n.not.estimable > 1) " values" else " value",
+            " in the ",  paste(focal.predictors, collapse="*"),
+            " effect are not estimable")
+    }
+    # substitute 0 for NA in coef vector and compute effects
   scoef <- ifelse(is.na(mod$coefficients), 0L, mod$coefficients)
   effect <- off + mod.matrix %*% scoef
   effect[!is.estimable] <- NA  # set all non-estimable effects to NA
@@ -361,17 +373,22 @@ Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
       }
     }
     else {
+      df.residual <- df.residual(mod)
+      if (is.null(df.residual) || is.na(df.residual)) df.residual <- Inf
       z <- if (confidence.type == "pointwise") {
-        qt(1 - (1 - confidence.level)/2, df = mod$df.residual)
+        qt(1 - (1 - confidence.level)/2, df = df.residual)
       } else {
         p <- length(na.omit(coef(mod)))
-        scheffe(confidence.level, p, mod$df.residual)
+        scheffe(confidence.level, p, df.residual)
       }
     }
     V <- if(inherits(vcov., "matrix")) vcov. else {
             if(inherits(vcov., "function")) vcov.(mod, complete=FALSE) 
             else stop("vcov. must be a function or matrix")}
-    mmat <- mod.matrix[, !is.na(mod$coefficients)] # remove non-cols with NA coeffs
+    use <- !is.na(mod$coefficients) # new
+    # mmat <- mod.matrix[, !is.na(mod$coefficients)] # remove non-cols with NA coeffs
+    mmat <- mod.matrix[, use] # remove non-cols with NA coeffs # new
+    if (any(is.na(V))) V <- V[use, use] # new
     eff.vcov <- mmat %*% V %*% t(mmat)
     rownames(eff.vcov) <- colnames(eff.vcov) <- NULL
     var <- diag(eff.vcov)

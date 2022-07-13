@@ -1,3 +1,14 @@
+Version 4.2-2
+
+ o Added warning or note about unestimable effects.
+ 
+ o More robust computation of residual df in Effect.lm(), to accommodate broader classes of models.
+ 
+ o Insure that factor levels of focal predictor are in proper order bug (reported by Christoph Scherber) didn't visibly affect plots or tables, just order of levels in returned factor.
+ 
+ o Functions supported by effects vignette rewritten (and renamed).
+
+
 Version 4.2-1
 
  o Allow the vcov. argument in the call to one of the effect methods to be a matrix or a function.  Previously only a function was permitted.

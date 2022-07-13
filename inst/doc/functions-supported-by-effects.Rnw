@@ -1,0 +1,307 @@
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Regression Models Supported by the effects Package}
+
+\documentclass[11pt]{article}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[american]{babel}
+\newcommand{\R}{{\sf R}}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{alltt}
+\usepackage{fancyvrb}
+\usepackage{natbib}
+\usepackage{amsmath}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{ragged2e}
+
+\VerbatimFootnotes
+\bibliographystyle{chicago}
+
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\code}[1]{\normalfont\texttt{\hyphenchar\font45\relax #1}}
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\tild}{\symbol{126}}
+\newcommand{\Rtilde}{\,\raisebox{-.5ex}{\code{\tild{}}}\,}
+\newcommand{\captilde}{\mbox{\protect\Rtilde}} % use in figure captions.
+\newcommand{\Rmod}[2]{\code{#1 \raisebox{-.5ex}{\tild{}} #2}}
+\newcommand{\Rmoda}[2]{\code{#1} &\code{\raisebox{-.5ex}{\tild{}} #2}}
+\newcommand{\Rmodb}[2]{\code{#1 &\raisebox{-.5ex}{\tild{}}& #2}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\betahat}{\widehat{\beta}}
+\newcommand{\bbetahat}{\widehat{\boldsymbol{\beta}}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\xbf}{\x_{\backslash{}f}}
+\newcommand{\hbf}{h_{\backslash{}f}}
+\newcommand{\xtb}{\x_{2\backslash{}f}}
+\newcommand{\xbfi}{\x_{\backslash{}f,i}}
+\newcommand{\inter}[2]{\mbox{$#1$:$#2$}}
+\newcommand{\cross}[2]{\mbox{$#1$\code{*}$#2$}}
+\newcommand{\N}{\mathrm{N}}
+
+\newcommand{\yx}{\widehat{y}(\x)}
+\newcommand{\lvn}[1]{\mbox{$\log(\mbox{\texttt{#1}})$}}
+
+\newcommand{\fn}[1]{\code{#1()}}
+\newcommand{\pkg}[1]{\textbf{#1}}
+\newcommand{\proglang}[1]{\textsf{#1}}
+\newcommand{\class}[1]{\texttt{"#1"}}
+
+\usepackage{xcolor}
+\newcommand{\Comment}[1]{\textbf{{\color{red}#1}}}
+
+\begin{document}
+
+\title{Regression Functions Supported by the \textbf{effects} Package\\
+And How to Support Other Classes of Regression Models}
+
+\author{John Fox and Sanford Weisberg}
+
+\date{2022-07-07}
+
+\maketitle
+
+<<setopts,echo=FALSE>>=
+library("knitr")
+opts_chunk$set(fig.width=5,fig.height=5,tidy=TRUE,
+               out.width="0.8\\textwidth",echo=TRUE)
+options(prompt=" ")
+@ 
+
+<<echo=FALSE, results='hide', include=FALSE>>=
+#options(continue="+    ", prompt="R> ", width=76)
+options(show.signif.stars=FALSE)
+options(scipen=3)
+library(effects)
+@
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+tidy=FALSE,fig.width=5,fig.height=5,cache=FALSE,comment=NA, prompt=TRUE
+)
+render_sweave()
+@
+
+
+<<echo=FALSE, results='hide', include=FALSE>>=
+options(continue="    ", prompt=" ", width=76)
+options(show.signif.stars=FALSE)
+options(scipen=3)
+@
+
+\section{Introduction}
+
+\emph{Effect plots}, as implemented in the \pkg{effects} package, represent the ``effects'' (in the not necessarily causal sense of ``partial relationship'') of one or more predictors on a response variable,  in regression models in which the response depends on a \emph{linear predictor}---a linear combination of main effects and interactions among the predictors \citep[Sec.~4.6.3]{FoxWeisberg19}. \fn{Effect} is the basic generic function in the \pkg{effects} package; \fn{Effect} is called directly or indirectly by several other functions in the package, such as \fn{predictorEffects} and \fn{allEffects}.
+
+Table~\ref{tab1} provides a list of regression modeling functions in \R{} that can be used with the \pkg{effects} package. This list, which is almost surely incomplete, includes functions that are directly supported by \fn{Effect} methods supplied by the \pkg{effects} package, by \fn{Effect} methods supplied by other CRAN packages, or by the default \fn{Effect} method,  which works with many classes of regression models.
+
+\begin{table}
+\caption{\R{} regression functions known to be compatible with the \fn{Effect} function.  The name before the double-colon is the package that includes the function; for example \fn{stats::lm} means that \fn{lm} is in the \pkg{stats} package. In some cases, \fn{Effect} may support only a subset of regression models fit by a particular function. Effects for mixed-effects models represent the fixed-effects part of the model.\label{tab1}}
+\begin{center}
+\begin{tabular}{|l|p{4.0in}|}\hline
+Function & Comments \\ \hline
+\multicolumn{2}{|l|}{\textbf{\code{glm}-type models}}\\ \hline
+\fn{stats::lm} & Standard linear regression models fit by least-squares or weighted least-squares.  A multivariate response, generating a multivariate linear model, is permitted, and in this case effects are computed for each response separately.\\
+\fn{stats::glm} & Generalized linear models.\\
+\fn{nlme::lme} & Linear mixed-effects models.\\
+\fn{nlme::gls} & Linear models fit by generalized least squares.\\
+\fn{lmer::lmer} & Linear mixed-effects models.\\
+\fn{lmer::glmer} & Generalized linear mixed-effects models.\\
+\fn{survey::svyglm} & Generalized linear models for complex survey designs.\\
+\fn{MASS::rlm} & Linear regression models estimated by robust M or MM regression.\\
+\fn{MASS::glmmPQL} & Generalized linear mixed-effects models via partial quadratic likelihood.\\
+\fn{robustlmm::rlmer} & Robust linear mixed-effects models.\\ 
+\fn{betareg::betareg} & Beta regression models for rates and proportions.\\
+\fn{ivreg::ivreg} & Linear regression models estimated by instrumental variables (2SLS regression). \\
+\fn{glmmTMB::glmmTMB} & Generalized linear mixed-effects regression models (similar to \fn{lmer::glmer} but accommodating a broader selection of models).\\
+\hline
+\multicolumn{2}{|l|}{\textbf{\code{multinom}-type models}}\\
+\hline
+\fn{nnet::multinom} & Multinomial logistic-regression models.  If the response has $K$ categories, the response for \fn{nnet::multinom} can be a factor with $K$ levels or a matrix with $K$ columns, which will be interpreted as counts for each of $K$ categories.  Effects plots require the response to be a factor, not a matrix.\\
+\fn{poLCA::poLCA} & Latent class analysis regression models for polytomous outcomes.  Latent class analysis has a similar structure to multinomial regression, except that class membership of observations is unobserved but estimated in the analysis.\\
+\hline
+\multicolumn{2}{|l|}{\textbf{\code{polr}-type models}}\\ \hline
+\fn{MASS:polr} & Ordinal logistic (proportional-odds) and probit regression models.\\
+\fn{ordinal::clm} & Cumulative-link regression models (similar to, but more extensive than, \fn{polr}).\\
+\fn{ordinal::clm2}& Updated version of \fn{ordinal::clm}.\\
+\fn{ordinal::clmm} & Cumulative-link regression models with random effects.\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+The most basic type of model for which \fn{Effect} is appropriate is a standard linear model fit by the \fn{lm} function; for example:
+
+<<fig.height=4,fig.width=8>>=
+library("effects")
+Prestige$type <- factor(Prestige$type, c("bc", "wc", "prof")) # reorder levels
+g1 <- lm(prestige ~ education + type + education:type, data = Prestige)
+  # equivalent to lm(prestige ~ education*type, data = Prestige)
+plot(predictorEffects(g1), lines=list(multiline=TRUE))
+@
+
+\noindent
+In this example the response \code{prestige} is modeled as a linear function of years of \code{education}, the factor \code{type}, with levels blue collar (\code{"bc"}), white collar (\code{"wc"}), and professional (\code{"prof"}), and their interaction. Because of the interaction, the estimated partial relationship of \code{prestige} to \code{education} (depicted in the \emph{predictor effect plot} for \code{education}, at the left) is different for each level of \code{type}, and the partial relationship of \code{prestige} to \code{type} (depicted in the predictor effect plot for \code{type}, at the right) varies with the value \code{education}.
+
+A linear mixed-effects model is a more complicated regression model, fit, for example, by the \fn{lmer} function in the \pkg{lme4} package \citep{Bates15}:
+<<>>=
+data(Orthodont, package="nlme")
+g2 <- lme4::lmer(distance ~ age + Sex + (1 | Subject), data = Orthodont)
+summary(g2)
+@
+This model has a fixed effect part, with response \code{distance} and predictors \code{age} and \code{Sex}.  The random intercept (represented by \code{1}) varies by \code{Subject}.  Effect plots for mixed-effects models are based only on the estimated fixed-effects in the model:
+<<fig.height=4,fig.width=8>>=
+plot(predictorEffects(g2))
+@
+
+\section{Basic Types of Regression Models in the effects Package}
+
+The \fn{Effects} function supports three basic types of regression models:
+
+\begin{itemize}
+
+\item The preceding examples that use the \fn{lm} and \fn{lmer} functions are examples of \code{glm}-type models, which express, via a link function, the dependence of a discrete or continuous numeric response or of a binary response on a set of main effects and interactions among fixed-effect predictors comprising a linear predictor.  The \fn{glm} function is the prototype for this kind of model. As shown in Table~\ref{tab1}, most of the regression functions currently supported by the \pkg{effects} package are of this type.  
+
+\item \code{multinom}-type models are multinomial regression models that arise when the response is an unordered multi-category variable, also modeled, via a suitable multivariate link function, as a linear function of fixed-effect main effects and interactions. The prototype for \code{multinom}-type models is the \fn{multinom} function in the \pkg{nnet} package \citep{VenablesRipley02}.
+
+\item \code{polr}-type models (i.e., ordinal regression models) are used for an ordered polytomous response variable. The prototype for  \code{polr}-type models is the \fn{polr} function in the \pkg{MASS} package \citep{VenablesRipley02}. 
+
+\end{itemize}
+
+\section{Supporting Specific Regression Functions}
+
+To support a specific class of regression models, say of class \code{"foo"} produced by the function \fn{foo}, one \emph{could} write a method \fn{Effect.foo} for the \proglang{S3} generic \fn{Effect} function. That approach is generally undesirable, for two reasons: (1) writing an \fn{Effect} method from scratch is a complicated endeavor; (2) the resulting object may not work properly with other functions in the \pkg{effects} package, such as \fn{plot} methods.
+
+The \pkg{effects} package defines and exports several methods for the \fn{Effect} function, including a default method, and three specific methods corresponding to the three types of regression models introduced in the preceding section: \fn{Effect.lm} (which is also inherited by models of class \code{"glm"}), \fn{Effect.multinom}, and \fn{Effect.polr}. Moreover, \fn{Effect.default} works by setting up a call to one of the three specific \fn{Effect} methods.\footnote{There are, as well, two additional specific \fn{Effect} methods provided by the \pkg{effects} package: \fn{Effect.merMod} for models produced by the \fn{lmer} and \fn{glmer} functions in the \pkg{lme4} package; and \fn{Effect.svyglm} for models produced by the \fn{svyglm} function in the \pkg{survey} package \citep{Lumley04}. To see the code for these methods, enter the commands \code{getAnywhere("Effect.merMod")} and \code{getAnywhere("Effect.svyglm")}, after loading the \pkg{effects} package.}
+
+The three basic \fn{Effect} methods collect information from the regression model of interest via a suitable method for the generic \fn{effects::effSources} function, and then use that information to compute effects and their standard errors.  The required information is summarized in Table~\ref{tab2}. 
+
+\begin{table}
+\caption{Values supplied by \fn{effSources} methods.  In the table, the regression model object is called \code{m}.  For functions cited in the \pkg{insight} package see \cite{insight19}.\label{tab2}}
+\begin{center}
+\begin{tabular}{|l|p{4.5in}|} \hline
+Argument & Description \\ \hline
+\code{type} & The type of the regression model: one of \code{"glm"} (the default if \code{type} isn't supplied), \code{"multinom"}, or \code{"polr"}. \\
+\code{call} & The call that created the regression model, which is generally returned by either \verb+m$call+ or \verb+m@call+ or \code{insight::get\_call(m)}.   The call is used to find the usual \code{data} and \code{subset} arguments that \fn{Effect} needs to perform the computation. See the discussion of \fn{nlme:::gls} below for an example where the \code{call} must be modified.\\
+formula &  The formula for the fixed-effects linear predictor, which is often returned by \code{stats::formula(m)} or \code{insight::find\_formula(m)\$conditional}.\\
+\code{family} & Many \code{glm}-type models include a family, with an error distribution and a link function.  These are often returned by the default \code{stats::family(m)} or \code{insight::get\_family(m)}.\\
+\code{coefficients} &  The vector of fixed-effect parameter estimates, often returned by \code{coef(m)}.  Alternatively \code{b <- insight::get\_parameters(m)} returns the coefficient estimates as a two-column matrix with parameter names in the first column, so \code{stats:setNames(b[,2], b[,1])} returns the estimates as a vector. For a \code{polr}-type model, coefficients  should return the regression coefficients excluding the thresholds.\\
+\code{vcov} &  The estimated covariance matrix of the fixed-effect estimates, often given by \code{stats::vcov(m)} or \code{insight::get\_varcov(m)}. For a \code{polr}-type model, the covariance matrix should include both the regression coefficients and the thresholds, with the regression coefficients \emph{preceding} the thresholds.\\  \hline\\
+\code{zeta} & The vector of estimated thresholds for a \code{polr}-type model, one fewer than the number of levels of the response. The default for a \code{polr}-type model is \code{zeta = m\$zeta}.\\
+\code{method} & For a \code{polr}-type model, the name of a link supported by the \fn{MASS::polr} function: one of \code{"logistic"}, \code{"probit"}, \code{"loglog"}, \code{"cloglog"}, or \code{"cauchit"}. The default for a \code{polr}-type model is \code{method = "logistic"}.\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+The default \fn{effSources} method simply returns \code{NULL}, which corresponds to selecting all of the defaults in Table~\ref{tab2}. If that doesn't work, it usually suffices to provide a suitable \fn{effSources} method. We illustrate by a few examples.
+
+\subsection{Examples}
+
+The following examples, with the exception of the last, are drawn directly from the \pkg{effects} package.
+
+\subsubsection{\texttt{glmmPQL()}}
+
+Objects of class \code{"glmmPQL"}, produced by \fn{MASS::glmmPQL} do not respond to the generic \fn{family} function, but the name of the family can be obtained from the call; thus:
+\begin{alltt}
+effSources.glmmPQL <- function(mod) \{
+  list(family = mod$family)
+\}
+\end{alltt}
+
+\subsubsection{\texttt{gls()}}
+
+The \code{weights} argument has different meaning for \fn{gls} in the \pkg{nlme} package \citep{nlme} and for the standard \R{} \fn{glm} function, and consequently the \code{call} must be modified to set \code{weights} to \code{NULL}:
+\begin{alltt}
+effSources.gls <- function(mod)\{
+  cl <- mod$call
+  cl$weights <- NULL
+  list(call = cl)
+\}
+\end{alltt}
+
+\subsubsection{\texttt{betareg()}}
+The \code{betareg} function in the \pkg{betareg} package \citep{betareg} fits response data similar to a binomial regression but with beta errors. Adapting these models for use with \fn{Effect} is considerably more complex than the two previous examples:
+
+\begin{alltt}
+effSources.gls <- function(mod)\{
+  coef <- mod$coefficients$mean
+  vco <- vcov(mod)[1:length(coef), 1:length(coef)]
+# betareg uses beta errors with mean link given in mod$link$mean.  
+# Construct a family based on the binomial() family
+  fam <- binomial(link=mod$link$mean)
+# adjust the variance function to account for beta variance
+  fam$variance <- function(mu){
+    f0 <- function(mu, eta) (1-mu)*mu/(1+eta)
+    do.call("f0", list(mu, mod$coefficient$precision))}
+# adjust initialize
+  fam$initialize <- expression({mustart <- y})
+# collect arguments
+  args <- list(
+    call = mod$call,
+    formula = formula(mod),
+    family=fam,
+    coefficients = coef,
+    vcov = vco)
+  args
+\}
+\end{alltt}
+
+\subsubsection{\texttt{clm2()}}
+
+The \fn{clm2} function in the \pkg{ordinal} package \citep{Christensen15} fits ordinal regression models, and so the aim is to create \code{polr}-type effects:
+
+\begin{alltt}
+effSources.clm2 <- function(mod)\{
+  if (!requireNamespace("MASS", quietly=TRUE))
+    stop("MASS package is required")
+  polr.methods <- c("logistic", "probit", "loglog", 
+                    "cloglog", "cauchit")
+  method <- mod\$link
+  if(!(method %in% polr.methods)) 
+    stop("'link' must be a 'method' supported by polr; see help(polr)")
+  if(is.null(mod\$Hessian))\{
+     message("Re-fitting to get Hessian")
+     mod <- update(mod, Hess=TRUE)
+  \}
+  if(mod\$threshold != "flexible") 
+    stop("Effects only supports the flexible threshold")
+  numTheta <- length(mod\$Theta)
+  numBeta <- length(mod\$beta)
+  or <- c( (numTheta+1):(numTheta + numBeta), 1:(numTheta))
+  list(
+    type = "polr",
+    formula = mod\$call\$location,
+    coefficients = mod\$beta,  
+    zeta = mod\$Theta,
+    method=method,
+    vcov = as.matrix(vcov(mod)[or, or]))
+\}
+\end{alltt}
+
+\subsubsection{\texttt{ivreg::ivreg()}}
+
+Sometimes it doesn't suffice to define an appropriate \fn{effSources} method, but it is still possible to avoid writing a detailed \fn{Effect} method. We use the \fn{ivreg} function (for instrumental-variables regression) in the \pkg{ivreg} package \citep{ivreg} as an example; that package defines the following \fn{Effect.ivreg} method:
+
+\begin{alltt}
+Effect.ivreg <- function (focal.predictors, mod, ...) \{
+  mod\$contrasts <- mod\$contrasts\$regressors
+  NextMethod()
+\}
+\end{alltt}
+
+\noindent Here it is sufficient to set the \code{contrasts} element of the model object to conform to the way it is defined in \class{lm} objects. That works because \class{ivreg} objects inherit from class \code{lm}, and thus \fn{Effect.lm} is called by \fn{NextMethod}.
+
+
+
+
+
+
+\bibliography{functions-supported-by-effects}
+\end{document}
+
+
