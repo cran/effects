@@ -15,7 +15,7 @@ into the \code{confint} and \code{fixed.predictors} arguments.
 
 For backwards compatibility, we have to the extent possible retained the
 older arguments. If specified, these legacy arguments take precedence over the newer
-list-style arguments
+list-style arguments.
 }
 
 \details{
@@ -111,8 +111,6 @@ For \code{Effect} methods:
 \item{\code{offset={function}}}{\code{fixed.predictors=list(offset={function})}}
 
 \item{\code{partial.residuals=TRUE/FALSE}}{\code{residuals=TRUE/FALSE}}
-
-\item{\code{transformation}}{This argument to \code{Effect} is not needed to compute effects.  It can now be set directly with the \code{plot} method with the argument \code{axes = list(y = list(transformation=specification))}.}
 
 }}
 

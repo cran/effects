@@ -1,3 +1,21 @@
+Version 4.2-4
+
+  o Restore export of Effect.default, effect.default, and allEffects.default to avoid breaking code in other packages.
+
+Version 4.2-3
+
+  o Fix bug in summary.eff() output when the transformation (e.g., link function) is inverse rather than direct, as in a gamma GLM (reported by Natalie Nicholls).
+
+  o Import version >= 1.4.1 of estimability to avoid bug in version 1.4.0 (suggestion of Russell Lenth).
+  
+  o Added levels2dates(), with "eff" and "effpoly" methods, for limited support for plotting "Date" objects (request of Christoph Scherber).
+  
+  o transformation is no longer considered a "legacy" argument for Effect.lm().
+  
+  o Update \link{}s in .Rd files to adhere to new rules.
+  
+  o Various small updates to conform to R/CRAN rules.
+  
 Version 4.2-2
 
  o Added warning or note about unestimable effects.

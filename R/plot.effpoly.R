@@ -20,6 +20,7 @@
 # 2018-10-05: modified plot.effpoly() so that multiline plots don't show confidence limits 
 #             by default, and so that confidence bars for a factor are staggered.
 # 2020-06-01: plot.effpoly() no longer ignores lty.
+# 2025-07-21: rename range.adj() to range_adj to avoid generic confusion.
 
 plot.effpoly <- function(x, x.var=which.max(levels), 
                          main=paste(effect, "effect plot"),
@@ -306,7 +307,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
           xlm <- if (nm %in% names(xlim)){
             xlim[[nm]]
           }
-          else range.adj(Data[nm]) # range(x.vals)
+          else range_adj(Data[nm]) # range(x.vals)
           tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
             trans <- transform.x[[nm]]$trans
             make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -446,7 +447,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
           xlm <- if (nm %in% names(xlim)){
             xlim[[nm]]
           }
-          else range.adj(Data[nm]) # range(x.vals)
+          else range_adj(Data[nm]) # range(x.vals)
           tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
             trans <- transform.x[[nm]]$trans
             make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -570,7 +571,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
         xlm <- if (nm %in% names(xlim)){
           xlim[[nm]]
         }
-        else range.adj(Data[nm]) # range(x.vals)
+        else range_adj(Data[nm]) # range(x.vals)
         tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
           trans <- transform.x[[nm]]$trans
           make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -722,7 +723,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
         xlm <- if (nm %in% names(xlim)){
           xlim[[nm]]
         }
-        else range.adj(Data[nm]) # range(x.vals)
+        else range_adj(Data[nm]) # range(x.vals)
         tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
           trans <- transform.x[[nm]]$trans
           make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -896,7 +897,7 @@ plot.effpoly <- function(x, x.var=which.max(levels),
         xlm <- if (nm %in% names(xlim)){
           xlim[[nm]]
         }
-        else range.adj(Data[nm]) # range(x.vals)
+        else range_adj(Data[nm]) # range(x.vals)
         tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
           trans <- transform.x[[nm]]$trans
           make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)

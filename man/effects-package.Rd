@@ -26,7 +26,7 @@ URL: \tab https://www.r-project.org, https://socialsciences.mcmaster.ca/jfox/\cr
 This package creates effect displays for various kinds of models, as partly explained in the references.
 Typical usage is \code{plot(allEffects(model))} or \code{plot(predictorEffects(model))},
 where \code{model} is an appropriate fitted-model object.
-Additional arguments to \code{\link{allEffects}}, \code{\link{predictorEffects}} and \code{\link{plot}} can be used to customize the resulting
+Additional arguments to \code{\link{allEffects}}, \code{\link{predictorEffects}} and \code{\link[graphics]{plot}} can be used to customize the resulting
 displays. The function \code{\link{effect}} can be employed to produce an effect display for a 
 particular term in the model, or to which terms in the model are marginal. The function \code{\link{predictorEffect}} can be used
 to construct an effect display for a particularly predictor. The function \code{\link{Effect}}

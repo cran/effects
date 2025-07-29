@@ -31,7 +31,7 @@ A vector of coefficient estimates
 }
 \author{Sanford Weisberg \email{sandy@umn.edu}}
 
-\seealso{\code{\link{get_parameters}}, and vignette \href{../doc/methods-supported-by-effects.pdf}{Regression Models Supported by the effects Package}}
+\seealso{\code{\link[insight]{get_parameters}}, and vignette \href{../doc/methods-supported-by-effects.pdf}{Regression Models Supported by the effects Package}}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

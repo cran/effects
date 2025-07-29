@@ -15,9 +15,24 @@
 #  2013-08-31: fixed handling of ticks.x argument. John
 #  2013-09-25: moved plot.eff methods to plot.methods.R for easier work. Michael
 #  2013-10-17: added use.splines argument to plot.effpoly.  Sandy
+#  2025-07-22: fix summary.eff when transformation is inverse rather than direct. John
 
 
 summary.eff <- function(object, type=c("response", "link"), ...){
+  
+  effect <- as.vector(object$fit)
+  trans.effect <- object$transformation$inverse(effect)
+  check.order  <- if (all(order(effect) == order(trans.effect))){
+    "direct"
+  } else if (all(order(effect) == order(- trans.effect))){ 
+    "inverse"
+  } else {
+    "inconsistent"
+  }
+  if (check.order == "inconsistent") {
+    warning("the response transformation appears to be non-monotone")
+  }
+  
   result <- list()
   result$header <- paste("\n", gsub(":", "*", object$term), 'effect\n')
   result$offset <- object$offset
@@ -25,8 +40,14 @@ summary.eff <- function(object, type=c("response", "link"), ...){
   if (type == "response") {
     object$fit <- object$transformation$inverse(object$fit)
     if (!is.null(object$confidence.level)){
-      object$lower <- object$transformation$inverse(object$lower)
-      object$upper <- object$transformation$inverse(object$upper)
+      if (check.order == "inverse"){
+        save.upper <- object$upper
+        object$upper <- object$transformation$inverse(object$lower)
+        object$lower <- object$transformation$inverse(save.upper)
+      } else {
+        object$lower <- object$transformation$inverse(object$lower)
+        object$upper <- object$transformation$inverse(object$upper)
+      }
     }
   }
   result$effect <- array(object$fit,     

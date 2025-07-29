@@ -1,17 +1,17 @@
 citHeader("To cite effects in publications use:")
 
-citEntry(entry = "Book",
+bibentry(bibtype = "Book",
   title        = "An R Companion to Applied Regression",
   edition      = "3rd",
-  author       = personList(as.person("John Fox"), as.person("Sanford Weisberg")),
+  author       = c(as.person("John Fox"), as.person("Sanford Weisberg")),
   year         = "2019",
   publisher    = "Sage",
   address      = "Thousand Oaks CA",
-  url          = "https://socialsciences.mcmaster.ca/jfox/Books/Companion/index.html",
+  url          = "https://www.john-fox.ca/Companion/index.html",
   textVersion =  paste("John Fox and Sanford Weisberg (2019).",
         "An R Companion to Applied Regression, 3rd Edition.",
         "Thousand Oaks, CA",
-        "<https://socialsciences.mcmaster.ca/jfox/Books/Companion/index.html>"
+        "<https://www.john-fox.ca/Companion/index.html>"
         ))
         
 bibentry(bibtype = "Article",
@@ -36,7 +36,7 @@ bibentry(bibtype = "Article",
 )
 
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
   title        = "Effect Displays in {R} for Generalised Linear Models",
   author       = as.person("John Fox"),
   journal      = "Journal of Statistical Software",
@@ -52,9 +52,9 @@ citEntry(entry = "Article",
   header = "For generalized linear models also cite:"
 )
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
   title        = "Effect Displays in {R} for Multinomial and Proportional-Odds Logit Models: Extensions to the {effects} Package",
-  author       = personList(as.person("John Fox"),
+  author       = c(as.person("John Fox"),
                    as.person("Jangman Hong")),
   journal      = "Journal of Statistical Software",
   year         = "2009",

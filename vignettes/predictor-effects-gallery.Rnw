@@ -71,7 +71,7 @@
 
 \author{John Fox and Sanford Weisberg}
 
-\date{2018-12-19, minor revisions 2020-02-08}
+\date{2018-12-19, minor revisions 2023-02-20}
 
 \maketitle
 
@@ -446,6 +446,66 @@ We use the top-level argument \code{main="Transformed Plot"} to set the title of
 The \ar{x} sub-argument is itself a list with three elements: The sub-arguments \code{rotate} and \ar{rug} set the rotation angle for the tick labels and suppress the rug plot, respectively.  The additional sub-argument is a list called \ar{income}, the name of the focal predictor.  If you were drawing many predictor effect plots you would supply one list named for each of the focal predictors.  All of the sub-arguments for \ar{income} are displayed in the example code above.  The sub-argument \code{transform=list(trans=log, inverse=exp)} specifies how to transform the $x$-axis.  The \code{ticks} and \code{lim} sub-arguments set the tick marks and range for the horizontal axis.
 
 This is admittedly a complex command, but it allows you to fine-tune the graph to look the way you want.  In specifying nested argument lists, you may encounter problems getting the parentheses in the right places. Be careful, indent your code to clarify the structure of the command, and be patient!
+
+\subsubsection{\ar{x}: Horizontal Axis Specification for Date Variables}
+
+The functions in the \pkg{effects} package, such as \fn{Effect} and \fn{predictorEffect}, support models with numeric, factor, character, and logical predictors. Date predictors must be converted to numeric for these functions to work. 
+
+We supply the generic function \fn{levels2dates}, with methods for \class{eff} and \class{effpoly} objects, which can be used to properly label the horizontal axes of effect and predictor effect plots by translating numeric dates back to dates for the axis tick-mark labels. \fn{levels2dates} takes several arguments:
+\begin{description}
+
+\item[\ar{effect}] An \class{eff} or \class{effpoly} object, created, e.g., by \fn{Effect} or \fn{predictorEffect}.
+
+\item[\ar{predictor}] The quoted name of the numeric version of the date predictor.
+
+\item[\ar{origin}] A quoted string giving the origin date (see the examples below).
+
+\item[\ar{evenly.spaced}] If \code{TRUE} (the default), the tick marks on the horizontal axis are evenly spaced; if \code{FALSE} the tick marks are taken from the levels of the numeric date predictor in the \class{eff} or \class{effpoly} object.
+
+\item[\ar{n}] The number of tick marks; if missing, the number of levels of the predictor in the \class{eff} or \class{effpoly} object.
+
+\end{description}
+
+Here are some examples:
+
+<<figdates1,include=TRUE,fig.width=5,fig.height=5,fig.show='hide'>>=
+data("airquality", package="datasets")
+airquality$Date <- with(airquality, as.Date(paste("1973", Month, Day, sep="-"), 
+    format="%Y-%m-%d"))
+airquality$Date.num <- as.numeric(airquality$Date)
+m1.date <- lm(Ozone ~ Date.num + Solar.R + Wind + Temp, data=airquality)
+eff.date.1 <- Effect("Date.num", m1.date)
+plot(eff.date.1, axes=list(x=list(Date.num=list(lab="Date", 
+    ticks=list(at=levels2dates(eff.date.1, "Date.num", "1970-01-01"))), 
+    rotate=45)), main="Date Effect")
+@
+
+\centerline{\includegraphics[width=4in]{figure/figdates1-1.pdf}}
+
+<<figdates2,include=TRUE,fig.width=5,fig.height=5,fig.show='hide'>>=
+plot(eff.date.1, axes=list(x=list(Date.num=list(lab="Date", 
+    ticks=list(at=levels2dates(eff.date.1, "Date.num", "1970-01-01", n=4))))), 
+    main="Date Effect")
+@
+
+\centerline{\includegraphics[width=4in]{figure/figdates2-1.pdf}}
+
+<<>>=
+eff.date.df <- as.data.frame(eff.date.1)
+eff.date.df$Date <- as.Date(eff.date.df$Date.num, origin="1970-01-01")
+eff.date.df
+@
+
+<<figdates3,include=TRUE,fig.width=7.5,fig.height=7.5,fig.show='hide'>>=
+m2.date <- lm(Ozone ~ Date.num*Temp + Solar.R + Wind, data=airquality)
+eff.date.2 <- Effect(c("Date.num", "Temp"), m2.date, xlevels=6)
+plot(eff.date.2, axes=list(x=list(Date.num=list(lab="Date", 
+  ticks=list(at=levels2dates(eff.date.2, "Date.num", "1970-01-01", n=3))), 
+  rotate=45)), main="Date Effect by Temperature")
+@
+
+\centerline{\includegraphics[width=6in]{figure/figdates3-1.pdf}}
+
 
 \subsubsection{\ar{y}: Vertical Axis Specification for Linear Models}
 

@@ -51,6 +51,7 @@
 # 2020-12-02: Allow cov. to be a matrix, not just a function.
 # 2022-01-29: Added warning or note about unestimable effects.
 # 2022-02-16: Make computation of residual df more robust.
+# 2025-07-27: transformation is no longer a "legacy" argument to Effect.lm().
 
 ### Non-exported function added 2018-01-22 to generalize given.values to allow for "equal" weighting of factor levels for non-focal predictors.
 .set.given.equal <- function(m){
@@ -225,10 +226,10 @@ fixFormula <- function (term)
 Effect.lm <- function(focal.predictors, mod, xlevels=list(), fixed.predictors,
         vcov. = vcov, se=TRUE,
         residuals=FALSE, quantiles=seq(0.2, 0.8, by=0.2),
-        x.var=NULL,  ...,
+        x.var=NULL, transformation, ...,
         #legacy arguments:
         given.values, typical, offset, confint, confidence.level, 
-        partial.residuals, transformation){ 
+        partial.residuals){ 
   
   if (is.numeric(xlevels)){
     if (length(xlevels) > 1 || round(xlevels != xlevels)) stop("xlevels must be a single whole number or a list")

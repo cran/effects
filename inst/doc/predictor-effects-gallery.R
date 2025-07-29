@@ -52,17 +52,17 @@ eall.lm1 <- predictorEffects(lm1)
 plot(eall.lm1)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  plot(eall.lm1)
-#  plot(predictorEffects(lm1))
-#  plot(predictorEffects(lm1, ~ income + education + women + type))
+# plot(eall.lm1)
+# plot(predictorEffects(lm1))
+# plot(predictorEffects(lm1, ~ income + education + women + type))
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  plot(predictorEffects(lm1, ~ type + education))
+# plot(predictorEffects(lm1, ~ type + education))
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  plot(predictorEffects(lm1, ~ women))
-#  plot(predictorEffects(lm1)[[2]])
-#  plot(predictorEffect("women", lm1))
+# plot(predictorEffects(lm1, ~ women))
+# plot(predictorEffects(lm1)[[2]])
+# plot(predictorEffect("women", lm1))
 
 ## ----fig21a,include=TRUE,fig.width=5,fig.height=4.5,fig.show='hide'-----------
 e3.lm1 <- predictorEffect("type", lm1)
@@ -112,6 +112,34 @@ plot(predictorEffects(lm2, ~ income),
                        ticks=list(at=c(2000, 5000, 10000, 20000)),
                        lim=c(1900, 21000))
     )))
+
+## ----figdates1,include=TRUE,fig.width=5,fig.height=5,fig.show='hide'----------
+data("airquality", package="datasets")
+airquality$Date <- with(airquality, as.Date(paste("1973", Month, Day, sep="-"), 
+    format="%Y-%m-%d"))
+airquality$Date.num <- as.numeric(airquality$Date)
+m1.date <- lm(Ozone ~ Date.num + Solar.R + Wind + Temp, data=airquality)
+eff.date.1 <- Effect("Date.num", m1.date)
+plot(eff.date.1, axes=list(x=list(Date.num=list(lab="Date", 
+    ticks=list(at=levels2dates(eff.date.1, "Date.num", "1970-01-01"))), 
+    rotate=45)), main="Date Effect")
+
+## ----figdates2,include=TRUE,fig.width=5,fig.height=5,fig.show='hide'----------
+plot(eff.date.1, axes=list(x=list(Date.num=list(lab="Date", 
+    ticks=list(at=levels2dates(eff.date.1, "Date.num", "1970-01-01", n=4))))), 
+    main="Date Effect")
+
+## -----------------------------------------------------------------------------
+eff.date.df <- as.data.frame(eff.date.1)
+eff.date.df$Date <- as.Date(eff.date.df$Date.num, origin="1970-01-01")
+eff.date.df
+
+## ----figdates3,include=TRUE,fig.width=7.5,fig.height=7.5,fig.show='hide'------
+m2.date <- lm(Ozone ~ Date.num*Temp + Solar.R + Wind, data=airquality)
+eff.date.2 <- Effect(c("Date.num", "Temp"), m2.date, xlevels=6)
+plot(eff.date.2, axes=list(x=list(Date.num=list(lab="Date", 
+  ticks=list(at=levels2dates(eff.date.2, "Date.num", "1970-01-01", n=3))), 
+  rotate=45)), main="Date Effect by Temperature")
 
 ## ----fig33,include=TRUE,fig.width=4,fig.height=4,fig.show='hide'--------------
 # default:
@@ -380,5 +408,5 @@ plot(predictorEffects(mr1, ~ Europe + political.knowledge,
                   strip=list(factor.names=FALSE)))
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  effectsTheme()
+# effectsTheme()
 

@@ -45,6 +45,7 @@
 # 2019-02-13: made sure lty not ignored.
 # 2019-08-27: correctly handle character or logical predictor
 # 2020-11-11: fixed bug in plot.eff when x.var is set for multiline plot.
+# 2025-07-21: rename range_adj() to range_adj to avoid generic confusion.
 
 # the following functions aren't exported
 
@@ -82,7 +83,7 @@ make.ticks <- function(range, link, inverse, at, n) {
   list(at=ticks, labels=format(labels))
 }
 
-range.adj <- function(x){
+range_adj <- function(x){
   range <- range(x, na.rm=TRUE)
   c(range[1] - .025*(range[2] - range[1]),
     range[2] + .025*(range[2] - range[1]))
@@ -476,7 +477,7 @@ plot.eff <- function(x, x.var,
       xlm <- if (nm %in% names(xlim)){
         xlim[[nm]]
       }
-      else range.adj(x[nm]) # range(x.vals)
+      else range_adj(x[nm]) # range(x.vals)
       tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
         trans <- transform.x[[nm]]$trans
         make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -696,7 +697,7 @@ plot.eff <- function(x, x.var,
       xlm <- if (nm %in% names(xlim)){
         xlim[[nm]]
       }
-      else range.adj(x[nm])
+      else range_adj(x[nm])
       tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
         trans <- transform.x[[nm]]$trans
         make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)
@@ -903,7 +904,7 @@ plot.eff <- function(x, x.var,
     xlm <- if (nm %in% names(xlim)){
       xlim[[nm]]
     }
-    else range.adj(x[nm])
+    else range_adj(x[nm])
     tickmarks.x <- if ((nm %in% names(transform.x)) && !(is.null(transform.x))){
       trans <- transform.x[[nm]]$trans
       make.ticks(trans(xlm), link=transform.x[[nm]]$trans, inverse=transform.x[[nm]]$inverse, at=at, n=n)

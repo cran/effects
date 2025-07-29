@@ -1,6 +1,6 @@
 Package: effects
-Version: 4.2-2
-Date: 2022-07-12
+Version: 4.2-4
+Date: 2025-07-29
 Title: Effect Displays for Linear, Generalized Linear, and Other Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Sanford", "Weisberg", role = "aut", email = "sandy@umn.edu"),
@@ -11,20 +11,20 @@ Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaste
     person("David", "Firth", role = "ctb"),
     person("Steve", "Taylor", role = "ctb"),
     person("R Core Team", role="ctb"))
-Depends: R (>= 3.5.0), carData
+Depends: R (>= 3.5.0), carData, datasets
 Suggests: pbkrtest (>= 0.4-4), nlme, MASS, poLCA, heplots, splines,
         ordinal, car, knitr, betareg, alr4, robustlmm
 Imports: lme4, nnet, lattice, grid, colorspace, graphics, grDevices,
-        stats, survey, utils, estimability, insight
+        stats, survey, utils, estimability (>= 1.4.1), insight
 Description: 
   Graphical and tabular effect displays, e.g., of interactions, for 
   various statistical models with linear predictors.
 License: GPL (>= 2)
-URL: https://www.r-project.org,
-        https://socialsciences.mcmaster.ca/jfox/
+URL: https://cran.r-project.org/package=effects,
+        https://www.john-fox.ca/
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2022-07-13 14:09:31 UTC; johnfox
+Packaged: 2025-07-29 12:51:59 UTC; johnfox
 Author: John Fox [aut, cre],
   Sanford Weisberg [aut],
   Brad Price [aut],
@@ -36,4 +36,4 @@ Author: John Fox [aut, cre],
   R Core Team [ctb]
 Maintainer: John Fox <jfox@mcmaster.ca>
 Repository: CRAN
-Date/Publication: 2022-07-13 15:00:03 UTC
+Date/Publication: 2025-07-29 18:00:02 UTC
